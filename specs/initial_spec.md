@@ -159,7 +159,8 @@ CREATE TABLE sync_run (
 CREATE TABLE file_record (
     id SERIAL PRIMARY KEY,
     sync_run_id INTEGER REFERENCES sync_run(id),
-    original_uri TEXT NOT NULL,
+    original_uri TEXT NOT NULL, -- URI of the uploaded file in the RAG system
+    rag_uri TEXT NOT NULL, -- Complete URI of the file in the RAG system
     file_hash VARCHAR(64) NOT NULL,
     uuid_filename VARCHAR(40) NOT NULL,
     upload_time TIMESTAMP NOT NULL,
