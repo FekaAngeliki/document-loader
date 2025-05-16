@@ -97,22 +97,24 @@ A configurable document management system that collects files from various sourc
 ## Entity Relationship Diagram
 ```
 ┌───────────────────┐       ┌───────────────────┐       ┌───────────────────┐
-│   KnowledgeBase   │       │   SyncRun         │       │   FileRecord      │
+│   knowledge_base  │       │   sync_run        │       │   file_record     │
 ├───────────────────┤       ├───────────────────┤       ├───────────────────┤
 │ id (PK)           │       │ id (PK)           │       │ id (PK)           │
-│ name              │1     *│ knowledge_base_id │1     *│ sync_run_id       │
-│ source_type       ├───────┤ start_time        ├───────┤ original_uri      │
-│ source_config     │       │ end_time          │       │ file_hash         │
-│ rag_type          │       │ status            │       │ uuid_filename     │
-│ rag_config        │       │ total_files       │       │ upload_time       │
-│ created_at        │       │ new_files         │       │ file_size         │
-│ updated_at        │       │ modified_files    │       │ status            │
-└───────────────────┘       │ deleted_files     │       │ error_message     │
-                            │ error_message     │       └───────────────────┘
+│ name              │1     *│ knowledge_base_id │1     *│ sync_run_id (FK)  │
+│ source_type       ├───────┤     (FK)          ├───────┤ original_uri      │
+│ source_config     │       │ start_time        │       │ rag_uri           │
+│ rag_type          │       │ end_time          │       │ file_hash         │
+│ rag_config        │       │ status            │       │ uuid_filename     │
+│ created_at        │       │ total_files       │       │ upload_time       │
+│ updated_at        │       │ new_files         │       │ file_size         │
+└───────────────────┘       │ modified_files    │       │ status            │
+                            │ deleted_files     │       │ error_message     │
+                            │ error_message     │       │ created_at        │
+                            │ created_at        │       └───────────────────┘
                             └───────────────────┘
 
 ┌───────────────────┐       ┌───────────────────┐
-│   SourceType      │       │   RagType         │
+│   source_type     │       │   rag_type        │
 ├───────────────────┤       ├───────────────────┤
 │ id (PK)           │       │ id (PK)           │
 │ name              │       │ name              │
@@ -159,7 +161,7 @@ CREATE TABLE sync_run (
 CREATE TABLE file_record (
     id SERIAL PRIMARY KEY,
     sync_run_id INTEGER REFERENCES sync_run(id),
-    original_uri TEXT NOT NULL, -- URI of the uploaded file in the RAG system
+    original_uri TEXT NOT NULL, -- Original path/URI of the source file
     rag_uri TEXT NOT NULL, -- Complete URI of the file in the RAG system
     file_hash VARCHAR(64) NOT NULL,
     uuid_filename VARCHAR(40) NOT NULL,

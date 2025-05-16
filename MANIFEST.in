@@ -1,0 +1,7 @@
+include README.md
+include LICENSE
+include pyproject.toml
+include .env.example
+recursive-include src *.py
+recursive-include document_loader *.py
+include specs/*.md

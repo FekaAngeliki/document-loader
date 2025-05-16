@@ -1,0 +1,26 @@
+[Unit]
+Description=Document Loader for RAG Systems
+After=network.target postgresql.service
+
+[Service]
+Type=exec
+ExecStart=/usr/local/bin/document-loader sync --kb-name my-docs
+Restart=on-failure
+RestartSec=30
+
+# Environment variables
+Environment="DOCUMENT_LOADER_DB_HOST=localhost"
+Environment="DOCUMENT_LOADER_DB_PORT=5432"
+Environment="DOCUMENT_LOADER_DB_NAME=document_loader"
+Environment="DOCUMENT_LOADER_DB_USER=docloader"
+Environment="DOCUMENT_LOADER_DB_PASSWORD=secure_password"
+Environment="DOCUMENT_LOADER_LOG_LEVEL=INFO"
+
+# Security settings
+User=docloader
+Group=docloader
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
