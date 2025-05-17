@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, Any, Optional, Callable
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
@@ -66,22 +67,46 @@ class BatchRunner:
                 # Detect changes
                 console.print("[cyan]Detecting changes...[/cyan]")
                 changes = await self.change_detector.detect_changes(source_files, kb.id)
-                change_summary = self.change_detector.get_change_summary(changes)
-                
-                # Display change summary
-                self._display_change_summary(change_summary, len(source_files))
-                
-                logger.info(f"Change summary: {change_summary}")
                 
                 # Process changes
                 processed_count = 0
                 error_count = 0
                 
-                # Filter out unchanged files for processing
-                changes_to_process = [
-                    change for change in changes 
-                    if change.change_type in [ChangeType.NEW, ChangeType.MODIFIED]
-                ]
+                # First pass: calculate hashes for all existing files to determine actual changes
+                actual_changes = []
+                for change in changes:
+                    if change.change_type == ChangeType.NEW:
+                        actual_changes.append(change)
+                    elif change.change_type == ChangeType.MODIFIED:
+                        # Calculate hash to verify if file actually changed
+                        try:
+                            content = await source.get_file_content(change.uri)
+                            file_hash = await self.file_processor.calculate_hash(content)
+                            
+                            if file_hash != change.existing_record.file_hash:
+                                # Content actually changed
+                                change.new_hash = file_hash  # Store hash to avoid recalculation
+                                actual_changes.append(change)
+                                logger.info(f"File {change.uri} content changed (hash mismatch)")
+                            else:
+                                # Content is the same, mark as unchanged
+                                change.change_type = ChangeType.UNCHANGED
+                                logger.info(f"File {change.uri} content unchanged (hash match)")
+                        except Exception as e:
+                            logger.error(f"Error calculating hash for {change.uri}: {e}")
+                            # If we can't calculate hash, assume it's modified to be safe
+                            actual_changes.append(change)
+                
+                # Filter to only process files with actual changes
+                changes_to_process = actual_changes
+                
+                # Update change summary after hash verification
+                change_summary = self.change_detector.get_change_summary(changes)
+                
+                # Display change summary
+                self._display_change_summary(change_summary, len(source_files))
+                
+                logger.info(f"Change summary after hash verification: {change_summary}")
                 
                 if changes_to_process:
                     console.print(f"\n[bold]Processing {len(changes_to_process)} files...[/bold]")
@@ -183,22 +208,31 @@ class BatchRunner:
             if change.existing_record:
                 existing_uuid = change.existing_record.uuid_filename
             
-            # Process file - use existing UUID if available
-            file_hash, uuid_filename, rag_uri = await self.file_processor.process_file(
-                content, change.uri, kb_name, existing_uuid
+            # Use pre-calculated hash if available
+            if hasattr(change, 'new_hash') and change.new_hash:
+                file_hash = change.new_hash
+            else:
+                # Calculate hash if not already done
+                file_hash = await self.file_processor.calculate_hash(content)
+            
+            # Generate UUID filename
+            uuid_filename = self.file_processor.generate_uuid_filename(
+                Path(change.uri).name, existing_uuid, change.uri
             )
             
-            # Check if hash actually changed (for modified files)
-            if change.change_type == ChangeType.MODIFIED and change.existing_record:
-                if file_hash == change.existing_record.file_hash:
-                    # File content hasn't actually changed, update record but skip upload
-                    logger.info(f"File {change.uri} modification time changed but content is identical")
-                    status = FileStatus.UNCHANGED.value
-                else:
-                    # Content has changed, proceed with upload
-                    status = FileStatus.MODIFIED.value
-            else:
+            # Create RAG URI
+            rag_uri = f"{kb_name}/{uuid_filename}"
+            
+            # Determine status based on change type (already verified by hash)
+            if change.change_type == ChangeType.NEW:
                 status = FileStatus.NEW.value
+            elif change.change_type == ChangeType.MODIFIED:
+                status = FileStatus.MODIFIED.value
+            else:
+                status = FileStatus.UNCHANGED.value
+                # Use existing RAG URI for unchanged files
+                if change.existing_record:
+                    rag_uri = change.existing_record.rag_uri
             
             # Upload to RAG system only if content changed
             if status != FileStatus.UNCHANGED.value:

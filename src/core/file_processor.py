@@ -23,11 +23,22 @@ class FileProcessor:
         
         return sha256.hexdigest()
     
-    def generate_uuid_filename(self, original_filename: str, existing_uuid: Optional[str] = None) -> str:
-        """Generate a UUID-based filename or use existing UUID."""
+    def generate_uuid_filename(self, original_filename: str, existing_uuid: Optional[str] = None, 
+                              full_path: Optional[str] = None) -> str:
+        """Generate a UUID-based filename or use existing UUID.
+        
+        Args:
+            original_filename: The original filename (can be full path)
+            existing_uuid: If provided, use this existing UUID
+            full_path: The full absolute path, used for deterministic UUID generation
+        """
+        # Extract the actual filename from path if needed
+        from pathlib import Path
+        filename_only = Path(original_filename).name
+        
         file_extension = ""
-        if '.' in original_filename:
-            file_extension = '.' + original_filename.split('.')[-1]
+        if '.' in filename_only:
+            file_extension = '.' + filename_only.split('.')[-1]
         
         # If we have an existing UUID, preserve it
         if existing_uuid:
@@ -38,7 +49,17 @@ class FileProcessor:
                 uuid_part = existing_uuid
             return f"{uuid_part}{file_extension}"
         
-        # Generate new UUID only if none exists
+        # Generate deterministic UUID based on full path
+        if full_path:
+            # Use the full path to generate a deterministic UUID
+            # This ensures the same file always gets the same UUID
+            import hashlib
+            path_hash = hashlib.sha256(full_path.encode()).hexdigest()
+            # Use first 32 chars of hash formatted as UUID
+            uuid_part = f"{path_hash[:8]}-{path_hash[8:12]}-{path_hash[12:16]}-{path_hash[16:20]}-{path_hash[20:32]}"
+            return f"{uuid_part}{file_extension}"
+        
+        # Fallback to random UUID only if no path is provided
         return f"{uuid.uuid4()}{file_extension}"
     
     def generate_rag_uri(self, kb_name: str, uuid_filename: str) -> str:
@@ -47,9 +68,17 @@ class FileProcessor:
     
     async def process_file(self, content: bytes, original_filename: str, kb_name: str, 
                           existing_uuid: Optional[str] = None) -> Tuple[str, str, str]:
-        """Process a file and return hash, UUID filename, and RAG URI."""
+        """Process a file and return hash, UUID filename, and RAG URI.
+        
+        Args:
+            content: File content
+            original_filename: Full path of the file
+            kb_name: Knowledge base name
+            existing_uuid: Existing UUID if available
+        """
         file_hash = await self.calculate_hash(content)
-        uuid_filename = self.generate_uuid_filename(original_filename, existing_uuid)
+        # Pass the full path for deterministic UUID generation
+        uuid_filename = self.generate_uuid_filename(original_filename, existing_uuid, full_path=original_filename)
         rag_uri = self.generate_rag_uri(kb_name, uuid_filename)
         
         return file_hash, uuid_filename, rag_uri

@@ -433,3 +433,44 @@ class Repository:
             )
             for row in rows
         ]
+    
+    async def get_latest_file_records_for_kb(self, kb_name: str) -> List[FileRecord]:
+        """Get the most recent file record for each unique URI in a knowledge base."""
+        query = """
+            SELECT DISTINCT ON (fr.original_uri) 
+                fr.id,
+                fr.sync_run_id,
+                fr.original_uri,
+                fr.rag_uri,
+                fr.file_hash,
+                fr.uuid_filename,
+                fr.upload_time,
+                fr.file_size,
+                fr.status,
+                fr.error_message,
+                fr.created_at
+            FROM file_record fr
+            JOIN sync_run sr ON fr.sync_run_id = sr.id
+            JOIN knowledge_base kb ON sr.knowledge_base_id = kb.id
+            WHERE kb.name = $1
+            ORDER BY fr.original_uri, fr.created_at DESC
+        """
+        
+        rows = await self.db.fetch(query, kb_name)
+        
+        return [
+            FileRecord(
+                id=row['id'],
+                sync_run_id=row['sync_run_id'],
+                original_uri=row['original_uri'],
+                rag_uri=row['rag_uri'],
+                file_hash=row['file_hash'],
+                uuid_filename=row['uuid_filename'],
+                upload_time=row['upload_time'],
+                file_size=row['file_size'],
+                status=row['status'],
+                error_message=row['error_message'],
+                created_at=row['created_at']
+            )
+            for row in rows
+        ]

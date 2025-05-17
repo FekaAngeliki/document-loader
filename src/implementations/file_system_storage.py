@@ -88,13 +88,29 @@ class FileSystemStorage(RAGSystem):
         logger.info(f"Saving document to file system: {filename}")
         
         # Determine file path
-        if self.preserve_structure and 'original_path' in metadata:
-            # Preserve original directory structure
-            relative_path = Path(metadata['original_path']).parent
-            file_path = self.documents_dir / relative_path / filename
-            await asyncio.get_event_loop().run_in_executor(
-                None, lambda: file_path.parent.mkdir(parents=True, exist_ok=True)
-            )
+        if self.preserve_structure:
+            # Check for original path/uri in metadata
+            original_path = metadata.get('original_path') or metadata.get('original_uri')
+            if original_path:
+                # Preserve original directory structure
+                # Make path relative to root if it's absolute
+                original_path_obj = Path(original_path)
+                if original_path_obj.is_absolute():
+                    # Try to make it relative to some common root
+                    try:
+                        # Just take the last few components of the path
+                        path_parts = original_path_obj.parts[-3:]  # Take last 3 parts
+                        relative_path = Path(*path_parts[:-1])  # Exclude the filename
+                    except IndexError:
+                        relative_path = original_path_obj.parent
+                else:
+                    relative_path = original_path_obj.parent
+                file_path = self.documents_dir / relative_path / filename
+                await asyncio.get_event_loop().run_in_executor(
+                    None, lambda: file_path.parent.mkdir(parents=True, exist_ok=True)
+                )
+            else:
+                file_path = self.documents_dir / filename
         else:
             file_path = self.documents_dir / filename
         

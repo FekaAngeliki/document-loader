@@ -33,13 +33,13 @@ class ChangeDetector:
     async def detect_changes(self, 
                            source_files: List[FileMetadata], 
                            knowledge_base_id: int,
-                           calculate_hashes: bool = False) -> List[FileChange]:
-        """Detect changes between source files and existing records.
+                           calculate_hashes: bool = True) -> List[FileChange]:
+        """Detect changes between source files and existing records using hash comparison.
         
         Args:
             source_files: List of file metadata from the source
             knowledge_base_id: ID of the knowledge base
-            calculate_hashes: If True, calculates file hashes for accurate modification detection
+            calculate_hashes: Always True - we only use hash-based comparison
         """
         changes = []
         
@@ -47,14 +47,14 @@ class ChangeDetector:
         source_uris = {file.uri for file in source_files}
         source_files_map = {file.uri: file for file in source_files}
         
-        # Get all existing file records for this knowledge base (from the last sync)
-        last_sync_run = await self.repository.get_last_sync_run(knowledge_base_id)
-        existing_records = []
+        # Get the knowledge base name from ID
+        knowledge_base = await self.repository.get_knowledge_base(knowledge_base_id)
         existing_records_map = {}
         
-        if last_sync_run:
-            existing_records = await self.repository.get_file_records_by_sync_run(last_sync_run.id)
-            existing_records_map = {record.original_uri: record for record in existing_records}
+        if knowledge_base:
+            # Get the latest file records across ALL sync runs for this knowledge base
+            all_latest_records = await self.repository.get_latest_file_records_for_kb(knowledge_base.name)
+            existing_records_map = {record.original_uri: record for record in all_latest_records}
         
         # Detect new and modified files
         for uri, metadata in source_files_map.items():
@@ -66,49 +66,20 @@ class ChangeDetector:
                     metadata=metadata
                 ))
             else:
-                # Existing file - check if modified
+                # Existing file - will be checked by hash comparison later
                 existing_record = existing_records_map[uri]
                 
-                # If hash calculation is requested, compare actual file content
-                if calculate_hashes:
-                    # This is handled by the scanner/batch runner to avoid redundant content fetching
-                    # Just mark as potentially modified based on metadata
-                    if (metadata.modified_at > existing_record.created_at or
-                        metadata.size != existing_record.file_size):
-                        changes.append(FileChange(
-                            uri=uri,
-                            change_type=ChangeType.MODIFIED,
-                            metadata=metadata,
-                            existing_record=existing_record,
-                            existing_hash=existing_record.file_hash
-                        ))
-                    else:
-                        changes.append(FileChange(
-                            uri=uri,
-                            change_type=ChangeType.UNCHANGED,
-                            metadata=metadata,
-                            existing_record=existing_record,
-                            existing_hash=existing_record.file_hash
-                        ))
-                else:
-                    # Use metadata comparison only
-                    if (metadata.modified_at > existing_record.created_at or
-                        metadata.size != existing_record.file_size):
-                        changes.append(FileChange(
-                            uri=uri,
-                            change_type=ChangeType.MODIFIED,
-                            metadata=metadata,
-                            existing_record=existing_record
-                        ))
-                    else:
-                        changes.append(FileChange(
-                            uri=uri,
-                            change_type=ChangeType.UNCHANGED,
-                            metadata=metadata,
-                            existing_record=existing_record
-                        ))
+                # For existing files, we'll mark them all as potentially modified
+                # The batch runner will calculate hashes and determine the actual status
+                changes.append(FileChange(
+                    uri=uri,
+                    change_type=ChangeType.MODIFIED,  # Will be verified by hash
+                    metadata=metadata,
+                    existing_record=existing_record,
+                    existing_hash=existing_record.file_hash
+                ))
         
-        # Detect deleted files
+        # Detect deleted files (files that existed in previous runs but not in current source)
         for uri, existing_record in existing_records_map.items():
             if uri not in source_uris:
                 changes.append(FileChange(

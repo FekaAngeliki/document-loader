@@ -40,7 +40,7 @@ class FileSystemSource(FileSource):
     
     async def get_file_content(self, uri: str) -> bytes:
         """Get the content of a file."""
-        file_path = self.root_path / uri
+        file_path = Path(uri)
         
         if not file_path.exists():
             raise FileNotFoundError(f"File {uri} not found")
@@ -50,7 +50,7 @@ class FileSystemSource(FileSource):
     
     async def get_file_metadata(self, uri: str) -> FileMetadata:
         """Get metadata for a file."""
-        file_path = self.root_path / uri
+        file_path = Path(uri)
         
         if not file_path.exists():
             raise FileNotFoundError(f"File {uri} not found")
@@ -59,7 +59,7 @@ class FileSystemSource(FileSource):
     
     async def exists(self, uri: str) -> bool:
         """Check if a file exists."""
-        file_path = self.root_path / uri
+        file_path = Path(uri)
         return file_path.exists() and file_path.is_file()
     
     async def cleanup(self):
@@ -120,7 +120,7 @@ class FileSystemSource(FileSource):
             mime_type = 'application/octet-stream'
         
         return FileMetadata(
-            uri=str(relative_path),
+            uri=str(file_path.absolute()),
             size=stat.st_size,
             created_at=datetime.fromtimestamp(stat.st_ctime),
             modified_at=datetime.fromtimestamp(stat.st_mtime),

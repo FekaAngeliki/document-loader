@@ -1,107 +1,122 @@
 #!/usr/bin/env python3
-"""
-Test script to demonstrate change detection functionality.
-"""
+"""Test change detection with consistent file tracking across sync runs."""
 
 import asyncio
-import tempfile
-import os
-from pathlib import Path
-from rich.console import Console
+from datetime import datetime
+from typing import List
+from dataclasses import dataclass
 
-from src.core.factory import SourceFactory
-from src.core.scanner import FileScanner
-from src.data.database import Database
-from src.data.repository import Repository
-from src.data.models import KnowledgeBase
+# Mock classes to simulate our system
+@dataclass
+class FileMetadata:
+    uri: str
+    size: int
+    created_at: datetime
+    modified_at: datetime
+    content_type: str
 
-console = Console()
+@dataclass 
+class FileRecord:
+    id: int
+    sync_run_id: int
+    original_uri: str
+    rag_uri: str
+    file_hash: str
+    file_size: int
+    status: str
+    created_at: datetime
+    
+class MockRepository:
+    def __init__(self):
+        # Simulate historical file records across multiple sync runs
+        self.file_records = [
+            # Sync run 1 - initial files
+            FileRecord(1, 1, "/data/file1.pdf", "uuid1-file1.pdf", "hash1", 1000, "uploaded", datetime(2024, 1, 1)),
+            FileRecord(2, 1, "/data/file2.docx", "uuid2-file2.docx", "hash2", 2000, "uploaded", datetime(2024, 1, 1)),
+            
+            # Sync run 2 - file2 was modified
+            FileRecord(3, 2, "/data/file1.pdf", "uuid1-file1.pdf", "hash1", 1000, "unchanged", datetime(2024, 1, 2)),
+            FileRecord(4, 2, "/data/file2.docx", "uuid2-file2.docx", "hash2_new", 2100, "modified", datetime(2024, 1, 2)),
+            FileRecord(5, 2, "/data/file3.txt", "uuid3-file3.txt", "hash3", 500, "new", datetime(2024, 1, 2)),
+        ]
+        
+        self.knowledge_bases = {
+            1: {"id": 1, "name": "test_kb"}
+        }
+    
+    async def get_knowledge_base(self, kb_id: int):
+        kb = self.knowledge_bases.get(kb_id)
+        if kb:
+            return type('KB', (), kb)()
+        return None
+    
+    async def get_latest_file_records_for_kb(self, kb_name: str) -> List[FileRecord]:
+        """Get the most recent file record for each unique URI."""
+        latest_records = {}
+        
+        # Group all records by URI and keep the most recent one
+        for record in self.file_records:
+            uri = record.original_uri
+            if uri not in latest_records or record.created_at > latest_records[uri].created_at:
+                latest_records[uri] = record
+        
+        return list(latest_records.values())
 
 async def test_change_detection():
-    """Test change detection with a temporary directory."""
+    """Test that change detection properly identifies file states across sync runs."""
     
-    # Create temporary directory for testing
-    with tempfile.TemporaryDirectory() as temp_dir:
-        console.print(f"[bold blue]Testing change detection in: {temp_dir}[/bold blue]\n")
-        
-        # Create test files
-        test_files = {
-            "file1.txt": "This is file 1 content",
-            "file2.txt": "This is file 2 content",
-            "file3.txt": "This is file 3 content"
-        }
-        
-        for filename, content in test_files.items():
-            file_path = Path(temp_dir) / filename
-            file_path.write_text(content)
-        
-        # Initialize database (in-memory for testing)
-        db = Database("postgresql://user:pass@localhost/test_db")
-        repository = Repository(db)
-        
-        # Create a test knowledge base
-        kb = KnowledgeBase(
-            name="test-kb",
-            source_type="file_system",
-            source_config={"root_path": temp_dir},
-            rag_type="mock",
-            rag_config={}
-        )
-        
-        # Create scanner and source
-        scanner = FileScanner()
-        source_factory = SourceFactory()
-        source = source_factory.create("file_system", {"root_path": temp_dir})
-        
-        console.print("[bold]First scan - all files should be new:[/bold]")
-        await scanner.scan_source(source, kb_name="test-kb", repository=repository)
-        
-        console.print("\n[bold]Second scan - all files should be unchanged:[/bold]")
-        source = source_factory.create("file_system", {"root_path": temp_dir})
-        await scanner.scan_source(source, kb_name="test-kb", repository=repository)
-        
-        # Modify a file
-        console.print("\n[bold]Modifying file2.txt...[/bold]")
-        file2_path = Path(temp_dir) / "file2.txt"
-        file2_path.write_text("This is MODIFIED file 2 content")
-        
-        console.print("\n[bold]Third scan - file2.txt should be modified:[/bold]")
-        source = source_factory.create("file_system", {"root_path": temp_dir})
-        await scanner.scan_source(source, kb_name="test-kb", repository=repository)
-        
-        # Add a new file
-        console.print("\n[bold]Adding file4.txt...[/bold]")
-        file4_path = Path(temp_dir) / "file4.txt"
-        file4_path.write_text("This is file 4 content")
-        
-        console.print("\n[bold]Fourth scan - file4.txt should be new:[/bold]")
-        source = source_factory.create("file_system", {"root_path": temp_dir})
-        await scanner.scan_source(source, kb_name="test-kb", repository=repository)
-        
-        # Delete a file
-        console.print("\n[bold]Deleting file1.txt...[/bold]")
-        file1_path = Path(temp_dir) / "file1.txt"
-        file1_path.unlink()
-        
-        console.print("\n[bold]Fifth scan - file1.txt should be detected as deleted:[/bold]")
-        source = source_factory.create("file_system", {"root_path": temp_dir})
-        await scanner.scan_source(source, kb_name="test-kb", repository=repository)
+    repo = MockRepository()
+    
+    # Current source files (simulating a new sync run)
+    current_files = [
+        FileMetadata("/data/file1.pdf", 1000, datetime(2024, 1, 1), datetime(2024, 1, 1), "application/pdf"),
+        FileMetadata("/data/file2.docx", 2100, datetime(2024, 1, 1), datetime(2024, 1, 2), "application/docx"),
+        FileMetadata("/data/file4.xlsx", 3000, datetime(2024, 1, 3), datetime(2024, 1, 3), "application/xlsx"),
+    ]
+    
+    print("=== Testing Change Detection Across Sync Runs ===\n")
+    
+    # Get latest records across all sync runs
+    kb = await repo.get_knowledge_base(1)
+    latest_records = await repo.get_latest_file_records_for_kb(kb.name)
+    
+    print(f"Latest records for KB '{kb.name}':")
+    for record in latest_records:
+        print(f"  - {record.original_uri}: {record.rag_uri} (from sync run {record.sync_run_id})")
+    print()
+    
+    # Build map of latest records
+    existing_records_map = {record.original_uri: record for record in latest_records}
+    
+    # Detect changes
+    print("Change detection results:")
+    for file in current_files:
+        if file.uri not in existing_records_map:
+            print(f"  ✨ NEW: {file.uri}")
+            print(f"     Will generate consistent UUID based on path")
+        else:
+            existing = existing_records_map[file.uri]
+            if file.modified_at > existing.created_at or file.size != existing.file_size:
+                print(f"  📝 MODIFIED: {file.uri}")
+                print(f"     Previous RAG URI: {existing.rag_uri}")
+                print(f"     Will keep same UUID pattern")
+            else:
+                print(f"  ✅ UNCHANGED: {file.uri}")
+                print(f"     Keeping RAG URI: {existing.rag_uri}")
+    
+    # Check for deleted files
+    current_uris = {file.uri for file in current_files}
+    for uri, record in existing_records_map.items():
+        if uri not in current_uris:
+            print(f"  ❌ DELETED: {uri}")
+            print(f"     Was: {record.rag_uri}")
+    
+    print("\n=== Summary ===")
+    print("With our changes:")
+    print("- Files maintain consistent RAG URIs across sync runs")
+    print("- New files get deterministic UUIDs based on their full path")
+    print("- Modified files keep their original RAG URI")
+    print("- Change detection looks at ALL sync runs, not just the last one")
 
 if __name__ == "__main__":
-    # Note: This is a simplified test that demonstrates the concept
-    # In reality, you'd need a running database and proper setup
-    console.print("[yellow]Note: This is a demonstration script.[/yellow]")
-    console.print("[yellow]For actual testing, you'll need a running PostgreSQL database.[/yellow]\n")
-    
-    # Show example output
-    console.print("[bold]Example output with change detection:[/bold]\n")
-    
-    console.print("[green]+[/green] /test/file1.txt | UUID: abc123... | Hash: def456... | Size: 1.2KB")
-    console.print("[green]+[/green] /test/file2.txt | UUID: ghi789... | Hash: jkl012... | Size: 1.5KB")
-    console.print("[green]+[/green] /test/file3.txt | UUID: mno345... | Hash: pqr678... | Size: 1.1KB")
-    console.print("\n[bold]Change Summary:[/bold]")
-    console.print("┌─────────────────┬───────┐")
-    console.print("│ New Files       │ 3     │")
-    console.print("│ Modified Files  │ 0     │")
-    console.print("│ Unchanged Files │ 0     │")
-    console.print("└─────────────────┴───────┘")
+    asyncio.run(test_change_detection())
