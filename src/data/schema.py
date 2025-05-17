@@ -76,4 +76,14 @@ def create_schema_sql():
     VALUES ('mock', 'src.implementations.mock_rag_system.MockRAGSystem', 
            '{"type": "object", "properties": {}}')
     ON CONFLICT (name) DO NOTHING;
+    
+    INSERT INTO rag_type (name, class_name, config_schema)
+    VALUES ('azure_blob', 'src.implementations.azure_blob_rag_system.AzureBlobRAGSystem',
+           '{"type": "object", "properties": {"connection_string": {"type": "string"}, "container_name": {"type": "string"}, "index_name": {"type": "string"}, "endpoint": {"type": "string"}, "api_key": {"type": "string"}}, "required": ["connection_string", "container_name"]}')
+    ON CONFLICT (name) DO NOTHING;
+    
+    INSERT INTO rag_type (name, class_name, config_schema)
+    VALUES ('file_system_storage', 'src.implementations.file_system_storage.FileSystemStorage',
+           '{"type": "object", "properties": {"storage_path": {"type": "string"}, "create_dirs": {"type": "boolean"}, "preserve_structure": {"type": "boolean"}, "metadata_format": {"type": "string", "enum": ["json", "yaml"]}}, "required": ["storage_path"]}')
+    ON CONFLICT (name) DO NOTHING;
     """

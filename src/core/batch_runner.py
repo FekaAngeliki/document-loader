@@ -2,6 +2,10 @@ import asyncio
 import logging
 from datetime import datetime
 from typing import Dict, Any, Optional, Callable
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from rich.table import Table
+from rich import box
 
 from ..abstractions.file_source import FileSource
 from ..abstractions.rag_system import RAGSystem
@@ -12,6 +16,7 @@ from .file_processor import FileProcessor
 from .factory import SourceFactory, RAGFactory
 
 logger = logging.getLogger(__name__)
+console = Console()
 
 class BatchRunner:
     """Manages synchronization runs for knowledge bases."""
@@ -23,13 +28,18 @@ class BatchRunner:
         self.source_factory = SourceFactory()
         self.rag_factory = RAGFactory()
     
-    async def sync_knowledge_base(self, kb_name: str):
-        """Synchronize a knowledge base."""
+    async def sync_knowledge_base(self, kb_name: str, progress_callback: Optional[Callable] = None):
+        """Synchronize a knowledge base with change detection and progress reporting."""
+        source = None
+        rag = None
+        
         try:
             # Get knowledge base configuration
             kb = await self.repository.get_knowledge_base_by_name(kb_name)
             if not kb:
                 raise ValueError(f"Knowledge base '{kb_name}' not found")
+            
+            console.print(f"[bold blue]Starting synchronization for knowledge base: {kb_name}[/bold blue]")
             
             # Create sync run
             sync_run_id = await self.repository.create_sync_run(kb.id, 'running')
@@ -49,12 +59,17 @@ class BatchRunner:
                 await rag.initialize()
                 
                 # List files from source
+                console.print("[cyan]Listing files from source...[/cyan]")
                 source_files = await source.list_files()
                 logger.info(f"Found {len(source_files)} files in source")
                 
                 # Detect changes
+                console.print("[cyan]Detecting changes...[/cyan]")
                 changes = await self.change_detector.detect_changes(source_files, kb.id)
                 change_summary = self.change_detector.get_change_summary(changes)
+                
+                # Display change summary
+                self._display_change_summary(change_summary, len(source_files))
                 
                 logger.info(f"Change summary: {change_summary}")
                 
@@ -62,16 +77,53 @@ class BatchRunner:
                 processed_count = 0
                 error_count = 0
                 
-                for change in changes:
-                    if change.change_type in [ChangeType.NEW, ChangeType.MODIFIED]:
-                        try:
-                            await self._process_file(
-                                source, rag, kb.name, sync_run.id, change
-                            )
-                            processed_count += 1
-                        except Exception as e:
-                            logger.error(f"Error processing file {change.uri}: {e}")
-                            error_count += 1
+                # Filter out unchanged files for processing
+                changes_to_process = [
+                    change for change in changes 
+                    if change.change_type in [ChangeType.NEW, ChangeType.MODIFIED]
+                ]
+                
+                if changes_to_process:
+                    console.print(f"\n[bold]Processing {len(changes_to_process)} files...[/bold]")
+                    
+                    with Progress(
+                        SpinnerColumn(),
+                        TextColumn("[progress.description]{task.description}"),
+                        BarColumn(),
+                        TaskProgressColumn(),
+                        console=console
+                    ) as progress:
+                        task = progress.add_task(
+                            f"Uploading files to {kb.rag_type}...", 
+                            total=len(changes_to_process)
+                        )
+                        
+                        for i, change in enumerate(changes_to_process):
+                            try:
+                                # Update progress description
+                                progress.update(
+                                    task, 
+                                    description=f"Processing: {change.uri} ({change.change_type.value})"
+                                )
+                                
+                                await self._process_file(
+                                    source, rag, kb.name, sync_run.id, change
+                                )
+                                processed_count += 1
+                                
+                                # Update progress
+                                progress.update(task, advance=1)
+                                
+                                # Call progress callback if provided
+                                if progress_callback:
+                                    await progress_callback(i + 1, len(changes_to_process), change.uri)
+                                    
+                            except Exception as e:
+                                logger.error(f"Error processing file {change.uri}: {e}")
+                                error_count += 1
+                                console.print(f"[red]Error processing {change.uri}: {e}[/red]")
+                else:
+                    console.print("[green]No files need processing (all files are unchanged)[/green]")
                 
                 # Update sync run with results
                 sync_run.end_time = datetime.now()
@@ -83,6 +135,14 @@ class BatchRunner:
                 
                 await self.repository.update_sync_run(sync_run)
                 
+                # Display final results
+                self._display_sync_results(
+                    processed_count, 
+                    error_count, 
+                    change_summary,
+                    sync_run
+                )
+                
                 logger.info(f"Sync completed: {processed_count} files processed, {error_count} errors")
                 
             except Exception as e:
@@ -93,12 +153,15 @@ class BatchRunner:
                 await self.repository.update_sync_run(sync_run)
                 
                 logger.error(f"Sync failed: {e}")
+                console.print(f"[red bold]Sync failed: {e}[/red bold]")
                 raise
             
             finally:
                 # Clean up resources
-                await source.cleanup()
-                await rag.cleanup()
+                if source:
+                    await source.cleanup()
+                if rag:
+                    await rag.cleanup()
         
         except Exception as e:
             logger.error(f"Fatal error in sync: {e}")
@@ -115,28 +178,44 @@ class BatchRunner:
             # Get file content
             content = await source.get_file_content(change.uri)
             
-            # Process file
+            # Get existing UUID if this is a modified file
+            existing_uuid = None
+            if change.existing_record:
+                existing_uuid = change.existing_record.uuid_filename
+            
+            # Process file - use existing UUID if available
             file_hash, uuid_filename, rag_uri = await self.file_processor.process_file(
-                content, change.uri, kb_name
+                content, change.uri, kb_name, existing_uuid
             )
             
-            # Upload to RAG system
-            metadata = {
-                "original_uri": change.uri,
-                "kb_name": kb_name,
-                "file_hash": file_hash,
-                "source_modified_at": change.metadata.modified_at.isoformat()
-            }
-            
-            if change.change_type == ChangeType.NEW:
-                await rag.upload_document(content, uuid_filename, metadata)
-                status = FileStatus.NEW.value
-            else:  # MODIFIED
-                if change.existing_record and change.existing_record.rag_uri:
-                    await rag.update_document(change.existing_record.rag_uri, content, metadata)
+            # Check if hash actually changed (for modified files)
+            if change.change_type == ChangeType.MODIFIED and change.existing_record:
+                if file_hash == change.existing_record.file_hash:
+                    # File content hasn't actually changed, update record but skip upload
+                    logger.info(f"File {change.uri} modification time changed but content is identical")
+                    status = FileStatus.UNCHANGED.value
                 else:
+                    # Content has changed, proceed with upload
+                    status = FileStatus.MODIFIED.value
+            else:
+                status = FileStatus.NEW.value
+            
+            # Upload to RAG system only if content changed
+            if status != FileStatus.UNCHANGED.value:
+                metadata = {
+                    "original_uri": change.uri,
+                    "kb_name": kb_name,
+                    "file_hash": file_hash,
+                    "source_modified_at": change.metadata.modified_at.isoformat()
+                }
+                
+                if change.change_type == ChangeType.NEW:
                     await rag.upload_document(content, uuid_filename, metadata)
-                status = FileStatus.MODIFIED.value
+                else:  # MODIFIED
+                    if change.existing_record and change.existing_record.rag_uri:
+                        await rag.update_document(change.existing_record.rag_uri, content, metadata)
+                    else:
+                        await rag.upload_document(content, uuid_filename, metadata)
             
             # Create file record
             file_record = FileRecord(
@@ -152,7 +231,7 @@ class BatchRunner:
             
             await self.repository.create_file_record_original(file_record)
             
-            logger.info(f"Processed file {change.uri} ({status})")
+            logger.info(f"Processed file {change.uri} ({status}) with UUID: {uuid_filename}")
             
         except Exception as e:
             # Create error record
@@ -170,3 +249,65 @@ class BatchRunner:
             
             await self.repository.create_file_record_original(file_record)
             raise
+    
+    def _display_change_summary(self, change_summary: Dict[str, int], total_files: int):
+        """Display a summary of detected changes."""
+        table = Table(
+            title="Change Detection Summary",
+            box=box.ROUNDED
+        )
+        table.add_column("Change Type", style="bold")
+        table.add_column("Count", style="bold", justify="right")
+        
+        table.add_row("[green]New Files[/green]", f"[green]{change_summary['new']}[/green]")
+        table.add_row("[yellow]Modified Files[/yellow]", f"[yellow]{change_summary['modified']}[/yellow]")
+        table.add_row("[dim]Unchanged Files[/dim]", f"[dim]{change_summary['unchanged']}[/dim]")
+        table.add_row("[red]Deleted Files[/red]", f"[red]{change_summary['deleted']}[/red]")
+        table.add_section()
+        table.add_row("[bold]Total Files[/bold]", f"[bold]{total_files}[/bold]")
+        
+        console.print(table)
+    
+    def _display_sync_results(self, processed_count: int, error_count: int, 
+                            change_summary: Dict[str, int], sync_run: SyncRun):
+        """Display final synchronization results."""
+        table = Table(
+            title="Synchronization Results",
+            box=box.ROUNDED
+        )
+        table.add_column("Metric", style="bold")
+        table.add_column("Value", style="bold", justify="right")
+        
+        # Add sync run details
+        duration = sync_run.end_time - sync_run.start_time
+        table.add_row("Duration", f"{duration.total_seconds():.1f} seconds")
+        table.add_row("Status", f"[green]{sync_run.status}[/green]")
+        table.add_section()
+        
+        # Add file processing details
+        table.add_row("Files Processed", f"{processed_count}")
+        table.add_row("Errors", f"[red]{error_count}[/red]" if error_count > 0 else "0")
+        table.add_section()
+        
+        # Add change details
+        table.add_row("New Files", f"[green]{change_summary['new']}[/green]")
+        table.add_row("Modified Files", f"[yellow]{change_summary['modified']}[/yellow]")
+        table.add_row("Unchanged Files", f"[dim]{change_summary['unchanged']}[/dim]")
+        table.add_row("Deleted Files", f"[red]{change_summary['deleted']}[/red]")
+        
+        console.print("\n")
+        console.print(table)
+        
+        if error_count > 0:
+            console.print(f"\n[yellow]Warning: {error_count} files failed to process[/yellow]")
+    
+    async def list_sync_runs(self, kb_name: str, limit: int = 10):
+        """List recent sync runs for a knowledge base."""
+        kb = await self.repository.get_knowledge_base_by_name(kb_name)
+        if not kb:
+            console.print(f"[red]Knowledge base '{kb_name}' not found[/red]")
+            return
+        
+        # This would require adding a new repository method to list sync runs
+        # For now, we'll just show a placeholder
+        console.print(f"[yellow]Listing sync runs not yet implemented[/yellow]")

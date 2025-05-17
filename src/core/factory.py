@@ -30,15 +30,16 @@ class RAGFactory:
     
     def __init__(self):
         self.systems = {
-            # Add RAG system types here as they are implemented
+            "mock": "src.implementations.mock_rag_system.MockRAGSystem",
+            "azure_blob": "src.implementations.azure_blob_rag_system.AzureBlobRAGSystem",
+            "file_system_storage": "src.implementations.file_system_storage.FileSystemStorage",
+            # Add more RAG system types here as they are implemented
         }
     
     def create(self, rag_type: str, config: Dict[str, Any]) -> RAGSystem:
         """Create a RAG system instance."""
         if rag_type not in self.systems:
-            # For now, return a mock RAG system
-            from ..implementations.mock_rag_system import MockRAGSystem
-            return MockRAGSystem(config)
+            raise ValueError(f"Unknown RAG type: {rag_type}")
         
         module_path, class_name = self.systems[rag_type].rsplit('.', 1)
         module = importlib.import_module(module_path)

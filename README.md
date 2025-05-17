@@ -148,6 +148,38 @@ document-loader create-kb \
   --rag-config '{}'
 ```
 
+#### Using the Mock RAG System
+
+The mock RAG system is perfect for testing and development. It requires no configuration:
+
+```bash
+# Basic example with file system source
+document-loader create-kb \
+  --name "test-knowledge-base" \
+  --source-type "file_system" \
+  --source-config '{"root_path": "/path/to/documents", "include_patterns": ["**/*.txt", "**/*.pdf"]}' \
+  --rag-type "mock" \
+  --rag-config '{}'
+
+# Example with more specific file filtering
+document-loader create-kb \
+  --name "development-docs" \
+  --source-type "file_system" \
+  --source-config '{
+    "root_path": "/home/user/docs",
+    "include_extensions": [".md", ".txt"],
+    "exclude_patterns": ["temp/**", "**/*.tmp"]
+  }' \
+  --rag-type "mock" \
+  --rag-config '{}'
+```
+
+The mock RAG system will:
+- Store documents in memory during execution
+- Return generated URIs like `/mock/{uuid_filename}`
+- Log all operations for debugging
+- Support all standard RAG operations (upload, update, delete, list)
+
 ### List Knowledge Bases
 
 ```bash

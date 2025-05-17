@@ -374,3 +374,62 @@ class Repository:
             class_name=row['class_name'],
             config_schema=json.loads(row['config_schema'])
         )
+    
+    async def get_last_sync_run(self, knowledge_base_id: int) -> Optional[SyncRun]:
+        """Get the most recent sync run for a knowledge base."""
+        query = """
+            SELECT id, knowledge_base_id, start_time, end_time, status,
+                   total_files, new_files, modified_files, deleted_files,
+                   error_message, created_at
+            FROM sync_run
+            WHERE knowledge_base_id = $1
+            ORDER BY created_at DESC
+            LIMIT 1
+        """
+        
+        row = await self.db.fetchrow(query, knowledge_base_id)
+        if not row:
+            return None
+        
+        return SyncRun(
+            id=row['id'],
+            knowledge_base_id=row['knowledge_base_id'],
+            start_time=row['start_time'],
+            end_time=row['end_time'],
+            status=row['status'],
+            total_files=row['total_files'],
+            new_files=row['new_files'],
+            modified_files=row['modified_files'],
+            deleted_files=row['deleted_files'],
+            error_message=row['error_message'],
+            created_at=row['created_at']
+        )
+    
+    async def get_file_records_by_sync_run(self, sync_run_id: int) -> List[FileRecord]:
+        """Get all file records for a specific sync run."""
+        query = """
+            SELECT id, sync_run_id, original_uri, rag_uri, file_hash,
+                   uuid_filename, upload_time, file_size, status,
+                   error_message, created_at
+            FROM file_record
+            WHERE sync_run_id = $1
+            ORDER BY original_uri
+        """
+        
+        rows = await self.db.fetch(query, sync_run_id)
+        return [
+            FileRecord(
+                id=row['id'],
+                sync_run_id=row['sync_run_id'],
+                original_uri=row['original_uri'],
+                rag_uri=row['rag_uri'],
+                file_hash=row['file_hash'],
+                uuid_filename=row['uuid_filename'],
+                upload_time=row['upload_time'],
+                file_size=row['file_size'],
+                status=row['status'],
+                error_message=row['error_message'],
+                created_at=row['created_at']
+            )
+            for row in rows
+        ]

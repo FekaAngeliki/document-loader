@@ -610,9 +610,9 @@ def update_kb(name: str, source_type: str, source_config: str, rag_type: str, ra
             if source_type:
                 # Validate source type exists
                 valid_source_types = await repository.get_source_types()
-                if source_type not in [st.name for st in valid_source_types]:
+                if source_type not in [st['name'] for st in valid_source_types]:
                     console.print(f"[red]Invalid source type: '{source_type}'[/red]")
-                    console.print(f"[yellow]Valid source types: {', '.join([st.name for st in valid_source_types])}[/yellow]")
+                    console.print(f"[yellow]Valid source types: {', '.join([st['name'] for st in valid_source_types])}[/yellow]")
                     return
                 updates['source_type'] = source_type
             
@@ -631,9 +631,9 @@ def update_kb(name: str, source_type: str, source_config: str, rag_type: str, ra
             if rag_type:
                 # Validate RAG type exists
                 valid_rag_types = await repository.get_rag_types()
-                if rag_type not in [rt.name for rt in valid_rag_types]:
+                if rag_type not in [rt['name'] for rt in valid_rag_types]:
                     console.print(f"[red]Invalid RAG type: '{rag_type}'[/red]")
-                    console.print(f"[yellow]Valid RAG types: {', '.join([rt.name for rt in valid_rag_types])}[/yellow]")
+                    console.print(f"[yellow]Valid RAG types: {', '.join([rt['name'] for rt in valid_rag_types])}[/yellow]")
                     return
                 updates['rag_type'] = rag_type
             
