@@ -63,4 +63,7 @@ Main tables:
 - Mock external systems (SharePoint, RAG) in tests
 - Verify database transaction handling
 
+### Test Script Management
+- Create a folder named `test_scripts` to collect and keep all test scripts used to check and confirm application operations
+
 Remember: No version control operations unless explicitly requested.
