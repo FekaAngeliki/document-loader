@@ -66,4 +66,17 @@ Main tables:
 ### Test Script Management
 - Create a folder named `test_scripts` to collect and keep all test scripts used to check and confirm application operations
 
+## Environment Configuration
+
+### Database Connection Parameters
+All parameters required by the app to communicate and update the database are stored in the shell environment file:
+
+- `DOCUMENT_LOADER_DB_HOST`: localhost
+- `DOCUMENT_LOADER_DB_PORT`: 5432
+- `DOCUMENT_LOADER_DB_NAME`: document_loader
+- `DOCUMENT_LOADER_DB_USER`: biks
+- `DOCUMENT_LOADER_DB_PASSWORD`: biks2013
+- `DOCUMENT_LOADER_DB_MIN_POOL_SIZE`: 10
+- `DOCUMENT_LOADER_DB_MAX_POOL_SIZE`: 20
+
 Remember: No version control operations unless explicitly requested.
