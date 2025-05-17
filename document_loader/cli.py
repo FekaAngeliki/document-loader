@@ -858,6 +858,12 @@ def _get_status_badge(status: str) -> str:
         return "[yellow]⟳ Running[/yellow]"
     elif status == SyncRunStatus.FAILED.value:
         return "[red]✗ Failed[/red]"
+    elif status == SyncRunStatus.SCAN_COMPLETED.value:
+        return "[blue]🔍 Scan Completed[/blue]"
+    elif status == SyncRunStatus.SCAN_RUNNING.value:
+        return "[cyan]🔍 Scanning[/cyan]"
+    elif status == SyncRunStatus.SCAN_FAILED.value:
+        return "[red]🔍 Scan Failed[/red]"
     else:
         return f"[dim]{status}[/dim]"
 

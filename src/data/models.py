@@ -7,6 +7,9 @@ class SyncRunStatus(Enum):
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+    SCAN_RUNNING = "scan_running"
+    SCAN_COMPLETED = "scan_completed"
+    SCAN_FAILED = "scan_failed"
 
 class FileStatus(Enum):
     NEW = "new"
@@ -14,6 +17,8 @@ class FileStatus(Enum):
     UNCHANGED = "unchanged"
     DELETED = "deleted"
     ERROR = "error"
+    SCANNED = "scanned"
+    SCAN_ERROR = "scan_error"
 
 @dataclass
 class KnowledgeBase:

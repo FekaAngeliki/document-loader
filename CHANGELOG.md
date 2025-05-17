@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `--kb-name` parameter for use with `--update-db`
   - Table view now includes UUID column
   - Can use knowledge base configuration when --kb-name is provided without --path
+- **Scan runs are now tracked separately in the database**
+  - Added new sync run statuses: scan_running, scan_completed, scan_failed
+  - Added new file statuses: scanned, scan_error
+  - Scan runs are recorded with distinctive statuses to differentiate from actual sync runs
+  - File records from scans are marked as 'scanned' instead of 'uploaded'
 
 ### Changed
 - Updated FileSystemSource to support include_extensions filtering

@@ -27,7 +27,7 @@ class FileScanner:
             if repository and kb_name:
                 kb = await repository.get_knowledge_base_by_name(kb_name)
                 if kb:
-                    sync_run_id = await repository.create_sync_run(kb.id, "running")
+                    sync_run_id = await repository.create_sync_run(kb.id, "scan_running")
             
             if show_progress:
                 with Progress(
@@ -43,11 +43,11 @@ class FileScanner:
                 
             # If repository is provided, update sync run as completed
             if repository and sync_run_id:
-                await repository.update_sync_run_status(sync_run_id, "completed")
+                await repository.update_sync_run_status(sync_run_id, "scan_completed")
         except Exception as e:
             # If repository is provided, update sync run as failed
             if repository and sync_run_id:
-                await repository.update_sync_run_status(sync_run_id, "failed", str(e))
+                await repository.update_sync_run_status(sync_run_id, "scan_failed", str(e))
             raise
         finally:
             await source.cleanup()
@@ -56,22 +56,36 @@ class FileScanner:
                                  kb_name: Optional[str] = None, repository = None, sync_run_id = None):
         """Scan files with progress indicator."""
         file_count = 0
+        stats = {'total': 0, 'new': 0, 'modified': 0}
         async for file_metadata in source.stream_files(path):
             file_count += 1
             progress.update(task, description=f"Scanning files... [{file_count}]")
             await self._process_file(source, file_metadata, kb_name, repository, sync_run_id)
+            stats['total'] += 1
+            stats['new'] += 1  # For scan, all files are considered "new"
         
         progress.update(task, description=f"Scan complete. Found {file_count} files.")
+        
+        # Update sync run with statistics
+        if repository and sync_run_id:
+            await repository.update_sync_run_stats(sync_run_id, stats)
     
     async def _scan_files(self, source: FileSource, path: str, kb_name: Optional[str] = None, 
                          repository = None, sync_run_id = None):
         """Scan files without progress indicator."""
         file_count = 0
+        stats = {'total': 0, 'new': 0, 'modified': 0}
         async for file_metadata in source.stream_files(path):
             file_count += 1
             await self._process_file(source, file_metadata, kb_name, repository, sync_run_id)
+            stats['total'] += 1
+            stats['new'] += 1  # For scan, all files are considered "new"
         
         console.print(f"\n[green]Scan complete. Found {file_count} files.[/green]")
+        
+        # Update sync run with statistics
+        if repository and sync_run_id:
+            await repository.update_sync_run_stats(sync_run_id, stats)
     
     async def _process_file(self, source: FileSource, file_metadata, kb_name: Optional[str] = None, 
                            repository = None, sync_run_id = None):
@@ -98,7 +112,7 @@ class FileScanner:
                     'file_hash': file_hash,
                     'uuid_filename': uuid_filename,
                     'size': file_metadata.size,
-                    'status': 'uploaded'
+                    'status': 'scanned'  # Use scanned status for scan runs
                 }
                 await repository.create_file_record(file_record)
             

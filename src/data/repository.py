@@ -229,12 +229,31 @@ class Repository:
             WHERE id = $1
         """
         
+        end_statuses = ('completed', 'failed', 'scan_completed', 'scan_failed')
         await self.db.execute(
             query,
             sync_run_id,
             status,
-            datetime.utcnow() if status in ('completed', 'failed') else None,
+            datetime.utcnow() if status in end_statuses else None,
             error_message
+        )
+    
+    async def update_sync_run_stats(self, sync_run_id: int, stats: Dict[str, int]):
+        """Update sync run statistics."""
+        query = """
+            UPDATE sync_run
+            SET total_files = $2,
+                new_files = $3,
+                modified_files = $4
+            WHERE id = $1
+        """
+        
+        await self.db.execute(
+            query,
+            sync_run_id,
+            stats.get('total', 0),
+            stats.get('new', 0),
+            stats.get('modified', 0)
         )
     
     async def create_file_record(self, file_data: Dict[str, Any]) -> int:

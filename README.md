@@ -121,6 +121,11 @@ document-loader scan --path /path/to/documents \
 
 # Scan using KB config and update database
 document-loader scan --kb-name "my-docs" --update-db
+
+# Note: Scan runs are recorded in the database with special statuses:
+# - scan_running, scan_completed, scan_failed (instead of running, completed, failed)
+# - File records are marked as 'scanned' (instead of 'uploaded')
+# This allows you to distinguish between actual sync runs and scan runs
 ```
 
 ### Create a Knowledge Base
