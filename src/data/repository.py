@@ -158,7 +158,7 @@ class Repository:
         rows = await self.db.fetch(query)
         return [dict(row) for row in rows]
     
-    async def create_sync_run(self, sync_run: SyncRun) -> int:
+    async def create_sync_run(self, knowledge_base_id: int, status: str = 'running') -> int:
         """Create a new sync run."""
         query = """
             INSERT INTO sync_run
@@ -169,9 +169,9 @@ class Repository:
         
         return await self.db.fetchval(
             query,
-            sync_run.knowledge_base_id,
-            sync_run.start_time,
-            sync_run.status
+            knowledge_base_id,
+            datetime.utcnow(),
+            status
         )
     
     async def update_sync_run(self, sync_run: SyncRun):
@@ -196,8 +196,77 @@ class Repository:
             sync_run.error_message
         )
     
-    async def create_file_record(self, file_record: FileRecord) -> int:
+    async def create_file_record_original(self, file_record: FileRecord) -> int:
         """Create a new file record."""
+        query = """
+            INSERT INTO file_record
+            (sync_run_id, original_uri, rag_uri, file_hash, uuid_filename,
+             upload_time, file_size, status, error_message)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING id
+        """
+        
+        return await self.db.fetchval(
+            query,
+            file_record.sync_run_id,
+            file_record.original_uri,
+            file_record.rag_uri,
+            file_record.file_hash,
+            file_record.uuid_filename,
+            file_record.upload_time,
+            file_record.file_size,
+            file_record.status,
+            file_record.error_message
+        )
+    
+    async def update_sync_run_status(self, sync_run_id: int, status: str, error_message: str = None):
+        """Update sync run status (simpler method for scanner)."""
+        query = """
+            UPDATE sync_run
+            SET status = $2, 
+                end_time = $3,
+                error_message = $4
+            WHERE id = $1
+        """
+        
+        await self.db.execute(
+            query,
+            sync_run_id,
+            status,
+            datetime.utcnow() if status in ('completed', 'failed') else None,
+            error_message
+        )
+    
+    async def create_file_record(self, file_data: Dict[str, Any]) -> int:
+        """Create a new file record (overloaded for dict input)."""
+        # Handle both FileRecord object and dict input
+        if isinstance(file_data, dict):
+            query = """
+                INSERT INTO file_record
+                (sync_run_id, original_uri, rag_uri, file_hash, uuid_filename,
+                 upload_time, file_size, status, error_message)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                RETURNING id
+            """
+            
+            return await self.db.fetchval(
+                query,
+                file_data['sync_run_id'],
+                file_data['original_uri'],
+                file_data.get('rag_uri'),
+                file_data['file_hash'],
+                file_data['uuid_filename'],
+                datetime.utcnow(),
+                file_data.get('size', 0),
+                file_data.get('status', 'uploaded'),
+                file_data.get('error_message')
+            )
+        else:
+            # Original implementation for FileRecord object
+            return await self.create_file_record_object(file_data)
+    
+    async def create_file_record_object(self, file_record: FileRecord) -> int:
+        """Create a new file record from FileRecord object."""
         query = """
             INSERT INTO file_record
             (sync_run_id, original_uri, rag_uri, file_hash, uuid_filename,

@@ -106,7 +106,8 @@ class FileSystemSource(FileSource):
             if path.match(pattern):
                 return True
         
-        return False
+        # If no include patterns defined, include by default
+        return len(self.include_patterns) == 0
     
     async def _get_file_metadata(self, file_path: Path) -> FileMetadata:
         """Get metadata for a file path."""

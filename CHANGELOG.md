@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Example: `"include_extensions": [".pdf", ".docx", ".xlsx"]`
 - Enhanced documentation for extension filtering in SOURCE_CONFIG_GUIDE.md
 - Migration script to update existing databases with new schema
+- **Enhanced scan command** with additional output and database update capability
+  - Now displays original filename, UUID filename, and hash for each file
+  - Added `--update-db` flag to update database as if performing a real sync
+  - Added `--kb-name` parameter for use with `--update-db`
+  - Table view now includes UUID column
+  - Can use knowledge base configuration when --kb-name is provided without --path
 
 ### Changed
 - Updated FileSystemSource to support include_extensions filtering
@@ -24,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   2. include_extensions (if specified, only these extensions are included)
   3. exclude_patterns (pattern-based exclusion)
   4. include_patterns (pattern-based inclusion)
+- Modified scanner output to display more detailed file information
+- Repository methods updated to support scanner's database update functionality
 
 ### Fixed
 - None

@@ -862,51 +862,116 @@ def _get_status_badge(status: str) -> str:
         return f"[dim]{status}[/dim]"
 
 @cli.command()
-@click.option('--path', required=True, help='Path to scan (local directory or SharePoint path)')
+@click.option('--path', help='Path to scan (overrides KB config if --kb-name is provided)')
 @click.option('--source-type', default='file_system', help='Source type (file_system or sharepoint)')
 @click.option('--source-config', default='{}', help='Additional source configuration as JSON')
 @click.option('--table', is_flag=True, help='Show results in a table format')
 @click.option('--recursive/--no-recursive', default=True, help='Scan recursively')
-def scan(path: str, source_type: str, source_config: str, table: bool, recursive: bool):
-    """Scan files and calculate hashes."""
+@click.option('--update-db', is_flag=True, help='Update database as if this were a real sync')
+@click.option('--kb-name', help='Knowledge base name (uses KB config if --path not provided)')
+def scan(path: str, source_type: str, source_config: str, table: bool, recursive: bool, update_db: bool, kb_name: str):
+    """Scan files and calculate hashes.
+    
+    If --kb-name is provided without --path, uses the knowledge base configuration.
+    If both are provided, --path overrides the KB config.
+    """
     async def run_scan():
+        db = None
+        repository = None
         try:
+            # Validate options
+            if update_db and not kb_name:
+                console.print("[red]Error: --kb-name is required when using --update-db[/red]")
+                return
+            
+            if not path and not kb_name:
+                console.print("[red]Error: Either --path or --kb-name must be provided[/red]")
+                return
+            
             # Parse source configuration
             config = json.loads(source_config)
             
-            # Set up path in config
-            if source_type == 'file_system':
-                config['root_path'] = path
-                config['include_patterns'] = config.get('include_patterns', ['**/*' if recursive else '*'])
+            # Determine path and configuration
+            actual_path = path  # Store the provided path
+            actual_source_type = source_type
+            
+            # If kb_name is provided and no path, load KB config
+            if kb_name and not actual_path:
+                db = await get_database()
+                repository = Repository(db)
+                kb = await repository.get_knowledge_base_by_name(kb_name)
+                if not kb:
+                    console.print(f"[red]Error: Knowledge base '{kb_name}' not found[/red]")
+                    return
+                
+                # Use KB configuration
+                actual_source_type = kb.source_type
+                config = kb.source_config.copy()
+                
+                # For file_system, root_path is already in config
+                if actual_source_type == 'file_system':
+                    # Don't override existing include_patterns from KB config
+                    if 'include_patterns' not in config:
+                        config['include_patterns'] = ['**'] if recursive else ['*']
+                    actual_path = config.get('root_path', '.')
+                else:
+                    # SharePoint or other sources
+                    config['recursive'] = recursive
+                    actual_path = config.get('path', '/')
             else:
-                # SharePoint or other sources
-                config['path'] = path
-                config['recursive'] = recursive
+                # Set up path in config if provided directly
+                if actual_source_type == 'file_system':
+                    config['root_path'] = actual_path
+                    # Don't override include_patterns if provided in config
+                    if 'include_patterns' not in config:
+                        config['include_patterns'] = ['**'] if recursive else ['*']
+                else:
+                    # SharePoint or other sources
+                    config['path'] = actual_path
+                    config['recursive'] = recursive
             
             # Create source
             factory = SourceFactory()
-            source = factory.create(source_type, config)
+            source = factory.create(actual_source_type, config)
             
             # Create scanner
             scanner = FileScanner()
             
+            # If updating DB, check knowledge base exists (if not already loaded)
+            if update_db and not repository:
+                db = await get_database()
+                repository = Repository(db)
+                kb = await repository.get_knowledge_base_by_name(kb_name)
+                if not kb:
+                    console.print(f"[red]Error: Knowledge base '{kb_name}' not found[/red]")
+                    return
+            
             console.print(Panel(
                 f"[bold blue]Scanning files[/bold blue]\n\n"
-                f"Path: [green]{path}[/green]\n"
-                f"Source: [yellow]{source_type}[/yellow]\n"
-                f"Recursive: [cyan]{'Yes' if recursive else 'No'}[/cyan]",
+                f"Path: [green]{actual_path}[/green]\n"
+                f"Source: [yellow]{actual_source_type}[/yellow]\n"
+                f"Recursive: [cyan]{'Yes' if recursive else 'No'}[/cyan]" +
+                (f"\nUpdate DB: [cyan]Yes (KB: {kb_name})[/cyan]" if update_db else ""),
                 expand=False
             ))
             
+            # Debug: Print the configuration (commented out for cleaner output)
+            # console.print(f"[dim]Debug - Source config: {config}[/dim]")
+            
             if table:
-                await scanner.print_summary_table(source)
+                await scanner.print_summary_table(source, kb_name=kb_name if update_db else None)
             else:
-                await scanner.scan_source(source, show_progress=not os.getenv('CI'))
+                await scanner.scan_source(source, show_progress=not os.getenv('CI'), 
+                                        kb_name=kb_name if update_db else None,
+                                        repository=repository if update_db else None)
             
         except json.JSONDecodeError as e:
             console.print(f"[red]Error parsing source configuration: {e}[/red]")
         except Exception as e:
             console.print(f"[red]Error during scan: {e}[/red]")
+        finally:
+            if db:
+                await db.disconnect()
     
     asyncio.run(run_scan())
 

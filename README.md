@@ -72,7 +72,14 @@ uv tool install document-loader
 
 ### Scan Files (New Feature!)
 
-Scan files in a directory and calculate hashes without creating a knowledge base:
+Scan files in a directory and calculate hashes, displaying each file's:
+- Original filename (full path)
+- Generated UUID filename
+- SHA-256 hash (abbreviated)
+- File size
+- Content type
+
+Optionally update the database as if performing a real sync run:
 
 ```bash
 # Scan a local directory (line by line output)
@@ -100,6 +107,20 @@ document-loader scan --path /path/to/documents \
 document-loader scan --path /sites/my-site/documents \
   --source-type sharepoint \
   --source-config '{"site_url": "https://company.sharepoint.com", "username": "user", "password": "pass"}'
+
+# Scan using knowledge base configuration
+document-loader scan --kb-name "my-docs"
+
+# Scan and update database (as if doing a real sync)
+document-loader scan --path /path/to/documents \
+  --update-db --kb-name "my-docs"
+
+# Scan with table format and database update
+document-loader scan --path /path/to/documents \
+  --table --update-db --kb-name "my-docs"
+
+# Scan using KB config and update database
+document-loader scan --kb-name "my-docs" --update-db
 ```
 
 ### Create a Knowledge Base

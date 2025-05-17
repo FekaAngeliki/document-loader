@@ -32,12 +32,13 @@ class BatchRunner:
                 raise ValueError(f"Knowledge base '{kb_name}' not found")
             
             # Create sync run
+            sync_run_id = await self.repository.create_sync_run(kb.id, 'running')
             sync_run = SyncRun(
+                id=sync_run_id,
                 knowledge_base_id=kb.id,
                 start_time=datetime.now(),
                 status=SyncRunStatus.RUNNING.value
             )
-            sync_run.id = await self.repository.create_sync_run(sync_run)
             
             try:
                 # Create source and RAG system instances
@@ -149,7 +150,7 @@ class BatchRunner:
                 status=status
             )
             
-            await self.repository.create_file_record(file_record)
+            await self.repository.create_file_record_original(file_record)
             
             logger.info(f"Processed file {change.uri} ({status})")
             
@@ -167,5 +168,5 @@ class BatchRunner:
                 error_message=str(e)
             )
             
-            await self.repository.create_file_record(file_record)
+            await self.repository.create_file_record_original(file_record)
             raise
