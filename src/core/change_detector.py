@@ -66,27 +66,38 @@ class ChangeDetector:
                     metadata=metadata
                 ))
             else:
-                # Existing file - will be checked by hash comparison later
+                # Existing file - check if it was deleted
                 existing_record = existing_records_map[uri]
                 
-                # For existing files, we'll mark them all as potentially modified
-                # The batch runner will calculate hashes and determine the actual status
-                changes.append(FileChange(
-                    uri=uri,
-                    change_type=ChangeType.MODIFIED,  # Will be verified by hash
-                    metadata=metadata,
-                    existing_record=existing_record,
-                    existing_hash=existing_record.file_hash
-                ))
+                # If the latest record shows the file was deleted, treat it as new (restored)
+                if existing_record.status == FileStatus.DELETED.value:
+                    changes.append(FileChange(
+                        uri=uri,
+                        change_type=ChangeType.NEW,
+                        metadata=metadata,
+                        existing_record=existing_record  # Keep reference for UUID generation
+                    ))
+                else:
+                    # For existing non-deleted files, mark as potentially modified
+                    # The batch runner will calculate hashes and determine the actual status
+                    changes.append(FileChange(
+                        uri=uri,
+                        change_type=ChangeType.MODIFIED,  # Will be verified by hash
+                        metadata=metadata,
+                        existing_record=existing_record,
+                        existing_hash=existing_record.file_hash
+                    ))
         
         # Detect deleted files (files that existed in previous runs but not in current source)
         for uri, existing_record in existing_records_map.items():
             if uri not in source_uris:
-                changes.append(FileChange(
-                    uri=uri,
-                    change_type=ChangeType.DELETED,
-                    existing_record=existing_record
-                ))
+                # Only mark as deleted if it's not already marked as deleted
+                if existing_record.status != FileStatus.DELETED.value:
+                    changes.append(FileChange(
+                        uri=uri,
+                        change_type=ChangeType.DELETED,
+                        existing_record=existing_record
+                    ))
         
         return changes
     

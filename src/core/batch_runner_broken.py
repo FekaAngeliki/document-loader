@@ -14,50 +14,52 @@ from ..data.repository import Repository
 from ..data.models import SyncRun, FileRecord, SyncRunStatus, FileStatus
 from .change_detector import ChangeDetector, ChangeType
 from .file_processor import FileProcessor
-from .factory import Factory
+from .factory import SourceFactory, RAGFactory
 
 logger = logging.getLogger(__name__)
 console = Console()
 
 class BatchRunner:
-    """Orchestrates the batch processing of files."""
+    """Manages synchronization runs for knowledge bases."""
     
     def __init__(self, repository: Repository):
         self.repository = repository
         self.change_detector = ChangeDetector(repository)
         self.file_processor = FileProcessor()
-        self.factory = Factory(repository)
+        self.source_factory = SourceFactory()
+        self.rag_factory = RAGFactory()
     
-    async def sync_knowledge_base(self, 
-                                 kb_name: str, 
-                                 progress_callback: Optional[Callable] = None):
-        """Synchronize a knowledge base."""
-        console.print(f"\n[bold cyan]Starting synchronization for knowledge base: {kb_name}[/bold cyan]")
-        
+    async def sync_knowledge_base(self, kb_name: str, progress_callback: Optional[Callable] = None):
+        """Synchronize a knowledge base with change detection and progress reporting."""
         source = None
         rag = None
-        sync_run = None
         
         try:
-            # Get knowledge base
+            # Get knowledge base configuration
             kb = await self.repository.get_knowledge_base_by_name(kb_name)
             if not kb:
                 raise ValueError(f"Knowledge base '{kb_name}' not found")
             
+            console.print(f"[bold blue]Starting synchronization for knowledge base: {kb_name}[/bold blue]")
+            
             # Create sync run
+            sync_run_id = await self.repository.create_sync_run(kb.id, 'running')
             sync_run = SyncRun(
-                id=await self.repository.create_sync_run(kb.id),
+                id=sync_run_id,
                 knowledge_base_id=kb.id,
                 start_time=datetime.now(),
                 status=SyncRunStatus.RUNNING.value
             )
             
-            # Initialize source and RAG systems
-            source = await self.factory.create_source(kb.source_type, kb.source_config)
-            rag = await self.factory.create_rag(kb.rag_type, kb.rag_config)
-            
             try:
-                # List source files
+                # Create source and RAG system instances
+                source = self.source_factory.create(kb.source_type, kb.source_config)
+                rag = self.rag_factory.create(kb.rag_type, kb.rag_config)
+                
+                await source.initialize()
+                await rag.initialize()
+                
+                # List files from source
                 console.print("[cyan]Listing files from source...[/cyan]")
                 source_files = await source.list_files()
                 logger.info(f"Found {len(source_files)} files in source")
@@ -192,6 +194,85 @@ class BatchRunner:
             logger.error(f"Fatal error in sync: {e}")
             raise
     
+    async def _process_deleted_file(self, 
+                                   rag: RAGSystem,
+                                   kb_name: str,
+                                   sync_run_id: int,
+                                   change):
+        """Process a deleted file by removing it from RAG and updating database."""
+        try:
+            if not change.existing_record:
+                logger.error(f"No existing record found for deleted file: {change.uri}")
+                return
+            
+            # Delete from RAG system
+            if change.existing_record.rag_uri:
+                try:
+                    await rag.delete_document(change.existing_record.rag_uri)
+                    logger.info(f"Deleted file from RAG: {change.existing_record.rag_uri}")
+                except Exception as e:
+                    logger.error(f"Error deleting file from RAG: {e}")
+                    # Continue to update database even if RAG deletion fails
+            
+            # Create file record marking it as deleted
+            file_record = FileRecord(
+                sync_run_id=sync_run_id,
+                original_uri=change.uri,
+                rag_uri=change.existing_record.rag_uri,
+                file_hash=change.existing_record.file_hash,
+                uuid_filename=change.existing_record.uuid_filename,
+                upload_time=datetime.now(),
+                file_size=change.existing_record.file_size,
+                status=FileStatus.DELETED.value
+            )
+            
+            await self.repository.create_file_record_original(file_record)
+            
+            logger.info(f"Marked file as deleted in database: {change.uri}")
+            
+        except Exception as e:
+            logger.error(f"Error processing deleted file {change.uri}: {e}")
+            # Create error record
+            error_record = FileRecord(
+                sync_run_id=sync_run_id,
+                original_uri=change.uri,
+                rag_uri=change.existing_record.rag_uri if change.existing_record else None,
+                file_hash=None,
+                uuid_filename=None,
+                upload_time=datetime.now(),
+                file_size=0,
+                status=FileStatus.ERROR.value,
+                error_message=str(e)
+            )
+            await self.repository.create_file_record_original(error_record)
+            raise
+                    sync_run
+                )
+                
+                logger.info(f"Sync completed: {processed_count} files processed, {error_count} errors")
+                
+            except Exception as e:
+                # Update sync run with error
+                sync_run.end_time = datetime.now()
+                sync_run.status = SyncRunStatus.FAILED.value
+                sync_run.error_message = str(e)
+                await self.repository.update_sync_run(sync_run)
+                
+                logger.error(f"Sync failed: {e}")
+                console.print(f"[red bold]Sync failed: {e}[/red bold]")
+                raise
+            
+            finally:
+                # Clean up resources
+                if source:
+                    await source.cleanup()
+                if rag:
+                    await rag.cleanup()
+        
+        except Exception as e:
+            logger.error(f"Fatal error in sync: {e}")
+            raise
+    
     async def _process_file(self, 
                           source: FileSource, 
                           rag: RAGSystem,
@@ -273,103 +354,42 @@ class BatchRunner:
             logger.info(f"Processed file {change.uri} ({status}) with UUID: {uuid_filename}")
             
         except Exception as e:
-            # Create error record - need to provide a dummy RAG URI since it's required
-            error_rag_uri = f"{kb_name}/error-{datetime.now().timestamp()}"
-            error_record = FileRecord(
-                sync_run_id=sync_run_id,
-                original_uri=change.uri,
-                rag_uri=error_rag_uri,  # Provide a dummy value since it's required
-                file_hash="",  # Empty string instead of None
-                uuid_filename="",  # Empty string instead of None
-                upload_time=datetime.now(),
-                file_size=0,
-                status=FileStatus.ERROR.value,
-                error_message=str(e)
-            )
-            await self.repository.create_file_record_original(error_record)
-            raise
-    
-    async def _process_deleted_file(self, 
-                                   rag: RAGSystem,
-                                   kb_name: str,
-                                   sync_run_id: int,
-                                   change):
-        """Process a deleted file by removing it from RAG and updating database."""
-        try:
-            if not change.existing_record:
-                logger.error(f"No existing record found for deleted file: {change.uri}")
-                return
-            
-            # Delete from RAG system
-            if change.existing_record.rag_uri:
-                try:
-                    await rag.delete_document(change.existing_record.rag_uri)
-                    logger.info(f"Deleted file from RAG: {change.existing_record.rag_uri}")
-                except Exception as e:
-                    logger.error(f"Error deleting file from RAG: {e}")
-                    # Continue to update database even if RAG deletion fails
-            
-            # Create file record marking it as deleted
+            # Create error record
             file_record = FileRecord(
                 sync_run_id=sync_run_id,
                 original_uri=change.uri,
-                rag_uri=change.existing_record.rag_uri,
-                file_hash=change.existing_record.file_hash,
-                uuid_filename=change.existing_record.uuid_filename,
+                rag_uri="",
+                file_hash="",
+                uuid_filename="",
                 upload_time=datetime.now(),
-                file_size=change.existing_record.file_size,
-                status=FileStatus.DELETED.value
-            )
-            
-            await self.repository.create_file_record_original(file_record)
-            
-            logger.info(f"Marked file as deleted in database: {change.uri}")
-            
-        except Exception as e:
-            logger.error(f"Error processing deleted file {change.uri}: {e}")
-            # Create error record - need to provide a dummy RAG URI since it's required
-            error_rag_uri = change.existing_record.rag_uri if change.existing_record else f"{kb_name}/error-{datetime.now().timestamp()}"
-            error_record = FileRecord(
-                sync_run_id=sync_run_id,
-                original_uri=change.uri,
-                rag_uri=error_rag_uri,  # Provide a value since it's required
-                file_hash="",  # Empty string instead of None
-                uuid_filename="",  # Empty string instead of None
-                upload_time=datetime.now(),
-                file_size=0,
+                file_size=change.metadata.size if change.metadata else 0,
                 status=FileStatus.ERROR.value,
                 error_message=str(e)
             )
-            await self.repository.create_file_record_original(error_record)
+            
+            await self.repository.create_file_record_original(file_record)
             raise
     
     def _display_change_summary(self, change_summary: Dict[str, int], total_files: int):
         """Display a summary of detected changes."""
         table = Table(
             title="Change Detection Summary",
-            box=box.ROUNDED,
-            show_header=True,
-            header_style="bold magenta"
+            box=box.ROUNDED
         )
-        
         table.add_column("Change Type", style="bold")
-        table.add_column("Count", justify="right")
+        table.add_column("Count", style="bold", justify="right")
         
-        table.add_row("New Files", f"[green]{change_summary['new']}[/green]")
-        table.add_row("Modified Files", f"[yellow]{change_summary['modified']}[/yellow]")
-        table.add_row("Unchanged Files", f"[dim]{change_summary['unchanged']}[/dim]")
-        table.add_row("Deleted Files", f"[red]{change_summary['deleted']}[/red]")
+        table.add_row("[green]New Files[/green]", f"[green]{change_summary['new']}[/green]")
+        table.add_row("[yellow]Modified Files[/yellow]", f"[yellow]{change_summary['modified']}[/yellow]")
+        table.add_row("[dim]Unchanged Files[/dim]", f"[dim]{change_summary['unchanged']}[/dim]")
+        table.add_row("[red]Deleted Files[/red]", f"[red]{change_summary['deleted']}[/red]")
         table.add_section()
-        table.add_row("Total Files", f"[bold]{total_files}[/bold]")
+        table.add_row("[bold]Total Files[/bold]", f"[bold]{total_files}[/bold]")
         
-        console.print("\n")
         console.print(table)
     
-    def _display_sync_results(self, 
-                            sync_run: SyncRun, 
-                            processed_count: int, 
-                            error_count: int,
-                            change_summary: Dict[str, int]):
+    def _display_sync_results(self, processed_count: int, error_count: int, 
+                            change_summary: Dict[str, int], sync_run: SyncRun):
         """Display final synchronization results."""
         table = Table(
             title="Synchronization Results",

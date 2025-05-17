@@ -21,21 +21,27 @@ class FileSystemStorage(RAGSystem):
         
         Args:
             config: Configuration dictionary that should contain:
-                - storage_path: Base directory for storing documents
+                - root_path OR storage_path: Base directory for storing documents
+                - kb_name: Knowledge base name (used for subdirectory)
                 - create_dirs: (Optional) Whether to create directories if they don't exist (default: True)
                 - preserve_structure: (Optional) Whether to preserve directory structure (default: False)
                 - metadata_format: (Optional) Format for metadata files ('json' or 'yaml', default: 'json')
         """
         super().__init__(config)
-        self.storage_path = Path(config.get('storage_path'))
+        
+        # Support both root_path and storage_path for compatibility
+        base_path = config.get('root_path') or config.get('storage_path')
+        if not base_path:
+            raise ValueError("root_path or storage_path is required")
+            
+        self.storage_path = Path(base_path)
+        self.kb_name = config.get('kb_name', 'default')
         self.create_dirs = config.get('create_dirs', True)
         self.preserve_structure = config.get('preserve_structure', False)
         self.metadata_format = config.get('metadata_format', 'json')
         
-        if not self.storage_path:
-            raise ValueError("storage_path is required")
-        
         # Initialize subdirectories
+        # The storage_path already includes the knowledge base path
         self.documents_dir = self.storage_path / "documents"
         self.metadata_dir = self.storage_path / "metadata"
     
@@ -55,6 +61,11 @@ class FileSystemStorage(RAGSystem):
         # Verify directories exist
         if not self.storage_path.exists():
             raise ValueError(f"Storage path does not exist: {self.storage_path}")
+        
+        # Create documents directory if it doesn't exist
+        await asyncio.get_event_loop().run_in_executor(
+            None, lambda: self.documents_dir.mkdir(parents=True, exist_ok=True)
+        )
         
         # Check write permissions
         test_file = self.storage_path / ".write_test"
@@ -113,6 +124,11 @@ class FileSystemStorage(RAGSystem):
                 file_path = self.documents_dir / filename
         else:
             file_path = self.documents_dir / filename
+        
+        # Ensure parent directory exists
+        await asyncio.get_event_loop().run_in_executor(
+            None, lambda: file_path.parent.mkdir(parents=True, exist_ok=True)
+        )
         
         # Save content
         async with aiofiles.open(file_path, 'wb') as f:
@@ -187,6 +203,7 @@ class FileSystemStorage(RAGSystem):
         # Clean up empty directories if configured
         if self.preserve_structure:
             try:
+                # Try to remove the parent directory if empty
                 await asyncio.get_event_loop().run_in_executor(
                     None, file_path.parent.rmdir
                 )
@@ -275,33 +292,48 @@ class FileSystemStorage(RAGSystem):
     
     # Helper methods
     def _uri_to_path(self, uri: str) -> Path:
-        """Convert a file URI to a Path object."""
+        """Convert a URI to a Path object.
+        
+        Handles both file:// URIs and simple paths.
+        For simple paths, treats them as relative to the documents directory.
+        """
         parsed = urlparse(uri)
-        if parsed.scheme != 'file':
-            raise ValueError(f"Invalid file URI: {uri}")
         
-        # Handle different URI formats
-        path = unquote(parsed.path)
-        if os.name == 'nt' and path.startswith('/'):
-            # Windows: file:///C:/path -> C:/path
-            path = path[1:]
-        
-        return Path(path)
+        if parsed.scheme == 'file':
+            # Handle file:// URI
+            path = unquote(parsed.path)
+            if os.name == 'nt' and path.startswith('/'):
+                # Windows: file:///C:/path -> C:/path
+                path = path[1:]
+            return Path(path)
+        elif parsed.scheme in ('', None):
+            # Handle simple paths (no scheme)
+            # URI format is expected to be: kb_name/filename
+            # Remove the kb_name prefix if present (for backwards compatibility)
+            if '/' in uri:
+                # Extract just the filename from kb_name/filename format
+                filename = uri.split('/', 1)[1]
+                return self.documents_dir / filename
+            else:
+                # Treat as relative to documents directory
+                return self.documents_dir / uri
+        else:
+            raise ValueError(f"Invalid URI scheme: {uri}")
     
     def _path_to_uri(self, path: Path) -> str:
-        """Convert a Path object to a file URI."""
-        # Convert to absolute path
-        abs_path = path.absolute()
+        """Convert a Path object to a URI.
         
-        # Convert to URI
-        if os.name == 'nt':
-            # Windows: C:\path -> file:///C:/path
-            uri_path = '/' + str(abs_path).replace('\\', '/')
+        Returns a simple path that matches the database format.
+        The database stores URIs as 'kb_name/filename' without the 'documents' folder.
+        """
+        # If path is inside documents directory, return just kb_name/filename
+        if path.is_absolute() and path.is_relative_to(self.documents_dir):
+            filename = path.name  # Just the filename, not the full path
+            # Return the URI with kb_name prefix to match database format
+            return f"{self.kb_name}/{filename}"
         else:
-            # Unix: /path -> file:///path
-            uri_path = str(abs_path)
-        
-        return f"file://{quote(uri_path)}"
+            # Return absolute path as a simple string
+            return str(path)
     
     def _get_metadata_path(self, document_path: Path) -> Path:
         """Get the metadata file path for a document."""

@@ -46,3 +46,19 @@ class RAGFactory:
         rag_class = getattr(module, class_name)
         
         return rag_class(config)
+
+class Factory:
+    """Unified factory for creating sources and RAG systems."""
+    
+    def __init__(self, repository):
+        self.repository = repository
+        self.source_factory = SourceFactory()
+        self.rag_factory = RAGFactory()
+    
+    async def create_source(self, source_type: str, config: Dict[str, Any]) -> FileSource:
+        """Create a file source instance."""
+        return self.source_factory.create(source_type, config)
+    
+    async def create_rag(self, rag_type: str, config: Dict[str, Any]) -> RAGSystem:
+        """Create a RAG system instance."""
+        return self.rag_factory.create(rag_type, config)
