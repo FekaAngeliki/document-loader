@@ -24,6 +24,47 @@ from azwrap import Identity, Subscription, ResourceGroup, StorageAccount, Contai
 
 from ..cli.params import get_params, CommandLineParams
 cli_params:CommandLineParams = get_params()
+
+def configure_azure_logging():
+    global cli_params
+    verbose = cli_params.verbose
+
+    """Configure Azure SDK logging based on verbose flag."""
+    # List of Azure SDK loggers to configure
+    azure_loggers = [
+        'azure',
+        'azure.core',
+        'azure.core.pipeline',
+        'azure.core.pipeline.policies',
+        'azure.core.pipeline.policies.http_logging_policy',
+        'azure.core.pipeline.policies._universal',
+        'azure.identity',
+        'azure.identity._internal',
+        'azure.identity._credentials',
+        'azure.identity._universal', 
+        'azure.identity.get_token_mixin',
+        'azure.mgmt',
+        'azure.storage',
+        'azure.storage.blob',
+        'azure.storage.blob._blob_client',
+        'azure.storage.blob._container_client',
+        'azure.storage.blob._blob_service_client',
+    ]
+    
+    # Set logging level based on verbose flag
+    log_level = logging.DEBUG if verbose else logging.WARNING
+    
+    # Configure all Azure loggers
+    for logger_name in azure_loggers:
+        logger = logging.getLogger(logger_name)
+        logger.setLevel(log_level)
+    
+    # Also configure urllib3 which Azure SDK uses
+    logging.getLogger('urllib3').setLevel(logging.WARNING if not verbose else logging.DEBUG)
+
+
+configure_azure_logging()
+
 def log_info( message: str):
     global cli_params
     if (cli_params.verbose):

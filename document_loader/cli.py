@@ -33,6 +33,7 @@ from src.core.scanner import FileScanner
 from src.data.schema import create_schema_sql
 from src.core.factory import SourceFactory, RAGFactory
 from src.cli.params import init_params, get_params, update_params
+from src.core.logging_config import configure_app_logging
 
 # Setup rich console
 console = Console()
@@ -214,6 +215,9 @@ def cli(ctx, verbose):
         datefmt="[%X]",
         handlers=[RichHandler(rich_tracebacks=True)]
     )
+    
+    # Configure application logging
+    configure_app_logging(verbose)
     
     # Store verbose flag in context for sub-commands
     ctx.ensure_object(dict)

@@ -101,6 +101,13 @@ The parameter system uses:
 - Automatic extraction from Click context
 - Support for parameter updates during command execution
 
+### Azure Logging Configuration
+
+Azure SDK logging is configured within the `azure_blob_rag_system` module to keep Azure dependencies centralized. This architectural decision:
+- Isolates Azure-specific configuration to the Azure implementation
+- Prevents unnecessary dependencies in the core CLI
+- Only loads Azure logging configuration when actually using Azure Blob storage
+
 ### Environment Variable Fallback
 
 The log level can still be set via environment variable as a fallback:
