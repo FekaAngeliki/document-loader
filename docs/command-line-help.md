@@ -164,14 +164,19 @@ document-loader init-azure --kb-name my-azure-kb
 }
 ```
 
-**Configuration Fields:**
-- `azure_tenant_id`: Azure AD tenant ID (can use env var: AZURE_TENANT_ID)
-- `azure_subscription_id`: Azure subscription ID (can use env var: AZURE_SUBSCRIPTION_ID)
-- `azure_client_id`: Service principal client ID (can use env var: AZURE_CLIENT_ID)
-- `azure_client_secret`: Service principal client secret (can use env var: AZURE_CLIENT_SECRET)
-- `azure_resource_group_name`: Azure resource group name (can use env var: AZURE_RESOURCE_GROUP_NAME)
-- `azure_storage_account_name`: Storage account name (can use env var: AZURE_STORAGE_ACCOUNT_NAME)
-- `azure_storage_container_name`: Blob container name (can use env var: AZURE_STORAGE_CONTAINER_NAME)
+**Configuration Fields (all optional if environment variables are set):**
+- `azure_tenant_id`: Azure AD tenant ID (fallback to env var: AZURE_TENANT_ID)
+- `azure_subscription_id`: Azure subscription ID (fallback to env var: AZURE_SUBSCRIPTION_ID)
+- `azure_client_id`: Service principal client ID (fallback to env var: AZURE_CLIENT_ID)
+- `azure_client_secret`: Service principal client secret (fallback to env var: AZURE_CLIENT_SECRET)
+- `azure_resource_group_name`: Azure resource group name (fallback to env var: AZURE_RESOURCE_GROUP_NAME)
+- `azure_storage_account_name`: Storage account name (fallback to env var: AZURE_STORAGE_ACCOUNT_NAME)
+- `azure_storage_container_name`: Blob container name (fallback to env var: AZURE_STORAGE_CONTAINER_NAME)
+
+**Environment Variable Fallback:**
+- If a configuration field is not provided or is empty, the system automatically uses the corresponding environment variable
+- You can use an empty configuration `{}` and rely entirely on environment variables
+- Configuration values always take precedence over environment variables when provided
 
 **Security Note:** It's recommended to use environment variables for sensitive values like client secrets instead of putting them directly in the configuration JSON.
 
@@ -196,11 +201,16 @@ The mock RAG system doesn't require any configuration.
 ```
 
 **Configuration Fields:**
-- `storage_path` (required): Base directory where documents will be stored
-- `kb_name` (optional): Subdirectory name for this knowledge base
+- `storage_path` or `root_path`: Base directory where documents will be stored
+  - If not provided, falls back to env var: `DOCUMENT_LOADER_STORAGE_PATH`
+  - Can be specified as either `storage_path` or `root_path` for compatibility
+- `kb_name` (optional): Subdirectory name for this knowledge base (default: "default")
 - `create_dirs` (optional): Whether to create directories if they don't exist (default: true)
 - `preserve_structure` (optional): Whether to preserve the original directory structure (default: false)
 - `metadata_format` (optional): Format for metadata files - "json" or "yaml" (default: "json")
+
+**Environment Variable Fallback:**
+- If neither `storage_path` nor `root_path` is provided in the config, the system uses `DOCUMENT_LOADER_STORAGE_PATH` environment variable
 
 ## Environment Variables
 

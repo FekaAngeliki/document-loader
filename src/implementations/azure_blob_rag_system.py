@@ -9,20 +9,33 @@ from ..abstractions.rag_system import RAGSystem, DocumentMetadata
 logger = logging.getLogger(__name__)
 
 import os
-AZURE_TENANT_ID= os.getenv('AZURE_TENANT_ID')
-AZURE_SUBSCRIPTION_ID= os.getenv('AZURE_SUBSCRIPTION_ID') 
-AZURE_CLIENT_ID= os.getenv('AZURE_CLIENT_ID') 
-AZURE_CLIENT_SECRET= os.getenv('AZURE_CLIENT_SECRET') 
-AZURE_RESOURCE_LOCATION= os.getenv('AZURE_RESOURCE_LOCATION')
-AZURE_RESOURCE_GROUP_NAME= os.getenv('AZURE_RESOURCE_GROUP_NAME')
+AZURE_TENANT_ID= os.getenv('DOCUMENT_LOADER_AZURE_TENANT_ID')
+AZURE_SUBSCRIPTION_ID= os.getenv('DOCUMENT_LOADER_AZURE_SUBSCRIPTION_ID') 
+AZURE_CLIENT_ID= os.getenv('DOCUMENT_LOADER_AZURE_CLIENT_ID') 
+AZURE_CLIENT_SECRET= os.getenv('DOCUMENT_LOADER_AZURE_CLIENT_SECRET') 
+AZURE_RESOURCE_LOCATION= os.getenv('DOCUMENT_LOADER_AZURE_RESOURCE_LOCATION')
+AZURE_RESOURCE_GROUP_NAME= os.getenv('DOCUMENT_LOADER_AZURE_RESOURCE_GROUP_NAME')
 
-AZURE_STORAGE_ACCOUNT_NAME= os.getenv('AZURE_STORAGE_ACCOUNT_NAME')
-AZURE_STORAGE_CONTAINER_NAME= os.getenv('AZURE_STORAGE_CONTAINER_NAME')
+AZURE_STORAGE_ACCOUNT_NAME= os.getenv('DOCUMENT_LOADER_AZURE_STORAGE_ACCOUNT_NAME')
+AZURE_STORAGE_CONTAINER_NAME= os.getenv('DOCUMENT_LOADER_AZURE_STORAGE_CONTAINER_NAME')
 
-from azwrap import Identity, Subscription, ResourceGroup, StorageAccount, BlobContainer
+from azure.storage.blob import BlobServiceClient, ContainerProperties, ContainerClient, BlobProperties
+from azwrap import Identity, Subscription, ResourceGroup, StorageAccount, Container
 class AzureBlobRAGSystem(RAGSystem):
     """Azure Blob Storage implementation of RAGSystem."""
     
+    azure_tenant_id: str = None
+    azure_subscription_id : str = None
+    azure_client_id : str = None
+    azure_client_secret : str = None
+    azure_resource_location : str = None
+    azure_resource_group_name : str = None
+
+    azure_storage_account_name : str = None
+    azure_storage_container_name : str = None
+
+    container: Container = None
+
     def __init__(self, config: Dict[str, Any]):
         """
         Initialize the Azure Blob RAG system.
@@ -57,52 +70,77 @@ class AzureBlobRAGSystem(RAGSystem):
         # Validate required parameters
         missing_params = []
         if not self.azure_tenant_id:
-            missing_params.append('azure_tenant_id (or AZURE_TENANT_ID env var)')
+            missing_params.append('azure_tenant_id (or DOCUMENT_LOADER_AZURE_TENANT_ID env var)')
         if not self.azure_subscription_id:
-            missing_params.append('azure_subscription_id (or AZURE_SUBSCRIPTION_ID env var)')
+            missing_params.append('azure_subscription_id (or DOCUMENT_LOADER_AZURE_SUBSCRIPTION_ID env var)')
         if not self.azure_client_id:
-            missing_params.append('azure_client_id (or AZURE_CLIENT_ID env var)')
+            missing_params.append('azure_client_id (or DOCUMENT_LOADER_AZURE_CLIENT_ID env var)')
         if not self.azure_client_secret:
-            missing_params.append('azure_client_secret (or AZURE_CLIENT_SECRET env var)')
+            missing_params.append('azure_client_secret (or DOCUMENT_LOADER_AZURE_CLIENT_SECRET env var)')
         if not self.azure_resource_group_name:
-            missing_params.append('azure_resource_group_name (or AZURE_RESOURCE_GROUP_NAME env var)')
+            missing_params.append('azure_resource_group_name (or DOCUMENT_LOADER_AZURE_RESOURCE_GROUP_NAME env var)')
         if not self.azure_storage_account_name:
-            missing_params.append('azure_storage_account_name (or AZURE_STORAGE_ACCOUNT_NAME env var)')
+            missing_params.append('azure_storage_account_name (or DOCUMENT_LOADER_AZURE_STORAGE_ACCOUNT_NAME env var)')
         if not self.azure_storage_container_name:
-            missing_params.append('azure_storage_container_name (or AZURE_STORAGE_CONTAINER_NAME env var)')
+            missing_params.append('azure_storage_container_name (or DOCUMENT_LOADER_AZURE_STORAGE_CONTAINER_NAME env var)')
             
         if missing_params:
             raise ValueError(f"Missing required Azure configuration parameters: {', '.join(missing_params)}")
-
-
-    
+   
     async def initialize(self):
         """Initialize the Azure Blob RAG system and create container if needed."""
         logger.info("Initializing Azure Blob RAG system")
 
+        logger.info("Get Identity")
         identity = Identity( 
             tenant_id=self.azure_tenant_id, 
-            subscription_id=self.azure_subscription_id, 
             client_id=self.azure_client_id, 
             client_secret=self.azure_client_secret
         )
+        logger.info(f"Get Subscritption {self.azure_subscription_id}")
         subscription: Subscription = identity.get_subscription(self.azure_subscription_id)
+        logger.info(f"Get Resource Group {self.azure_resource_group_name}")
         resource_group: ResourceGroup = subscription.get_resource_group(self.azure_resource_group_name)
-        storage_account:StorageAccount = resource_group.get_storage_account(self.azure_storage_account_name)
-        if not storage_account.exists():
+        logger.info(f"Get StorageAccount {self.azure_storage_account_name}")
+        try:
+            storage_account:StorageAccount = resource_group.get_storage_account(self.azure_storage_account_name)
+        except Exception as e:
+            logger.info(f"Failed to get storage account: {e}")
+            logger.info("StorageAccount not found. ")
             logger.info(f"Creating storage account '{self.azure_storage_account_name}'...")
             storage_account = resource_group.create_storage_account(self.azure_storage_account_name, self.azure_resource_location)
             logger.info(f"Storage account '{self.azure_storage_account_name}' created successfully")
 
-        container: BlobContainer = storage_account.get_blob_container(self.azure_storage_container_name)
-        if container is None:
-            logger.info(f"Creating blob container '{self.azure_storage_container_name}'...")
-            container = storage_account.create_blob_container(self.azure_storage_container_name)
-            logger.info(f"Blob container '{self.azure_storage_container_name}' created successfully")
+        if (storage_account is None):
+            logger.info(f"Storage account '{self.azure_storage_account_name}' not found and could not be created.")
         else:
-            logger.info(f"Blob container '{self.azure_storage_container_name}' already exists")
+            container: Container = storage_account.get_container(self.azure_storage_container_name)
+            if container is None:
+                logger.info(f"Creating blob container '{self.azure_storage_container_name}'...")
+                container = storage_account.create_container(self.azure_storage_container_name, public_access_level="container")
+                logger.info(f"Blob container '{self.azure_storage_container_name}' created successfully")
+            else:
+                logger.info(f"Blob container '{self.azure_storage_container_name}' already exists")
         
-    
+    async def get_container(self) -> Container:
+        logger.info("Initializing Azure Blob RAG system")
+
+        logger.info("Get Identity")
+        identity = Identity( 
+            tenant_id=self.azure_tenant_id, 
+            client_id=self.azure_client_id, 
+            client_secret=self.azure_client_secret
+        )
+        logger.info(f"Get Subscritption {self.azure_subscription_id}")
+        subscription: Subscription = identity.get_subscription(self.azure_subscription_id)
+        logger.info(f"Get Resource Group {self.azure_resource_group_name}")
+        resource_group: ResourceGroup = subscription.get_resource_group(self.azure_resource_group_name)
+        logger.info(f"Get StorageAccount {self.azure_storage_account_name}")
+        storage_account:StorageAccount = resource_group.get_storage_account(self.azure_storage_account_name)
+        container: Container = storage_account.get_container(self.azure_storage_container_name)
+        self.container = container
+        return container
+
     async def upload_document(self, 
                            content: bytes, 
                            filename: str, 
@@ -118,13 +156,27 @@ class AzureBlobRAGSystem(RAGSystem):
         Returns:
             The blob URI (e.g., https://account.blob.core.windows.net/container/filename)
         """
+
         logger.info(f"Uploading document to Azure Blob: {filename}")
+        logger.info(f"Uploading document {filename} with metadata: {metadata} to Azure Blob")
+        if (self.container is None):
+            self.container = await self.get_container()
+        logger.info(f"Container: {self.container= } folder based on {metadata['kb_name']}")
+        destination_blob_name = f"{metadata['kb_name']}/{filename}"
+        
+        from io import BytesIO
+        buffered_reader = BytesIO(content)
+
+        blobproperties:BlobProperties = self.container.upload_stream( buffered_reader, destination_blob_name = destination_blob_name)
+        logger.info(f"Uploaded document {filename} to Azure Blob: {blobproperties= }")
+
+
         # TODO: Implement upload logic
         # - Upload blob to container
         # - Set blob metadata
         # - Optionally index in Azure Search
         # - Return the blob URI
-        raise NotImplementedError("Azure Blob upload not implemented")
+        #raise NotImplementedError("Azure Blob upload not implemented")
     
     async def update_document(self, 
                            uri: str, 
@@ -139,12 +191,25 @@ class AzureBlobRAGSystem(RAGSystem):
             metadata: New metadata
         """
         logger.info(f"Updating document in Azure Blob: {uri}")
+        
+        if (self.container is None):
+            self.container = await self.get_container()
+        logger.info(f"Container: {self.container= } folder based on {metadata['kb_name']}")
+        deleted = self.container.delete_blob(uri)
+        logger.info(f"Document in Azure Blob: {uri} succesfully(?) {deleted=}")
+        from io import BytesIO
+        buffered_reader = BytesIO(content)
+        blobproperties:BlobProperties = self.container.upload_stream( buffered_reader, destination_blob_name = uri)
+        logger.info(f"Updated document {metadata=} to Azure Blob: {blobproperties= }")
+
+                
+        #logger.info(f"Updating uri {uri} with metadata: {metadata} to Azure Blob")
         # TODO: Implement update logic
         # - Verify blob exists
         # - Upload new content
         # - Update metadata
         # - Update search index if configured
-        raise NotImplementedError("Azure Blob update not implemented")
+        #raise NotImplementedError("Azure Blob update not implemented")
     
     async def delete_document(self, uri: str):
         """

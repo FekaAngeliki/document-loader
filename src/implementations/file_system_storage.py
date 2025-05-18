@@ -26,13 +26,23 @@ class FileSystemStorage(RAGSystem):
                 - create_dirs: (Optional) Whether to create directories if they don't exist (default: True)
                 - preserve_structure: (Optional) Whether to preserve directory structure (default: False)
                 - metadata_format: (Optional) Format for metadata files ('json' or 'yaml', default: 'json')
+                
+        Environment variables:
+            - DOCUMENT_LOADER_STORAGE_PATH: Default storage path if not provided in config
         """
         super().__init__(config)
         
+        if config is None:
+            config = {}
+        
         # Support both root_path and storage_path for compatibility
-        base_path = config.get('root_path') or config.get('storage_path')
+        # Also check environment variable as fallback
+        base_path = (config.get('root_path') or 
+                    config.get('storage_path') or 
+                    os.environ.get('DOCUMENT_LOADER_STORAGE_PATH'))
+                    
         if not base_path:
-            raise ValueError("root_path or storage_path is required")
+            raise ValueError("root_path or storage_path is required (can also use DOCUMENT_LOADER_STORAGE_PATH env var)")
             
         self.storage_path = Path(base_path)
         self.kb_name = config.get('kb_name', 'default')
