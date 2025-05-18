@@ -32,18 +32,12 @@ from src.core.batch_runner import BatchRunner
 from src.core.scanner import FileScanner
 from src.data.schema import create_schema_sql
 from src.core.factory import SourceFactory, RAGFactory
+from src.cli.params import init_params, get_params, update_params
 
 # Setup rich console
 console = Console()
 
-# Setup logging with rich handler
-log_level = os.getenv('DOCUMENT_LOADER_LOG_LEVEL', 'INFO')
-logging.basicConfig(
-    level=getattr(logging, log_level),
-    format="%(message)s",
-    datefmt="[%X]",
-    handlers=[RichHandler(rich_tracebacks=True)]
-)
+# Logging will be configured after parsing command line arguments
 
 async def create_database(config: DatabaseConfig, create_schema: bool = True) -> bool:
     """Create the database if it doesn't exist, optionally with schema."""
@@ -201,9 +195,29 @@ async def get_database():
 
 @click.group()
 @click.version_option(version='0.1.0')
-def cli():
+@click.option('--verbose', is_flag=True, help='Enable verbose logging (DEBUG level)')
+@click.pass_context
+def cli(ctx, verbose):
     """Document Management System for RAG systems."""
-    pass
+    # Initialize command line parameters
+    params = init_params(ctx)
+    params.verbose = verbose
+    
+    # Configure logging based on verbose flag
+    log_level = params.get_log_level()
+    if not log_level:
+        log_level = os.getenv('DOCUMENT_LOADER_LOG_LEVEL', 'INFO')
+    
+    logging.basicConfig(
+        level=getattr(logging, log_level),
+        format="%(message)s",
+        datefmt="[%X]",
+        handlers=[RichHandler(rich_tracebacks=True)]
+    )
+    
+    # Store verbose flag in context for sub-commands
+    ctx.ensure_object(dict)
+    ctx.obj['verbose'] = verbose
 
 @cli.command()
 @click.option('--create-db', is_flag=True, help='Create the database if it doesn\'t exist')
@@ -418,8 +432,12 @@ def check_connection():
 @cli.command()
 @click.option('--kb-name', required=True, help='Knowledge base name')
 @click.option('--run-once', is_flag=True, help='Run sync once instead of scheduled')
-def sync(kb_name: str, run_once: bool):
+@click.pass_context
+def sync(ctx, kb_name: str, run_once: bool):
     """Synchronize a knowledge base."""
+    # Update command line params
+    update_params(kb_name=kb_name, run_once=run_once)
+    
     async def run_sync():
         db = await get_database()
         try:
@@ -982,7 +1000,8 @@ def _get_status_badge(status: str) -> str:
 @click.option('--recursive/--no-recursive', default=True, help='Scan recursively')
 @click.option('--update-db', is_flag=True, help='Update database as if this were a real sync')
 @click.option('--kb-name', help='Knowledge base name (uses KB config if --path not provided)')
-def scan(path: str, source_type: str, source_config: str, table: bool, recursive: bool, update_db: bool, kb_name: str):
+@click.pass_context
+def scan(ctx, path: str, source_type: str, source_config: str, table: bool, recursive: bool, update_db: bool, kb_name: str):
     """Scan files and calculate hashes.
     
     If --kb-name is provided without --path, uses the knowledge base configuration.
@@ -1003,6 +1022,17 @@ def scan(path: str, source_type: str, source_config: str, table: bool, recursive
       --kb-name "my-docs" \\
       --table
     """
+    # Update command line params
+    update_params(
+        path=path,
+        source_type=source_type,
+        source_config=json.loads(source_config) if source_config != '{}' else {},
+        table=table,
+        recursive=recursive,
+        update_db=update_db,
+        kb_name=kb_name
+    )
+    
     async def run_scan():
         db = None
         repository = None
@@ -1187,6 +1217,7 @@ def quickstart():
         ("5", "document-loader init-azure \\\n  --kb-name my-kb", "Initialize Azure resources\n(only for azure_blob RAG)"),
         ("6", "document-loader update-kb \\\n  --name my-kb [options]", "Update configuration"),
         ("7", "document-loader sync \\\n  --kb-name my-kb", "Sync documents to RAG"),
+        ("8", "document-loader --verbose sync \\\n  --kb-name my-kb", "Sync with debug output"),
     ]
     
     for num, cmd, desc in commands:
@@ -1220,8 +1251,11 @@ def quickstart():
     console.print(Panel(
         "For detailed help on any command:\n"
         "[yellow]document-loader <command> --help[/yellow]\n\n"
-        "Example:\n"
-        "[yellow]document-loader create-kb --help[/yellow]",
+        "For verbose output (DEBUG logging):\n"
+        "[yellow]document-loader --verbose <command>[/yellow]\n\n"
+        "Examples:\n"
+        "[yellow]document-loader create-kb --help[/yellow]\n"
+        "[yellow]document-loader --verbose sync --kb-name my-kb[/yellow]",
         title="Getting Help",
         border_style="cyan",
         expand=False
@@ -1258,6 +1292,7 @@ def main():
             ("5", "document-loader init-azure \\\n     --kb-name my-kb", "Initialize Azure resources (only for azure_blob)"),
             ("6", "document-loader update-kb \\\n     --name my-kb [options]", "Update configuration"),
             ("7", "document-loader sync \\\n     --kb-name my-kb", "Sync documents to RAG"),
+            ("8", "document-loader --verbose sync \\\n     --kb-name my-kb", "Sync with verbose output"),
         ]
         
         for num, cmd, desc in steps:
@@ -1283,6 +1318,7 @@ def main():
             console.print(f"  [green]{cmd:<20}[/green] {desc}")
         
         console.print("\n[bold cyan]OPTIONS:[/bold cyan]")
+        console.print("  [green]--verbose[/green]            Enable verbose logging (DEBUG level)")
         console.print("  [green]--version[/green]            Show the version and exit")
         console.print("  [green]--help[/green]               Show this message and exit")
         
