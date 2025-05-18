@@ -39,19 +39,40 @@ class AzureBlobRAGSystem(RAGSystem):
                 - azure_storage_container_name: Azure storage container name
         """
         super().__init__(config)
-        # TODO: Initialize Azure SDK clients
-
+        
         if config is None:
-            config = {} 
-        self.azure_tenant_id = config.get('azure_tenant_id') | AZURE_TENANT_ID
-        self.azure_subscription_id = config.get('azure_subscription_id') | AZURE_SUBSCRIPTION_ID
-        self.azure_client_id = config.get('azure_client_id') | AZURE_CLIENT_ID
-        self.azure_client_secret = config.get('azure_client_secret') | AZURE_CLIENT_SECRET
-        self.azure_resource_location = config.get('azure_resource_location') | AZURE_RESOURCE_LOCATION
-        self.azure_resource_group_name = config.get('azure_resource_group_name') | AZURE_RESOURCE_GROUP_NAME
-
-        self.azure_storage_account_name = config.get('azure_storage_account_name') | AZURE_STORAGE_ACCOUNT_NAME
-        self.azure_storage_container_name = config.get('azure_storage_container_name') | AZURE_STORAGE_CONTAINER_NAME
+            config = {}
+            
+        # Use environment variables as fallback for missing config values
+        self.azure_tenant_id = config.get('azure_tenant_id') or AZURE_TENANT_ID
+        self.azure_subscription_id = config.get('azure_subscription_id') or AZURE_SUBSCRIPTION_ID
+        self.azure_client_id = config.get('azure_client_id') or AZURE_CLIENT_ID
+        self.azure_client_secret = config.get('azure_client_secret') or AZURE_CLIENT_SECRET
+        self.azure_resource_location = config.get('azure_resource_location') or AZURE_RESOURCE_LOCATION
+        self.azure_resource_group_name = config.get('azure_resource_group_name') or AZURE_RESOURCE_GROUP_NAME
+        
+        self.azure_storage_account_name = config.get('azure_storage_account_name') or AZURE_STORAGE_ACCOUNT_NAME
+        self.azure_storage_container_name = config.get('azure_storage_container_name') or AZURE_STORAGE_CONTAINER_NAME
+        
+        # Validate required parameters
+        missing_params = []
+        if not self.azure_tenant_id:
+            missing_params.append('azure_tenant_id (or AZURE_TENANT_ID env var)')
+        if not self.azure_subscription_id:
+            missing_params.append('azure_subscription_id (or AZURE_SUBSCRIPTION_ID env var)')
+        if not self.azure_client_id:
+            missing_params.append('azure_client_id (or AZURE_CLIENT_ID env var)')
+        if not self.azure_client_secret:
+            missing_params.append('azure_client_secret (or AZURE_CLIENT_SECRET env var)')
+        if not self.azure_resource_group_name:
+            missing_params.append('azure_resource_group_name (or AZURE_RESOURCE_GROUP_NAME env var)')
+        if not self.azure_storage_account_name:
+            missing_params.append('azure_storage_account_name (or AZURE_STORAGE_ACCOUNT_NAME env var)')
+        if not self.azure_storage_container_name:
+            missing_params.append('azure_storage_container_name (or AZURE_STORAGE_CONTAINER_NAME env var)')
+            
+        if missing_params:
+            raise ValueError(f"Missing required Azure configuration parameters: {', '.join(missing_params)}")
 
 
     

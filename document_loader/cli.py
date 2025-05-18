@@ -202,19 +202,7 @@ async def get_database():
 @click.group()
 @click.version_option(version='0.1.0')
 def cli():
-    """Document Management System for RAG systems.
-    
-    Quick start:
-    1. Check your database connection: document-loader check-connection
-    2. Create database and schema: document-loader create-db
-    3. Create a knowledge base: document-loader create-kb
-    4. List knowledge bases: document-loader list-kb
-    5. Initialize Azure storage (if using azure_blob): document-loader init-azure --kb-name <name>
-    6. Update configuration: document-loader update-kb --name <name>
-    7. Sync a knowledge base: document-loader sync --kb-name <name>
-    
-    For more help on any command: document-loader <command> --help
-    """
+    """Document Management System for RAG systems."""
     pass
 
 @cli.command()
@@ -526,12 +514,74 @@ def list_kb():
 
 @cli.command()
 @click.option('--name', required=True, help='Knowledge base name')
-@click.option('--source-type', default='file_system', help='Source type (default: file_system)')
-@click.option('--source-config', required=True, help='Source configuration as JSON')
-@click.option('--rag-type', default='mock', help='RAG system type (default: mock)')
-@click.option('--rag-config', default='{}', help='RAG configuration as JSON')
+@click.option('--source-type', 
+              default='file_system', 
+              help='Source type for documents. Available options: file_system, sharepoint (default: file_system)')
+@click.option('--source-config', 
+              required=True, 
+              help='Source configuration as JSON (e.g., {"root_path": "/path/to/docs"} for file_system)')
+@click.option('--rag-type', 
+              default='mock', 
+              help='RAG system type. Available options: mock, azure_blob, file_system_storage (default: mock)')
+@click.option('--rag-config', 
+              default='{}', 
+              help='''RAG configuration as JSON. Structure depends on rag-type:
+              
+              \b
+              For "file_system_storage":
+              {
+                "storage_path": "/path/to/storage",     # Base directory for documents
+                "kb_name": "knowledge-base-name",       # Subdirectory name
+                "create_dirs": true,                    # Auto-create directories (default: true)
+                "preserve_structure": false,            # Keep original structure (default: false)
+                "metadata_format": "json"               # Metadata format: "json" or "yaml" (default: "json")
+              }
+              
+              \b
+              For "azure_blob":
+              {
+                "azure_tenant_id": "...",              # Or use env: AZURE_TENANT_ID
+                "azure_subscription_id": "...",        # Or use env: AZURE_SUBSCRIPTION_ID  
+                "azure_client_id": "...",              # Or use env: AZURE_CLIENT_ID
+                "azure_client_secret": "...",          # Or use env: AZURE_CLIENT_SECRET
+                "azure_resource_group_name": "...",    # Or use env: AZURE_RESOURCE_GROUP_NAME
+                "azure_storage_account_name": "...",   # Or use env: AZURE_STORAGE_ACCOUNT_NAME
+                "azure_storage_container_name": "..."  # Or use env: AZURE_STORAGE_CONTAINER_NAME
+              }
+              
+              For "mock": {} (empty)
+              ''')
 def create_kb(name: str, source_type: str, source_config: str, rag_type: str, rag_config: str):
-    """Create a new knowledge base."""
+    """Create a new knowledge base.
+    
+    Examples:
+    
+    \b
+    # File system source with mock RAG:
+    document-loader create-kb \\
+      --name "my-docs" \\
+      --source-type "file_system" \\
+      --source-config '{"root_path": "/path/to/documents"}' \\
+      --rag-type "mock"
+    
+    \b
+    # File system source with file system storage:
+    document-loader create-kb \\
+      --name "my-docs" \\
+      --source-type "file_system" \\
+      --source-config '{"root_path": "/path/to/documents"}' \\
+      --rag-type "file_system_storage" \\
+      --rag-config '{"storage_path": "/path/to/rag/storage", "kb_name": "my-docs"}'
+    
+    \b
+    # SharePoint source with Azure Blob RAG:
+    document-loader create-kb \\
+      --name "sharepoint-docs" \\
+      --source-type "sharepoint" \\
+      --source-config '{"site_url": "https://company.sharepoint.com/sites/docs"}' \\
+      --rag-type "azure_blob" \\
+      --rag-config '{}'
+    """
     async def run_create():
         db = await get_database()
         try:
@@ -588,12 +638,64 @@ def create_kb(name: str, source_type: str, source_config: str, rag_type: str, ra
 
 @cli.command()
 @click.option('--name', required=True, help='Knowledge base name')
-@click.option('--source-type', help='New source type')
-@click.option('--source-config', help='New source configuration as JSON')
-@click.option('--rag-type', help='New RAG system type')
-@click.option('--rag-config', help='New RAG configuration as JSON')
+@click.option('--source-type', 
+              help='New source type. Available options: file_system, sharepoint')
+@click.option('--source-config', 
+              help='New source configuration as JSON')
+@click.option('--rag-type', 
+              help='New RAG system type. Available options: mock, azure_blob, file_system_storage')
+@click.option('--rag-config', 
+              help='''New RAG configuration as JSON. Structure depends on rag-type:
+              
+              \b
+              For "file_system_storage":
+              {
+                "storage_path": "/path/to/storage",     # Base directory for documents
+                "kb_name": "knowledge-base-name",       # Subdirectory name
+                "create_dirs": true,                    # Auto-create directories (default: true)
+                "preserve_structure": false,            # Keep original structure (default: false)
+                "metadata_format": "json"               # Metadata format: "json" or "yaml" (default: "json")
+              }
+              
+              \b
+              For "azure_blob":
+              {
+                "azure_tenant_id": "...",              # Or use env: AZURE_TENANT_ID
+                "azure_subscription_id": "...",        # Or use env: AZURE_SUBSCRIPTION_ID  
+                "azure_client_id": "...",              # Or use env: AZURE_CLIENT_ID
+                "azure_client_secret": "...",          # Or use env: AZURE_CLIENT_SECRET
+                "azure_resource_group_name": "...",    # Or use env: AZURE_RESOURCE_GROUP_NAME
+                "azure_storage_account_name": "...",   # Or use env: AZURE_STORAGE_ACCOUNT_NAME
+                "azure_storage_container_name": "..."  # Or use env: AZURE_STORAGE_CONTAINER_NAME
+              }
+              
+              For "mock": {} (empty)
+              ''')
 def update_kb(name: str, source_type: str, source_config: str, rag_type: str, rag_config: str):
-    """Update an existing knowledge base configuration."""
+    """Update an existing knowledge base configuration.
+    
+    Examples:
+    
+    \b
+    # Update RAG type to file system storage:
+    document-loader update-kb \\
+      --name "my-docs" \\
+      --rag-type "file_system_storage" \\
+      --rag-config '{"storage_path": "/path/to/storage", "kb_name": "my-docs"}'
+    
+    \b
+    # Update RAG type to Azure Blob:
+    document-loader update-kb \\
+      --name "my-docs" \\
+      --rag-type "azure_blob" \\
+      --rag-config '{}'
+    
+    \b
+    # Update source configuration:
+    document-loader update-kb \\
+      --name "my-docs" \\
+      --source-config '{"root_path": "/new/path/to/documents"}'
+    """
     async def run_update():
         db = await get_database()
         try:
@@ -870,8 +972,12 @@ def _get_status_badge(status: str) -> str:
 
 @cli.command()
 @click.option('--path', help='Path to scan (overrides KB config if --kb-name is provided)')
-@click.option('--source-type', default='file_system', help='Source type (file_system or sharepoint)')
-@click.option('--source-config', default='{}', help='Additional source configuration as JSON')
+@click.option('--source-type', 
+              default='file_system', 
+              help='Source type. Available options: file_system, sharepoint (default: file_system)')
+@click.option('--source-config', 
+              default='{}', 
+              help='Additional source configuration as JSON')
 @click.option('--table', is_flag=True, help='Show results in a table format')
 @click.option('--recursive/--no-recursive', default=True, help='Scan recursively')
 @click.option('--update-db', is_flag=True, help='Update database as if this were a real sync')
@@ -881,6 +987,21 @@ def scan(path: str, source_type: str, source_config: str, table: bool, recursive
     
     If --kb-name is provided without --path, uses the knowledge base configuration.
     If both are provided, --path overrides the KB config.
+    
+    Examples:
+    
+    \b
+    # Scan local directory:
+    document-loader scan \\
+      --path "/path/to/documents" \\
+      --source-type "file_system" \\
+      --recursive
+    
+    \b
+    # Scan using knowledge base config:
+    document-loader scan \\
+      --kb-name "my-docs" \\
+      --table
     """
     async def run_scan():
         db = None
@@ -1034,21 +1155,147 @@ def init_azure(kb_name: str):
     
     asyncio.run(run_init())
 
+@cli.command()
+def quickstart():
+    """Show a color-coded quick start guide."""
+    from rich.syntax import Syntax
+    from rich.table import Table
+    from rich.panel import Panel
+    
+    console.print("\n")
+    console.print(Panel.fit(
+        "[bold cyan]Document Loader - Quick Start Guide[/bold cyan]",
+        border_style="blue"
+    ))
+    
+    # Create a table for the commands
+    table = Table(
+        show_header=True,
+        header_style="bold magenta",
+        border_style="blue",
+        title_style="bold",
+    )
+    table.add_column("#", style="bold yellow", width=3)
+    table.add_column("Command", style="bold green", no_wrap=True)
+    table.add_column("Description", style="cyan")
+    
+    commands = [
+        ("1", "document-loader check-connection", "Verify database connectivity"),
+        ("2", "document-loader create-db", "Create database with schema"),
+        ("3", "document-loader create-kb \\\n  --name my-kb \\\n  --source-type file_system \\\n  --source-config '{\"root_path\": \"/docs\"}' \\\n  --rag-type mock", "Create a knowledge base"),
+        ("4", "document-loader list-kb", "List all knowledge bases"),
+        ("5", "document-loader init-azure \\\n  --kb-name my-kb", "Initialize Azure resources\n(only for azure_blob RAG)"),
+        ("6", "document-loader update-kb \\\n  --name my-kb [options]", "Update configuration"),
+        ("7", "document-loader sync \\\n  --kb-name my-kb", "Sync documents to RAG"),
+    ]
+    
+    for num, cmd, desc in commands:
+        table.add_row(num, cmd, desc)
+    
+    console.print(table)
+    
+    # Additional info panels
+    console.print("\n")
+    console.print(Panel(
+        "[bold]Available RAG Types:[/bold]\n"
+        "[green]mock[/green] - Testing and development\n"
+        "[blue]azure_blob[/blue] - Azure Blob Storage\n"
+        "[yellow]file_system_storage[/yellow] - Local file storage",
+        title="RAG Systems",
+        border_style="green",
+        expand=False
+    ))
+    
+    console.print("\n")
+    console.print(Panel(
+        "[bold]Available Source Types:[/bold]\n"
+        "[green]file_system[/green] - Local file system\n"
+        "[blue]sharepoint[/blue] - SharePoint documents",
+        title="Document Sources",
+        border_style="green",
+        expand=False
+    ))
+    
+    console.print("\n")
+    console.print(Panel(
+        "For detailed help on any command:\n"
+        "[yellow]document-loader <command> --help[/yellow]\n\n"
+        "Example:\n"
+        "[yellow]document-loader create-kb --help[/yellow]",
+        title="Getting Help",
+        border_style="cyan",
+        expand=False
+    ))
+
 def main():
     """Entry point for the CLI."""
+    import sys
+    
     # Add ASCII art banner
     banner = """
-╔═══════════════════════════════════════════════════════════╗
-║       ____                                        __      ║
-║      / __ \\____  _______  ______ ___  ___  ____  / /_     ║
-║     / / / / __ \\/ ___/ / / / __ `__ \\/ _ \\/ __ \\/ __/     ║
-║    / /_/ / /_/ / /__/ /_/ / / / / / /  __/ / / / /_       ║
-║   /_____/\\____/\\___/\\__,_/_/ /_/ /_/\\___/_/ /_/\\__/      ║
-║                                                           ║
-║              [Document Loader for RAG Systems]            ║
-╚═══════════════════════════════════════════════════════════╝
+====================================================
+     ____                                        __  
+    / __ \____  _______  ______ ___  ___  ____  / /_ 
+   / / / / __ \/ ___/ / / / __ `__ \/ _ \/ __ \/ __/
+  / /_/ / /_/ / /__/ /_/ / / / / / /  __/ / / / /_  
+ /_____/\____/\___/\__,_/_/ /_/ /_/\___/_/ /_/\__/   
+                                                     
+        Document Loader for RAG Systems
+====================================================
 """
     console.print(banner, style="bold blue")
+    
+    # Show colored help for both no arguments and --help
+    if len(sys.argv) == 1 or (len(sys.argv) == 2 and sys.argv[1] in ['--help', '-h']):
+        console.print("\n[bold]Document Management System for RAG systems[/bold]\n")
+        console.print("[bold cyan]QUICK START:[/bold cyan]\n")
+        
+        steps = [
+            ("1", "document-loader check-connection", "Verify database connectivity"),
+            ("2", "document-loader create-db", "Create database with schema"),
+            ("3", "document-loader create-kb \\\n     --name my-kb \\\n     --source-type file_system \\\n     --source-config '{\"root_path\": \"/docs\"}' \\\n     --rag-type mock", "Create a knowledge base"),
+            ("4", "document-loader list-kb", "List all knowledge bases"),
+            ("5", "document-loader init-azure \\\n     --kb-name my-kb", "Initialize Azure resources (only for azure_blob)"),
+            ("6", "document-loader update-kb \\\n     --name my-kb [options]", "Update configuration"),
+            ("7", "document-loader sync \\\n     --kb-name my-kb", "Sync documents to RAG"),
+        ]
+        
+        for num, cmd, desc in steps:
+            console.print(f"[bold yellow]{num}.[/bold yellow] [bold green]{cmd}[/bold green]  [dim]# {desc}[/dim]\n")
+        
+        console.print("\n[bold cyan]AVAILABLE COMMANDS:[/bold cyan]")
+        commands = [
+            ("check-connection", "Test database connectivity"),
+            ("create-db", "Create database and schema"),  
+            ("create-kb", "Create a new knowledge base"),
+            ("list-kb", "List all knowledge bases"),
+            ("info", "Show KB details"),
+            ("status", "Show sync history"),
+            ("scan", "Preview what will be synced"),
+            ("sync", "Sync documents to RAG"),
+            ("init-azure", "Initialize Azure resources"),
+            ("update-kb", "Update KB configuration"),
+            ("quickstart", "Show color-coded guide"),
+            ("--help", "Show this message and exit"),
+        ]
+        
+        for cmd, desc in commands:
+            console.print(f"  [green]{cmd:<20}[/green] {desc}")
+        
+        console.print("\n[bold cyan]OPTIONS:[/bold cyan]")
+        console.print("  [green]--version[/green]            Show the version and exit")
+        console.print("  [green]--help[/green]               Show this message and exit")
+        
+        console.print("\n[bold cyan]ADDITIONAL INFO:[/bold cyan]")
+        console.print("  [yellow]RAG types:[/yellow] mock | azure_blob | file_system_storage")
+        console.print("  [yellow]Source types:[/yellow] file_system | sharepoint")
+        
+        console.print("\n[dim]For detailed help on any command:[/dim]")
+        console.print("  [yellow]document-loader <command> --help[/yellow]")
+        console.print("\n[dim]Example:[/dim]")
+        console.print("  [yellow]document-loader create-kb --help[/yellow]\n")
+        return
+    
     cli()
 
 if __name__ == '__main__':
