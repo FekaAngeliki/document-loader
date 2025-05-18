@@ -202,8 +202,6 @@ class AzureBlobRAGSystem(RAGSystem):
         blobproperties:BlobProperties = self.container.upload_stream( buffered_reader, destination_blob_name = uri)
         logger.info(f"Updated document {metadata=} to Azure Blob: {blobproperties= }")
 
-                
-        #logger.info(f"Updating uri {uri} with metadata: {metadata} to Azure Blob")
         # TODO: Implement update logic
         # - Verify blob exists
         # - Upload new content
@@ -218,11 +216,17 @@ class AzureBlobRAGSystem(RAGSystem):
         Args:
             uri: The blob URI to delete
         """
-        logger.info(f"Deleting document from Azure Blob: {uri}")
+        logger.info(f"Updating document in Azure Blob: {uri}")
+        
+        if (self.container is None):
+            self.container = await self.get_container()
+        deleted = self.container.delete_blob(uri)
+        logger.info(f"Document in Azure Blob: {uri} succesfully(?) {deleted=}")
+
         # TODO: Implement delete logic
         # - Delete blob from container
         # - Remove from search index if configured
-        raise NotImplementedError("Azure Blob delete not implemented")
+        #raise NotImplementedError("Azure Blob delete not implemented")
     
     async def get_document(self, uri: str) -> Optional[DocumentMetadata]:
         """
