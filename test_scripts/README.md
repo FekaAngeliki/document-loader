@@ -101,6 +101,16 @@ Checks the configuration structure and current directory layout. Helps understan
 #### migrate_storage.py
 Migration script to move files from the old directory structure (with nested "default" directories) to the new simplified structure.
 
+### Configuration Tests
+
+#### test_azure_blob_config.py
+Tests the Azure Blob RAG configuration structure including:
+- Configuration creation with various authentication methods
+- Configuration serialization and deserialization
+- Configuration validation
+- Environment variable fallback support
+- Advanced configuration scenarios
+
 ### Pattern Matching Tests
 
 #### test_match.py

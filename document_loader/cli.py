@@ -31,7 +31,7 @@ from src.data.models import KnowledgeBase, SyncRunStatus
 from src.core.batch_runner import BatchRunner
 from src.core.scanner import FileScanner
 from src.data.schema import create_schema_sql
-from src.core.factory import SourceFactory
+from src.core.factory import SourceFactory, RAGFactory
 
 # Setup rich console
 console = Console()
@@ -209,8 +209,9 @@ def cli():
     2. Create database and schema: document-loader create-db
     3. Create a knowledge base: document-loader create-kb
     4. List knowledge bases: document-loader list-kb
-    5. Update configuration: document-loader update-kb --name <name>
-    6. Sync a knowledge base: document-loader sync --kb-name <name>
+    5. Initialize Azure storage (if using azure_blob): document-loader init-azure --kb-name <name>
+    6. Update configuration: document-loader update-kb --name <name>
+    7. Sync a knowledge base: document-loader sync --kb-name <name>
     
     For more help on any command: document-loader <command> --help
     """
@@ -980,6 +981,58 @@ def scan(path: str, source_type: str, source_config: str, table: bool, recursive
                 await db.disconnect()
     
     asyncio.run(run_scan())
+
+@cli.command()
+@click.option('--kb-name', required=True, help='Knowledge base name to initialize')
+def init_azure(kb_name: str):
+    """Initialize Azure Blob Storage container for a knowledge base.
+    
+    This command creates the Azure storage account and blob container
+    if they don't exist, using the configuration from the knowledge base.
+    """
+    async def run_init():
+        db = await get_database()
+        try:
+            repository = Repository(db)
+            
+            # Get the knowledge base
+            kb = await repository.get_knowledge_base_by_name(kb_name)
+            if not kb:
+                console.print(f"[red]Knowledge base '{kb_name}' not found[/red]")
+                return
+                
+            # Check if it's an Azure Blob RAG type
+            if kb.rag_type != 'azure_blob':
+                console.print(f"[red]Knowledge base '{kb_name}' is not using Azure Blob storage (RAG type: {kb.rag_type})[/red]")
+                return
+            
+            # Create the RAG system instance
+            rag_factory = RAGFactory()
+            rag_system = rag_factory.create(kb.rag_type, kb.rag_config)
+            
+            console.print(Panel(
+                f"[bold blue]Initializing Azure Blob Storage[/bold blue]\n\n"
+                f"Knowledge Base: [green]{kb_name}[/green]\n"
+                f"RAG Type: [yellow]{kb.rag_type}[/yellow]",
+                expand=False
+            ))
+            
+            # Initialize the Azure Blob storage
+            with console.status("[bold green]Initializing Azure resources..."):
+                await rag_system.initialize()
+            
+            console.print("[green]✓[/green] Azure Blob Storage initialized successfully")
+            console.print("\nYour Azure resources are ready!")
+            console.print(f"You can now sync the knowledge base with: [cyan]document-loader sync --kb-name {kb_name}[/cyan]")
+            
+        except Exception as e:
+            console.print(f"[red]Error initializing Azure Blob Storage: {e}[/red]")
+            import traceback
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
+        finally:
+            await db.disconnect()
+    
+    asyncio.run(run_init())
 
 def main():
     """Entry point for the CLI."""

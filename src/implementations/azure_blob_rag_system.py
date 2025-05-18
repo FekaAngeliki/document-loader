@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import logging
 from typing import Dict, Any, List, Optional
 
@@ -5,6 +8,18 @@ from ..abstractions.rag_system import RAGSystem, DocumentMetadata
 
 logger = logging.getLogger(__name__)
 
+import os
+AZURE_TENANT_ID= os.getenv('AZURE_TENANT_ID')
+AZURE_SUBSCRIPTION_ID= os.getenv('AZURE_SUBSCRIPTION_ID') 
+AZURE_CLIENT_ID= os.getenv('AZURE_CLIENT_ID') 
+AZURE_CLIENT_SECRET= os.getenv('AZURE_CLIENT_SECRET') 
+AZURE_RESOURCE_LOCATION= os.getenv('AZURE_RESOURCE_LOCATION')
+AZURE_RESOURCE_GROUP_NAME= os.getenv('AZURE_RESOURCE_GROUP_NAME')
+
+AZURE_STORAGE_ACCOUNT_NAME= os.getenv('AZURE_STORAGE_ACCOUNT_NAME')
+AZURE_STORAGE_CONTAINER_NAME= os.getenv('AZURE_STORAGE_CONTAINER_NAME')
+
+from azwrap import Identity, Subscription, ResourceGroup, StorageAccount, BlobContainer
 class AzureBlobRAGSystem(RAGSystem):
     """Azure Blob Storage implementation of RAGSystem."""
     
@@ -14,28 +29,58 @@ class AzureBlobRAGSystem(RAGSystem):
         
         Args:
             config: Configuration dictionary that should contain:
-                - connection_string: Azure Storage connection string
-                - container_name: Name of the blob container
-                - index_name: (Optional) Name of the Azure Search index
-                - endpoint: (Optional) Azure Cognitive Search endpoint
-                - api_key: (Optional) Azure Cognitive Search API key
+                - azure_tenant_id: Azure tenant ID
+                - azure_subscription_id: Azure subscription ID
+                - azure_client_id: Azure client ID
+                - azure_client_secret: Azure client secret
+                - azure_resource_location: Azure resource location
+                - azure_resource_group_name: Azure resource group name
+                - azure_storage_account_name: Azure storage account name
+                - azure_storage_container_name: Azure storage container name
         """
         super().__init__(config)
         # TODO: Initialize Azure SDK clients
-        self.connection_string = config.get('connection_string')
-        self.container_name = config.get('container_name')
-        self.index_name = config.get('index_name')
-        self.search_endpoint = config.get('endpoint')
-        self.search_api_key = config.get('api_key')
+
+        if config is None:
+            config = {} 
+        self.azure_tenant_id = config.get('azure_tenant_id') | AZURE_TENANT_ID
+        self.azure_subscription_id = config.get('azure_subscription_id') | AZURE_SUBSCRIPTION_ID
+        self.azure_client_id = config.get('azure_client_id') | AZURE_CLIENT_ID
+        self.azure_client_secret = config.get('azure_client_secret') | AZURE_CLIENT_SECRET
+        self.azure_resource_location = config.get('azure_resource_location') | AZURE_RESOURCE_LOCATION
+        self.azure_resource_group_name = config.get('azure_resource_group_name') | AZURE_RESOURCE_GROUP_NAME
+
+        self.azure_storage_account_name = config.get('azure_storage_account_name') | AZURE_STORAGE_ACCOUNT_NAME
+        self.azure_storage_container_name = config.get('azure_storage_container_name') | AZURE_STORAGE_CONTAINER_NAME
+
+
     
     async def initialize(self):
         """Initialize the Azure Blob RAG system and create container if needed."""
         logger.info("Initializing Azure Blob RAG system")
-        # TODO: Implement initialization logic
-        # - Create blob container if it doesn't exist
-        # - Verify Azure Search index exists (if configured)
-        # - Test connectivity
-        raise NotImplementedError("Azure Blob initialization not implemented")
+
+        identity = Identity( 
+            tenant_id=self.azure_tenant_id, 
+            subscription_id=self.azure_subscription_id, 
+            client_id=self.azure_client_id, 
+            client_secret=self.azure_client_secret
+        )
+        subscription: Subscription = identity.get_subscription(self.azure_subscription_id)
+        resource_group: ResourceGroup = subscription.get_resource_group(self.azure_resource_group_name)
+        storage_account:StorageAccount = resource_group.get_storage_account(self.azure_storage_account_name)
+        if not storage_account.exists():
+            logger.info(f"Creating storage account '{self.azure_storage_account_name}'...")
+            storage_account = resource_group.create_storage_account(self.azure_storage_account_name, self.azure_resource_location)
+            logger.info(f"Storage account '{self.azure_storage_account_name}' created successfully")
+
+        container: BlobContainer = storage_account.get_blob_container(self.azure_storage_container_name)
+        if container is None:
+            logger.info(f"Creating blob container '{self.azure_storage_container_name}'...")
+            container = storage_account.create_blob_container(self.azure_storage_container_name)
+            logger.info(f"Blob container '{self.azure_storage_container_name}' created successfully")
+        else:
+            logger.info(f"Blob container '{self.azure_storage_container_name}' already exists")
+        
     
     async def upload_document(self, 
                            content: bytes, 
