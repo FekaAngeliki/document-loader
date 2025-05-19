@@ -20,7 +20,7 @@ AZURE_STORAGE_ACCOUNT_NAME= os.getenv('DOCUMENT_LOADER_AZURE_STORAGE_ACCOUNT_NAM
 AZURE_STORAGE_CONTAINER_NAME= os.getenv('DOCUMENT_LOADER_AZURE_STORAGE_CONTAINER_NAME')
 
 from azure.storage.blob import BlobServiceClient, ContainerProperties, ContainerClient, BlobProperties
-from azwrap import Identity, Subscription, ResourceGroup, StorageAccount, Container
+from azwrap import Identity, Subscription, ResourceGroup, StorageAccount, Container, ResourceNotFoundError
 
 from ..cli.params import get_params, CommandLineParams
 cli_params:CommandLineParams = get_params()
@@ -151,10 +151,8 @@ class AzureBlobRAGSystem(RAGSystem):
         log_info(f"Get StorageAccount {self.azure_storage_account_name}")
         try:
             storage_account:StorageAccount = resource_group.get_storage_account(self.azure_storage_account_name)
-        except Exception as e:
-            log_info(f"Failed to get storage account: {e}")
-            log_info("StorageAccount not found. ")
-            log_info(f"Creating storage account '{self.azure_storage_account_name}'...")
+        except ResourceNotFoundError as e:
+            log_info(f"Storage account {self.azure_storage_account_name} not found. Creating Storage account.")
             storage_account = resource_group.create_storage_account(self.azure_storage_account_name, self.azure_resource_location)
             log_info(f"Storage account '{self.azure_storage_account_name}' created successfully")
 
@@ -162,12 +160,13 @@ class AzureBlobRAGSystem(RAGSystem):
             log_info(f"Storage account '{self.azure_storage_account_name}' not found and could not be created.")
         else:
             container: Container = storage_account.get_container(self.azure_storage_container_name)
-            if container is None:
+            if container is None or container.container_client.exists() == False:
                 log_info(f"Creating blob container '{self.azure_storage_container_name}'...")
                 container = storage_account.create_container(self.azure_storage_container_name, public_access_level="container")
                 log_info(f"Blob container '{self.azure_storage_container_name}' created successfully")
             else:
                 log_info(f"Blob container '{self.azure_storage_container_name}' already exists")
+                container = storage_account.create_container(self.azure_storage_container_name, public_access_level="container")
         
     async def get_container(self) -> Container:
         log_info("Initializing Azure Blob RAG system")
