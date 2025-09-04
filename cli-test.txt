@@ -1,0 +1,62 @@
+document-loader create-kb \
+--name "test-2025-09-04" \
+--source-type "file_system" \
+--source-config '{"root_path": "/Users/giorgosmarinos/Documents/Athena Documents - χωρίς πίνακες"}' \
+--rag-type "azure_blob" \
+--rag-config '{"azure_storage_account_name": "documentloader001", "azure_storage_container_name": "testset002"}'
+
+
+DOCUMENT_LOADER_AZURE_TENANT_ID=
+DOCUMENT_LOADER_AZURE_SUBSCRIPTION_ID=
+DOCUMENT_LOADER_AZURE_CLIENT_ID=
+DOCUMENT_LOADER_AZURE_CLIENT_SECRET=
+DOCUMENT_LOADER_AZURE_RESOURCE_LOCATION=
+DOCUMENT_LOADER_AZURE_RESOURCE_GROUP_NAME=
+DOCUMENT_LOADER_AZURE_STORAGE_ACCOUNT_NAME=
+
+
+Options:
+  --name TEXT           Knowledge base name  [required]
+  --source-type TEXT    Source type for documents. Available options:
+                        file_system, sharepoint (default: file_system)
+  --source-config TEXT  Source configuration as JSON (e.g., {"root_path":
+                        "/path/to/docs"} for file_system)  [required]
+  --rag-type TEXT       RAG system type. Available options: mock, azure_blob,
+                        file_system_storage (default: mock)
+  --rag-config TEXT     RAG configuration as JSON. Structure depends on rag-
+                        type:
+
+                        For "file_system_storage":
+                        {
+                          "storage_path": "/path/to/storage",     # Base directory for documents
+                          "kb_name": "knowledge-base-name",       # Subdirectory name
+                          "create_dirs": true,                    # Auto-create directories (default: true)
+                          "preserve_structure": false,            # Keep original structure (default: false)
+                          "metadata_format": "json"               # Metadata format: "json" or "yaml" (default: "json")
+                        }
+
+                        For "azure_blob":
+                        {
+                          "azure_tenant_id": "...",              # Or use env: AZURE_TENANT_ID
+                          "azure_subscription_id": "...",        # Or use env: AZURE_SUBSCRIPTION_ID
+                          "azure_client_id": "...",              # Or use env: AZURE_CLIENT_ID
+                          "azure_client_secret": "...",          # Or use env: AZURE_CLIENT_SECRET
+                          "azure_resource_group_name": "...",    # Or use env: AZURE_RESOURCE_GROUP_NAME
+                          "azure_storage_account_name": "...",   # Or use env: AZURE_STORAGE_ACCOUNT_NAME
+                          "azure_storage_container_name": "..."  # Or use env: AZURE_STORAGE_CONTAINER_NAME
+                        }
+
+                        For "mock": {} (empty)
+  --help                Show this message and exit.
+
+
+
+  INSERT INTO public.knowledge_base (name, source_type, source_config, rag_type, rag_config, created_at, updated_at) 
+  VALUES ('azure-docs', 'file_system', '{"root_path": "/Users/giorgosmarinos/Documents/scrapper-output", 
+  
+  "exclude_extensions": [".png"], "include_extensions": [".md", ".docx"]}', 'azure_blob', '{}', 
+  '2025-05-18 05:30:43.839957', '2025-05-19 04:22:04.278694');
+
+
+
+
