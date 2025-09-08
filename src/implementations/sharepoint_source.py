@@ -2,11 +2,9 @@ import os
 from dotenv import load_dotenv
 load_dotenv(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '.env.sharepoint')))
 from typing import List, Dict, Any, AsyncIterator
-from datetime import datetime
-import logging
-import aiohttp
 from ..abstractions.file_source import FileSource, FileMetadata
 
+<<<<<<< HEAD
 logger = logging.getLogger(__name__)
 class SharePointSource(FileSource):
     async def list_files_in_library(self, library_url: str, recursive: bool = True) -> list:
@@ -194,37 +192,35 @@ class SharePointSource(FileSource):
         except Exception as e:
             logger.error(f"Error listing files from SharePoint: {e}")
             return []
+=======
+
+class SharePointSource(FileSource):
+    """SharePoint implementation of FileSource."""
+    
+    def __init__(self, config: Dict[str, Any]):
+        super().__init__(config)
+    
+    async def initialize(self):
+        """Initialize the SharePoint connection."""
+        pass
+    
+    async def list_files(self, path: str = "") -> List[FileMetadata]:
+        """List all files in the SharePoint path."""
+        pass
+>>>>>>> 0adfdd2f12785c2066d387195d1d62648cdbdb55
     
     async def get_file_content(self, uri: str) -> bytes:
         """Get the content of a file from SharePoint."""
-        # TODO: Implement actual SharePoint file download
-        logger.warning(f"Mock download of {uri}")
-        return b"Mock file content"
+        pass
     
     async def get_file_metadata(self, uri: str) -> FileMetadata:
         """Get metadata for a file."""
-        # TODO: Implement actual SharePoint metadata retrieval
-        return FileMetadata(
-            uri=uri,
-            size=1024,
-            created_at=datetime.now(),
-            modified_at=datetime.now(),
-            content_type="application/octet-stream"
-        )
+        pass
     
     async def exists(self, uri: str) -> bool:
         """Check if a file exists in SharePoint."""
-        # TODO: Implement actual SharePoint file existence check
-        return True
+        pass
     
     async def cleanup(self):
         """Clean up resources."""
-        if self.session:
-            await self.session.close()
-    
-    async def stream_files(self, path: str = "") -> AsyncIterator[FileMetadata]:
-        """Stream files for large directories."""
-        # TODO: Implement streaming for large SharePoint libraries
-        files = await self.list_files(path)
-        for file in files:
-            yield file
+        pass
