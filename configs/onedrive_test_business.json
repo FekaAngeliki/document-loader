@@ -1,0 +1,9 @@
+[
+  {
+    "type": "onedrive",
+    "user_id": "",
+    "root_folder": "/sites/NBG-DM-22533-ChatbotPlatformASKHRusecase-365grp/Shared Documents/General/Chatbot - NBG",
+    "recursive": true,
+    "account_type": "business"
+  }
+]

@@ -1,0 +1,16 @@
+[
+  {
+  "name": "978_Portal_Demo",
+  "site_id": "1690e4a1-35b6-40a8-91f4-2b4a15d0d6e6",
+  "site_url": "https://groupnbg.sharepoint.com/sites/978_Portal_Demo",
+  "path": "/sites/Engineering/Shared Documents",
+  "recursive": true
+  },
+  {
+    "name": "Ask_HR",
+    "site_id": "e44311ad-e1db-4d3e-8496-a745e5a0418f",
+    "site_url": "https://groupnbg.sharepoint.com/sites/Ask_HR",
+    "path": "/sites/Marketing/Shared Documents/Events",
+    "recursive": true
+  }
+]
