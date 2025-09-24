@@ -200,7 +200,7 @@ def create_multi_kb(config_file: str, config_name: str, validate_only: bool, for
             click.echo(f"🗄️  RAG Container: {multi_kb.rag_config.get('azure_storage_container_name', 'default')}")
             
             # Save configuration for reference
-            config_save_path = Path(f"multi_source_configs/{multi_kb.name}.json")
+            config_save_path = Path(f"configs/{multi_kb.name}.json")
             config_save_path.parent.mkdir(exist_ok=True)
             with open(config_save_path, 'w') as f:
                 json.dump(config, f, indent=2)
@@ -1496,7 +1496,7 @@ def delete_multi_kb(config_file: str, name: str, force: bool):
             click.echo(f"   🔄 Deleted {len(deleted_compat_kbs)} compatibility KBs")
             
             # Clean up saved configuration
-            config_save_path = Path(f"multi_source_configs/{kb_name}.json")
+            config_save_path = Path(f"configs/{kb_name}.json")
             if config_save_path.exists():
                 config_save_path.unlink()
                 click.echo(f"   🗑️  Removed saved configuration: {config_save_path}")
