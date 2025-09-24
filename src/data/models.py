@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from enum import Enum
 
 class SyncRunStatus(Enum):
@@ -58,6 +58,16 @@ class FileRecord:
     status: str = FileStatus.NEW.value
     error_message: Optional[str] = None
     created_at: Optional[datetime] = None
+    source_id: Optional[str] = None
+    source_type: Optional[str] = None
+    source_path: Optional[str] = None
+    content_type: Optional[str] = None
+    source_metadata: Optional[Dict[str, Any]] = None
+    rag_metadata: Optional[Dict[str, Any]] = None
+    tags: Optional[List[str]] = None
+    source_created_at: Optional[datetime] = None
+    source_modified_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 @dataclass
 class SourceType:

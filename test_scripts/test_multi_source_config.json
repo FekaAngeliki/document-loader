@@ -1,0 +1,44 @@
+{
+  "name": "test-multi-knowledge-base",
+  "description": "Test multi-source knowledge base for validation",
+  "rag_type": "mock",
+  "rag_config": {},
+  "sources": [
+    {
+      "source_id": "test_filesystem_1",
+      "source_type": "file_system",
+      "source_config": {
+        "root_path": "test_scripts/test_data/source1",
+        "include_extensions": [".txt", ".md"],
+        "recursive": true
+      },
+      "enabled": true,
+      "metadata_tags": {
+        "source_system": "file_system",
+        "department": "test_dept_1"
+      }
+    },
+    {
+      "source_id": "test_filesystem_2", 
+      "source_type": "file_system",
+      "source_config": {
+        "root_path": "test_scripts/test_data/source2",
+        "include_extensions": [".txt", ".pdf"],
+        "recursive": true
+      },
+      "enabled": true,
+      "metadata_tags": {
+        "source_system": "file_system",
+        "department": "test_dept_2"
+      }
+    }
+  ],
+  "file_organization": {
+    "naming_convention": "{source_id}/{uuid}{extension}",
+    "folder_structure": "source_based"
+  },
+  "sync_strategy": {
+    "default_mode": "parallel",
+    "rate_limiting": true
+  }
+}

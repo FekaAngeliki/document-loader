@@ -1,0 +1,1 @@
+# Admin module for configuration management

@@ -1,9 +1,0 @@
-[
-  {
-    "type": "onedrive",
-    "user_id": "me",
-    "root_folder": "/Documents/STAGING_PLACE",
-    "recursive": true,
-    "account_type": "business"
-  }
-]

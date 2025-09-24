@@ -1,0 +1,82 @@
+{
+  "name": "hr-knowledge-base",
+  "description": "Knowledge base with Sharepoint sources for HR Chatbot",
+  "rag_type": "DEV",
+  "rag_config": {
+    "storage_path": "/tmp/mixed_rag_storage"
+  },
+  "sources": [
+    {
+      "source_id": "hr_demo_sharepoint",
+      "source_type": "enterprise_sharepoint",
+      "enabled": true,
+      "source_config": {
+        "site_url": "https://company.sharepoint.com/sites/finance",
+        "document_library": "Financial Documents",
+        "folder_path": "/Budget Reports",
+        "include_extensions": [".xlsx", ".pdf", ".docx"],
+        "recursive": true,
+        "auth_method": "service_principal",
+        "client_id": "${SHAREPOINT_CLIENT_ID}",
+        "client_secret": "${SHAREPOINT_CLIENT_SECRET}",
+        "tenant_id": "${SHAREPOINT_TENANT_ID}"
+      },
+      "metadata_tags": {
+        "department": "Finance",
+        "source_system": "sharepoint",
+        "content_type": "financial_documents",
+        "security_level": "confidential"
+      },
+      "sync_schedule": "0 3 * * *"
+    },
+    {
+      "source_id": "legal_sharepoint",
+      "source_type": "enterprise_sharepoint", 
+      "enabled": true,
+      "source_config": {
+        "site_url": "https://company.sharepoint.com/sites/legal",
+        "document_library": "Legal Documents",
+        "folder_path": "/Contracts",
+        "include_extensions": [".pdf", ".docx"],
+        "recursive": true,
+        "auth_method": "service_principal",
+        "client_id": "${SHAREPOINT_CLIENT_ID}",
+        "client_secret": "${SHAREPOINT_CLIENT_SECRET}",
+        "tenant_id": "${SHAREPOINT_TENANT_ID}"
+      },
+      "metadata_tags": {
+        "department": "Legal",
+        "source_system": "sharepoint",
+        "content_type": "legal_documents",
+        "security_level": "restricted"
+      },
+      "sync_schedule": "0 4 * * 1"
+    },
+    {
+      "source_id": "archive_file_system",
+      "source_type": "file_system",
+      "enabled": true,
+      "source_config": {
+        "root_path": "test_scripts/test_data/source2",
+        "include_extensions": [".txt", ".pdf"],
+        "recursive": true
+      },
+      "metadata_tags": {
+        "department": "Archive",
+        "source_system": "filesystem", 
+        "content_type": "archived_documents",
+        "security_level": "internal"
+      },
+      "sync_schedule": "0 5 * * 0"
+    }
+  ],
+  "file_organization": {
+    "naming_convention": "{source_id}/{department}/{uuid}{extension}",
+    "folder_structure": "source_based"
+  },
+  "sync_strategy": {
+    "default_mode": "parallel",
+    "batch_size": 50,
+    "max_retries": 3
+  }
+}

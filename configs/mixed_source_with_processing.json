@@ -1,0 +1,56 @@
+{
+  "name": "hr-kb-with-processing",
+  "source_type": "mixed_source",
+  "rag_type": "mock",
+  "rag_config": {},
+  "exclude_extensions": [".ppt", ".pptx"],
+  "processing_pipeline": {
+    "enabled": true,
+    "queue_extensions": [".ppt", ".pptx"],
+    "processors": {
+      ".ppt": "ppt_to_text_converter",
+      ".pptx": "pptx_to_markdown_converter"
+    },
+    "output_format": ".md",
+    "processing_dir": "/tmp/document_processing",
+    "processed_dir": "/processed_docs"
+  },
+  "sources": [
+    {
+      "source_id": "hr_sharepoint",
+      "source_type": "enterprise_sharepoint",
+      "enabled": true,
+      "source_config": {
+        "site_url": "https://groupnbg.sharepoint.com/sites/Ask_HR",
+        "site_id": "e44311ad-e1db-4d3e-8496-a745e5a0418f",
+        "document_libraries": [
+          "/sites/Ask_HR/chatbot ask hr"
+        ],
+        "include_extensions": [".pdf", ".docx", ".txt", ".md"],
+        "lists": [],
+        "site_pages": false,
+        "recursive": true
+      },
+      "metadata_tags": {
+        "department": "HR",
+        "source_system": "sharepoint",
+        "content_type": "hr_documents"
+      }
+    },
+    {
+      "source_id": "hr_file_system",
+      "source_type": "file_system",
+      "enabled": true,
+      "source_config": {
+        "root_path": "/home/user/hr_documents",
+        "include_extensions": [".txt", ".md", ".pdf"],
+        "exclude_patterns": ["temp/*", "*.tmp", ".*"]
+      },
+      "metadata_tags": {
+        "department": "HR",
+        "source_system": "file_system",
+        "content_type": "hr_documents"
+      }
+    }
+  ]
+}

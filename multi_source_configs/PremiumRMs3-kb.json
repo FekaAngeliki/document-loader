@@ -1,0 +1,43 @@
+{
+  "name": "PremiumRMs3-kb",
+  "description": "Knowledge Base for Premium RMs",
+  "rag_type": "file_system_storage",
+  "rag_config": {
+    "storage_path": "/mnt/c/Users/E41297/Documents/NBG/sharepoint-files/premium-rms3"
+  },
+  "sources": [
+    {
+      "source_id": "Sharepoint_1",
+      "source_type": "enterprise_sharepoint",
+      "source_config": {
+        "tenant_id": "${SHAREPOINT_TENANT_ID}",
+        "client_id": "${SHAREPOINT_CLIENT_ID}",
+        "client_secret": "${SHAREPOINT_CLIENT_SECRET}",
+        "site_url": "https://groupnbg.sharepoint.com/sites/div991secb",
+        "site_id": "6f63c8f0-aa51-4681-8da5-5d48f6255f69",
+        "include_libraries": true,
+        "include_lists": false,
+        "include_site_pages": false,
+        "include_extensions": [
+          ".pdf",
+          ".doc",
+          ".docx"
+        ],
+        "recursive": true
+      },
+      "metadata_tags": {
+        "source_system": "sharepoint",
+        "department": "Premium RMs",
+        "site_url": "https://groupnbg.sharepoint.com/sites/div991secb"
+      }
+    }
+  ],
+  "file_organization": {
+    "naming_convention": "{source_id}/{uuid}{extension}",
+    "folder_structure": "source_based"
+  },
+  "sync_strategy": {
+    "default_mode": "parallel",
+    "rate_limiting": true
+  }
+}

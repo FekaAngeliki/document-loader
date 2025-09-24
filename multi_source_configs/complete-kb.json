@@ -1,0 +1,81 @@
+{
+  "name": "complete-kb",
+  "description": "Multi-source knowledge base: complete-kb",
+  "rag_type": "azure_blob",
+  "rag_config": {
+    "azure_tenant_id": "${AZURE_TENANT_ID}",
+    "azure_subscription_id": "${AZURE_SUBSCRIPTION_ID}",
+    "azure_client_id": "${AZURE_CLIENT_ID}",
+    "azure_client_secret": "${AZURE_CLIENT_SECRET}",
+    "azure_resource_group_name": "${AZURE_RESOURCE_GROUP_NAME}",
+    "azure_storage_account_name": "${AZURE_STORAGE_ACCOUNT_NAME}",
+    "azure_storage_container_name": "complete-container"
+  },
+  "sources": [
+    {
+      "source_id": "sharepoint_1",
+      "source_type": "enterprise_sharepoint",
+      "source_config": {
+        "tenant_id": "${SHAREPOINT_TENANT_ID}",
+        "client_id": "${SHAREPOINT_CLIENT_ID}",
+        "client_secret": "${SHAREPOINT_CLIENT_SECRET}",
+        "site_url": "https://company.sharepoint.com/sites/hr",
+        "include_libraries": true,
+        "include_lists": true,
+        "include_site_pages": false,
+        "include_extensions": [
+          ".pdf",
+          ".docx",
+          ".xlsx",
+          ".pptx"
+        ],
+        "recursive": true
+      },
+      "metadata_tags": {
+        "source_system": "sharepoint",
+        "site_url": "https://company.sharepoint.com/sites/hr"
+      }
+    },
+    {
+      "source_id": "filesystem_1",
+      "source_type": "file_system",
+      "source_config": {
+        "root_path": "/home/user/documents",
+        "include_extensions": [
+          ".pdf",
+          ".docx",
+          ".xlsx",
+          ".txt",
+          ".md"
+        ],
+        "recursive": true
+      },
+      "metadata_tags": {
+        "source_system": "file_system",
+        "root_path": "/home/user/documents"
+      }
+    },
+    {
+      "source_id": "onedrive_1",
+      "source_type": "onedrive",
+      "source_config": {
+        "user_id": "user@company.com",
+        "root_folder": "/Documents",
+        "recursive": true,
+        "account_type": "business"
+      },
+      "metadata_tags": {
+        "source_system": "onedrive",
+        "user_id": "user@company.com"
+      }
+    }
+  ],
+  "file_organization": {
+    "naming_convention": "{source_id}/{uuid}{extension}",
+    "folder_structure": "source_based"
+  },
+  "sync_strategy": {
+    "default_mode": "parallel",
+    "rate_limiting": true
+  }
+}

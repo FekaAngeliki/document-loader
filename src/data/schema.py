@@ -32,7 +32,7 @@ def create_schema_sql():
         original_uri TEXT NOT NULL,
         rag_uri TEXT NOT NULL,
         file_hash VARCHAR(64) NOT NULL,
-        uuid_filename VARCHAR(40) NOT NULL,
+        uuid_filename VARCHAR(100) NOT NULL,
         upload_time TIMESTAMP NOT NULL,
         file_size BIGINT NOT NULL,
         status VARCHAR(20) NOT NULL,

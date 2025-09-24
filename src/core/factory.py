@@ -11,6 +11,8 @@ class SourceFactory:
         self.sources = {
             "file_system": "src.implementations.file_system_source.FileSystemSource",
             "sharepoint": "src.implementations.sharepoint_source.SharePointSource",
+            "enterprise_sharepoint": "src.implementations.enterprise_sharepoint_source.EnterpriseSharePointSource",
+            "mixed_source": "src.implementations.mixed_source.MixedSource",
             # Add more source types here as they are implemented
         }
     
@@ -57,7 +59,13 @@ class Factory:
     
     async def create_source(self, source_type: str, config: Dict[str, Any]) -> FileSource:
         """Create a file source instance."""
-        return self.source_factory.create(source_type, config)
+        source = self.source_factory.create(source_type, config)
+        
+        # Set repository for sources that support delta sync
+        if hasattr(source, 'set_repository'):
+            source.set_repository(self.repository)
+        
+        return source
     
     async def create_rag(self, rag_type: str, config: Dict[str, Any]) -> RAGSystem:
         """Create a RAG system instance."""

@@ -1,0 +1,81 @@
+{
+  "name": "complete-kb",
+  "sources": [
+    {
+      "source_id": "sharepoint_1",
+      "source_type": "enterprise_sharepoint",
+      "metadata_tags": {
+        "site_url": "https://company.sharepoint.com/sites/hr",
+        "source_system": "sharepoint"
+      },
+      "source_config": {
+        "site_url": "https://company.sharepoint.com/sites/hr",
+        "client_id": "${SHAREPOINT_CLIENT_ID}",
+        "recursive": true,
+        "tenant_id": "${SHAREPOINT_TENANT_ID}",
+        "client_secret": "${SHAREPOINT_CLIENT_SECRET}",
+        "include_lists": true,
+        "include_libraries": true,
+        "include_extensions": [
+          ".pdf",
+          ".docx",
+          ".xlsx",
+          ".pptx"
+        ],
+        "include_site_pages": false
+      }
+    },
+    {
+      "source_id": "filesystem_1",
+      "source_type": "file_system",
+      "metadata_tags": {
+        "root_path": "/home/user/documents",
+        "source_system": "file_system"
+      },
+      "source_config": {
+        "recursive": true,
+        "root_path": "/home/user/documents",
+        "include_extensions": [
+          ".pdf",
+          ".docx",
+          ".xlsx",
+          ".txt",
+          ".md"
+        ]
+      }
+    },
+    {
+      "source_id": "onedrive_1",
+      "source_type": "onedrive",
+      "metadata_tags": {
+        "user_id": "user@company.com",
+        "source_system": "onedrive"
+      },
+      "source_config": {
+        "user_id": "user@company.com",
+        "recursive": true,
+        "root_folder": "/Documents",
+        "account_type": "business"
+      }
+    }
+  ],
+  "rag_type": "azure_blob",
+  "rag_config": {
+    "azure_client_id": "${AZURE_CLIENT_ID}",
+    "azure_tenant_id": "${AZURE_TENANT_ID}",
+    "azure_client_secret": "${AZURE_CLIENT_SECRET}",
+    "azure_subscription_id": "${AZURE_SUBSCRIPTION_ID}",
+    "azure_resource_group_name": "${AZURE_RESOURCE_GROUP_NAME}",
+    "azure_storage_account_name": "${AZURE_STORAGE_ACCOUNT_NAME}",
+    "azure_storage_container_name": "complete-container"
+  },
+  "description": "Multi-source knowledge base: complete-kb",
+  "sync_strategy": {
+    "default_mode": "parallel",
+    "rate_limiting": true
+  },
+  "file_organization": {
+    "folder_structure": "source_based",
+    "naming_convention": "{source_id}/{uuid}{extension}"
+  }
+}

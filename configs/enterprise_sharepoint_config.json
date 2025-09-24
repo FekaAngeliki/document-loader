@@ -1,0 +1,55 @@
+{
+  "name": "enterprise-sharepoint-kb",
+  "source_type": "enterprise_sharepoint",
+  "source_config": {
+    "tenant_id": "${SHAREPOINT_TENANT_ID}",
+    "client_id": "${SHAREPOINT_CLIENT_ID}",
+    "client_secret": "${SHAREPOINT_CLIENT_SECRET}",
+    "sites": [
+      {
+        "site_url": "https://yourorg.sharepoint.com/sites/hr",
+        "department": "HR",
+        "include_libraries": true,
+        "include_lists": true,
+        "include_site_pages": false,
+        "library_filters": ["Shared Documents", "Policies", "Forms"],
+        "list_filters": ["Employee Records", "Training Records"]
+      },
+      {
+        "site_url": "https://yourorg.sharepoint.com/sites/finance",
+        "department": "Finance", 
+        "include_libraries": true,
+        "include_lists": true,
+        "include_site_pages": false,
+        "library_filters": ["Financial Reports", "Budgets"],
+        "list_filters": ["Invoice Tracking", "Budget Approvals"]
+      },
+      {
+        "site_url": "https://yourorg.sharepoint.com/sites/marketing",
+        "department": "Marketing",
+        "include_libraries": true,
+        "include_lists": false,
+        "include_site_pages": true,
+        "library_filters": ["Campaign Assets", "Brand Guidelines"]
+      }
+    ],
+    "include_extensions": [".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".md"],
+    "exclude_extensions": [".tmp", ".log", ".bak"],
+    "exclude_patterns": ["~$*", "*.tmp*", "*/_vti_*"],
+    "recursive": true,
+    "batch_size": 50,
+    "max_retries": 3,
+    "timeout": 30,
+    "rate_limit_delay": 1.0
+  },
+  "rag_type": "azure_blob", 
+  "rag_config": {
+    "azure_tenant_id": "${AZURE_TENANT_ID}",
+    "azure_subscription_id": "${AZURE_SUBSCRIPTION_ID}",
+    "azure_client_id": "${AZURE_CLIENT_ID}",
+    "azure_client_secret": "${AZURE_CLIENT_SECRET}",
+    "azure_resource_group_name": "${AZURE_RESOURCE_GROUP_NAME}",
+    "azure_storage_account_name": "${AZURE_STORAGE_ACCOUNT_NAME}",
+    "azure_storage_container_name": "sharepoint-documents"
+  }
+}

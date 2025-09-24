@@ -1,0 +1,37 @@
+{
+  "name": "InternalAudit-kb",
+  "description": "Knowledge Base for Internal Audit",
+  "rag_type": "mock",
+  "rag_config": {},
+  "sources": [
+    {
+      "source_id": "Sharepoint_1",
+      "source_type": "enterprise_sharepoint",
+      "source_config": {
+        "tenant_id": "${SHAREPOINT_TENANT_ID}",
+        "client_id": "${SHAREPOINT_CLIENT_ID}",
+        "client_secret": "${SHAREPOINT_CLIENT_SECRET}",
+        "site_url": "https://groupnbg.sharepoint.com/sites/NBGInternalAuditDivision",
+        "site_id": "ba00c686-567e-41e8-b320-2d54f35bfe54",
+        "include_libraries": true,
+        "include_lists": false,
+        "include_site_pages": false,
+        "include_extensions": [".pdf"],
+        "recursive": true
+      },
+      "metadata_tags": {
+        "source_system": "sharepoint",
+        "department": "Internal Audit",
+        "site_url": "https://groupnbg.sharepoint.com/sites/NBGInternalAuditDivision"
+      }
+    }
+  ],
+  "file_organization": {
+    "naming_convention": "{source_id}/{uuid}{extension}",
+    "folder_structure": "source_based"
+  },
+  "sync_strategy": {
+    "default_mode": "parallel",
+    "rate_limiting": true
+  }
+}

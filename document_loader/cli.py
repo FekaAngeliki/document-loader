@@ -10,6 +10,10 @@ import json
 import sys
 import os
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from rich.console import Console
 from rich.table import Table
@@ -28,12 +32,18 @@ from src.data.database import Database, DatabaseConfig
 from src.data.repository import Repository
 from src.data.repository_ext import ExtendedRepository
 from src.data.models import KnowledgeBase, SyncRunStatus
+from src.cli.multi_source_commands import multi_source
 from src.core.batch_runner import BatchRunner
 from src.core.scanner import FileScanner
 from src.data.schema import create_schema_sql
 from src.core.factory import SourceFactory, RAGFactory
 from src.cli.params import init_params, get_params, update_params
 from src.core.logging_config import configure_app_logging
+from src.admin.config_manager import create_config_manager
+from src.data.multi_source_models import create_multi_source_kb_from_config
+from src.data.multi_source_repository import MultiSourceRepository
+from src.cli.validation_helpers import validate_and_confirm_kb_creation, validate_and_confirm_db_creation, get_user_confirmation
+from src.data.update_validators import validate_kb_update
 
 # Setup rich console
 console = Console()
@@ -291,10 +301,25 @@ def init_db(create_db: bool):
 
 @cli.command()
 @click.option('--no-schema', is_flag=True, help='Create database without schema')
-def create_db(no_schema: bool):
+@click.option('--force', is_flag=True, help='Skip validation checks and create without confirmation')
+def create_db(no_schema: bool, force: bool):
     """Create the database and schema if they don't exist."""
     async def run_create():
         config = DatabaseConfig()
+        
+        # Validate database creation
+        if not await validate_and_confirm_db_creation(config.database, config, force):
+            console.print("[red]❌ Database creation cancelled due to validation errors.[/red]")
+            return
+        
+        # Get user confirmation unless forced
+        if not force:
+            if not get_user_confirmation(
+                f"create database '{config.database}'",
+                f"This will create a new PostgreSQL database on {config.host}:{config.port}"
+            ):
+                console.print("[yellow]Operation cancelled by user.[/yellow]")
+                return
         
         console.print("[yellow]Creating database...[/yellow]")
         console.print(f"\n[cyan]Configuration:[/cyan]")
@@ -556,7 +581,7 @@ def list_kb():
                 "kb_name": "knowledge-base-name",       # Subdirectory name
                 "create_dirs": true,                    # Auto-create directories (default: true)
                 "preserve_structure": false,            # Keep original structure (default: false)
-                "metadata_format": "json"               # Metadata format: "json" or "yaml" (default: "json")
+                "metadata_format": "json"               # Metadata format: "json" or "yaml" (default: "json")"
               }
               
               \b
@@ -573,7 +598,8 @@ def list_kb():
               
               For "mock": {} (empty)
               ''')
-def create_kb(name: str, source_type: str, source_config: str, rag_type: str, rag_config: str):
+@click.option('--force', is_flag=True, help='Skip validation checks and create without confirmation')
+def create_kb(name: str, source_type: str, source_config: str, rag_type: str, rag_config: str, force: bool):
     """Create a new knowledge base.
     
     Examples:
@@ -609,41 +635,38 @@ def create_kb(name: str, source_type: str, source_config: str, rag_type: str, ra
         try:
             repository = Repository(db)
             
-            # Parse configurations
-            try:
-                source_config_dict = json.loads(source_config)
-                rag_config_dict = json.loads(rag_config)
-            except json.JSONDecodeError as e:
-                console.print(f"[red]Error parsing JSON configuration: {e}[/red]")
-                await db.disconnect()
+            # Validate and get user confirmation
+            kb_config = await validate_and_confirm_kb_creation(
+                name, source_type, source_config, rag_type, rag_config, repository, force
+            )
+            
+            if not kb_config:
+                console.print("[red]❌ Knowledge base creation cancelled due to validation errors.[/red]")
                 return
             
-            # Display configuration for confirmation
-            console.print(Panel.fit(
-                f"[bold]Creating Knowledge Base[/bold]\n\n"
-                f"Name: [green]{name}[/green]\n"
-                f"Source Type: [blue]{source_type}[/blue]\n"
-                f"RAG Type: [blue]{rag_type}[/blue]",
-                title="Configuration",
-                border_style="blue"
-            ))
+            # Get user confirmation unless forced
+            if not force:
+                if not get_user_confirmation(
+                    f"create knowledge base '{name}'",
+                    "This will create a new knowledge base entry in the database."
+                ):
+                    console.print("[yellow]Operation cancelled by user.[/yellow]")
+                    return
             
-            console.print("\n[bold]Source Configuration:[/bold]")
-            syntax = Syntax(json.dumps(source_config_dict, indent=2), "json", theme="monokai")
-            console.print(syntax)
-            
+            # Create knowledge base from first source (backwards compatibility)
+            source_def = kb_config['sources'][0]
             kb = KnowledgeBase(
                 name=name,
-                source_type=source_type,
-                source_config=source_config_dict,
-                rag_type=rag_type,
-                rag_config=rag_config_dict
+                source_type=source_def['source_type'],
+                source_config=source_def['source_config'],
+                rag_type=kb_config['rag_type'],
+                rag_config=kb_config['rag_config']
             )
             
             with console.status("[bold green]Creating knowledge base..."):
                 kb_id = await repository.create_knowledge_base(kb)
             
-            console.print(f"\n[green]✓[/green] Created knowledge base '[bold]{name}[/bold]' with ID {kb_id}")
+            console.print(f"\n[green]✅ Created knowledge base '[bold]{name}[/bold]' with ID {kb_id}[/green]")
             
         except asyncpg.exceptions.UndefinedTableError as e:
             console.print(f"[red]Database tables are not initialized.[/red]")
@@ -664,59 +687,32 @@ def create_kb(name: str, source_type: str, source_config: str, rag_type: str, ra
               help='New source type. Available options: file_system, sharepoint')
 @click.option('--source-config', 
               help='New source configuration as JSON')
-@click.option('--rag-type', 
-              help='New RAG system type. Available options: mock, azure_blob, file_system_storage')
-@click.option('--rag-config', 
-              help='''New RAG configuration as JSON. Structure depends on rag-type:
-              
-              \b
-              For "file_system_storage":
-              {
-                "storage_path": "/path/to/storage",     # Base directory for documents
-                "kb_name": "knowledge-base-name",       # Subdirectory name
-                "create_dirs": true,                    # Auto-create directories (default: true)
-                "preserve_structure": false,            # Keep original structure (default: false)
-                "metadata_format": "json"               # Metadata format: "json" or "yaml" (default: "json")
-              }
-              
-              \b
-              For "azure_blob":
-              {
-                "azure_tenant_id": "...",              # Or use env: AZURE_TENANT_ID
-                "azure_subscription_id": "...",        # Or use env: AZURE_SUBSCRIPTION_ID  
-                "azure_client_id": "...",              # Or use env: AZURE_CLIENT_ID
-                "azure_client_secret": "...",          # Or use env: AZURE_CLIENT_SECRET
-                "azure_resource_group_name": "...",    # Or use env: AZURE_RESOURCE_GROUP_NAME
-                "azure_storage_account_name": "...",   # Or use env: AZURE_STORAGE_ACCOUNT_NAME
-                "azure_storage_container_name": "..."  # Or use env: AZURE_STORAGE_CONTAINER_NAME
-              }
-              
-              For "mock": {} (empty)
-              ''')
-def update_kb(name: str, source_type: str, source_config: str, rag_type: str, rag_config: str):
-    """Update an existing knowledge base configuration.
+def update_kb(name: str, source_type: str, source_config: str):
+    """Update source configuration of an existing knowledge base.
+    
+    Note: RAG type and RAG configuration are immutable and cannot be changed.
+    Only source type and source configuration can be updated.
     
     Examples:
     
     \b
-    # Update RAG type to file system storage:
+    # Update source type only:
     document-loader update-kb \\
       --name "my-docs" \\
-      --rag-type "file_system_storage" \\
-      --rag-config '{"storage_path": "/path/to/storage", "kb_name": "my-docs"}'
+      --source-type "sharepoint"
     
     \b
-    # Update RAG type to Azure Blob:
-    document-loader update-kb \\
-      --name "my-docs" \\
-      --rag-type "azure_blob" \\
-      --rag-config '{}'
-    
-    \b
-    # Update source configuration:
+    # Update source configuration only:
     document-loader update-kb \\
       --name "my-docs" \\
       --source-config '{"root_path": "/new/path/to/documents"}'
+    
+    \b
+    # Update both source type and configuration:
+    document-loader update-kb \\
+      --name "my-docs" \\
+      --source-type "file_system" \\
+      --source-config '{"root_path": "/updated/path/to/documents"}'
     """
     async def run_update():
         db = await get_database()
@@ -733,12 +729,6 @@ def update_kb(name: str, source_type: str, source_config: str, rag_type: str, ra
             updates = {}
             
             if source_type:
-                # Validate source type exists
-                valid_source_types = await repository.get_source_types()
-                if source_type not in [st['name'] for st in valid_source_types]:
-                    console.print(f"[red]Invalid source type: '{source_type}'[/red]")
-                    console.print(f"[yellow]Valid source types: {', '.join([st['name'] for st in valid_source_types])}[/yellow]")
-                    return
                 updates['source_type'] = source_type
             
             if source_config:
@@ -753,29 +743,17 @@ def update_kb(name: str, source_type: str, source_config: str, rag_type: str, ra
                     console.print(f"[red]Error parsing source config JSON: {e}[/red]")
                     return
             
-            if rag_type:
-                # Validate RAG type exists
-                valid_rag_types = await repository.get_rag_types()
-                if rag_type not in [rt['name'] for rt in valid_rag_types]:
-                    console.print(f"[red]Invalid RAG type: '{rag_type}'[/red]")
-                    console.print(f"[yellow]Valid RAG types: {', '.join([rt['name'] for rt in valid_rag_types])}[/yellow]")
-                    return
-                updates['rag_type'] = rag_type
-            
-            if rag_config:
-                try:
-                    rag_config_dict = json.loads(rag_config)
-                    # Basic validation - ensure it's a dictionary
-                    if not isinstance(rag_config_dict, dict):
-                        console.print(f"[red]RAG config must be a JSON object[/red]")
-                        return
-                    updates['rag_config'] = rag_config_dict
-                except json.JSONDecodeError as e:
-                    console.print(f"[red]Error parsing RAG config JSON: {e}[/red]")
-                    return
+            # Validate updates
+            validation_result = await validate_kb_update(name, updates, repository)
+            if not validation_result.is_valid:
+                console.print(f"\n[red]❌ Update validation failed:[/red]")
+                for error in validation_result.errors:
+                    console.print(f"  - {error.field}: {error.message}")
+                return
             
             if not updates:
-                console.print("[yellow]No updates provided[/yellow]")
+                console.print("[yellow]No updates provided. Use --source-type or --source-config[/yellow]")
+                console.print("[dim]Note: RAG type and RAG config are immutable and cannot be updated[/dim]")
                 return
             
             # Display current configuration
@@ -783,7 +761,7 @@ def update_kb(name: str, source_type: str, source_config: str, rag_type: str, ra
                 f"[bold]Current Configuration[/bold]\n\n"
                 f"Name: [green]{kb.name}[/green]\n"
                 f"Source Type: [blue]{kb.source_type}[/blue]\n"
-                f"RAG Type: [blue]{kb.rag_type}[/blue]",
+                f"RAG Type: [blue]{kb.rag_type}[/blue] [dim](immutable)[/dim]",
                 title="Knowledge Base",
                 border_style="blue"
             ))
@@ -795,12 +773,6 @@ def update_kb(name: str, source_type: str, source_config: str, rag_type: str, ra
             if 'source_config' in updates:
                 console.print("  Source Config: [green]Updated[/green]")
                 syntax = Syntax(json.dumps(updates['source_config'], indent=2), "json", theme="monokai")
-                console.print(syntax)
-            if 'rag_type' in updates:
-                console.print(f"  RAG Type: [red]{kb.rag_type}[/red] → [green]{updates['rag_type']}[/green]")
-            if 'rag_config' in updates:
-                console.print("  RAG Config: [green]Updated[/green]")
-                syntax = Syntax(json.dumps(updates['rag_config'], indent=2), "json", theme="monokai")
                 console.print(syntax)
             
             # Confirm update
@@ -829,6 +801,118 @@ def update_kb(name: str, source_type: str, source_config: str, rag_type: str, ra
             await db.disconnect()
     
     asyncio.run(run_update())
+
+@cli.command()
+@click.argument('name')
+@click.option('--force', is_flag=True, help='Skip confirmation prompt')
+def delete_kb(name: str, force: bool):
+    """Delete a knowledge base and all its associated data.
+    
+    This command will delete:
+    - The knowledge base configuration
+    - All sync run history
+    - All file records for this knowledge base
+    
+    Examples:
+    
+    \b
+    # Delete with confirmation prompt
+    document-loader delete-kb "my-kb"
+    
+    \b
+    # Delete without confirmation (use with caution)
+    document-loader delete-kb "my-kb" --force
+    """
+    async def run_delete():
+        db = await get_database()
+        try:
+            repository = Repository(db)
+            
+            # Check if KB exists
+            kb = await repository.get_knowledge_base_by_name(name)
+            if not kb:
+                console.print(f"[red]Knowledge base '{name}' not found[/red]")
+                return
+            
+            # Show KB info before deletion
+            console.print(Panel.fit(
+                f"[bold red]Deleting Knowledge Base[/bold red]\n\n"
+                f"Name: [yellow]{kb.name}[/yellow]\n"
+                f"Source Type: [blue]{kb.source_type}[/blue]\n"
+                f"RAG Type: [blue]{kb.rag_type}[/blue]\n"
+                f"Created: [green]{kb.created_at.strftime('%Y-%m-%d %H:%M') if kb.created_at else 'N/A'}[/green]",
+                title="⚠️  WARNING",
+                border_style="red"
+            ))
+            
+            # Get statistics about what will be deleted
+            try:
+                sync_runs = await db.fetch(
+                    "SELECT COUNT(*) as count FROM sync_run WHERE knowledge_base_id = $1",
+                    kb.id
+                )
+                file_records = await db.fetch(
+                    "SELECT COUNT(*) as count FROM file_record WHERE knowledge_base_id = $1", 
+                    kb.id
+                )
+                
+                sync_count = sync_runs[0]['count'] if sync_runs else 0
+                file_count = file_records[0]['count'] if file_records else 0
+                
+                console.print(f"\n[bold]This will delete:[/bold]")
+                console.print(f"  • Knowledge base configuration")
+                console.print(f"  • {sync_count} sync run records")
+                console.print(f"  • {file_count} file records")
+                console.print(f"\n[red]This action cannot be undone![/red]")
+                
+            except Exception as e:
+                console.print(f"[yellow]Warning: Could not get deletion statistics: {e}[/yellow]")
+            
+            # Confirmation
+            if not force:
+                if not click.confirm(f"\nAre you sure you want to delete knowledge base '{name}'?"):
+                    console.print("[yellow]Deletion cancelled[/yellow]")
+                    return
+            
+            # Perform deletion in transaction
+            with console.status("[bold red]Deleting knowledge base..."):
+                async with db.pool.acquire() as conn:
+                    async with conn.transaction():
+                        # Delete in correct order (due to foreign key constraints)
+                        
+                        # 1. Delete file records
+                        await conn.execute(
+                            "DELETE FROM file_record WHERE knowledge_base_id = $1",
+                            kb.id
+                        )
+                        
+                        # 2. Delete sync runs  
+                        await conn.execute(
+                            "DELETE FROM sync_run WHERE knowledge_base_id = $1",
+                            kb.id
+                        )
+                        
+                        # 3. Delete knowledge base
+                        await conn.execute(
+                            "DELETE FROM knowledge_base WHERE id = $1",
+                            kb.id
+                        )
+            
+            console.print(f"\n[green]✓[/green] Knowledge base '[bold]{name}[/bold]' has been deleted successfully")
+            console.print("[dim]All associated sync runs and file records have been removed[/dim]")
+            
+        except asyncpg.exceptions.UndefinedTableError as e:
+            console.print(f"[red]Database tables are not initialized.[/red]")
+            console.print("\n[yellow]The database exists but the schema hasn't been set up.[/yellow]")
+            console.print("\n[cyan]Please run one of these commands:[/cyan]")
+            console.print("  [cyan]document-loader create-db[/cyan]  # Will setup schema if database exists")
+            console.print("  [cyan]document-loader setup[/cyan]      # Setup schema only")
+        except Exception as e:
+            console.print(f"[red]Error deleting knowledge base: {str(e)}[/red]")
+        finally:
+            await db.disconnect()
+    
+    asyncio.run(run_delete())
 
 @cli.command()
 def setup():
@@ -1216,12 +1300,12 @@ def quickstart():
     commands = [
         ("1", "document-loader check-connection", "Verify database connectivity"),
         ("2", "document-loader create-db", "Create database with schema"),
-        ("3", "document-loader create-kb \\\n  --name my-kb \\\n  --source-type file_system \\\n  --source-config '{\"root_path\": \"/docs\"}' \\\n  --rag-type mock", "Create a knowledge base"),
-        ("4", "document-loader list-kb", "List all knowledge bases"),
-        ("5", "document-loader init-azure \\\n  --kb-name my-kb", "Initialize Azure resources\n(only for azure_blob RAG)"),
-        ("6", "document-loader update-kb \\\n  --name my-kb [options]", "Update configuration"),
-        ("7", "document-loader sync \\\n  --kb-name my-kb", "Sync documents to RAG"),
-        ("8", "document-loader --verbose sync \\\n  --kb-name my-kb", "Sync with debug output"),
+        ("3", "document-loader config upload \\\n  --file configs/my-config.json \\\n  --name my-config", "Upload config to PostgreSQL"),
+        ("4", "document-loader multi-source create-multi-kb \\\n  --config-name my-config", "Create multi-source knowledge base"),
+        ("5", "document-loader multi-source sync-multi-kb \\\n  --config-name my-config", "Sync documents from all sources"),
+        ("6", "document-loader multi-source status-multi-kb \\\n  --config-name my-config", "Check sync status and statistics"),
+        ("7", "document-loader config list", "List all stored configurations"),
+        ("8", "document-loader --verbose multi-source sync-multi-kb \\\n  --config-name my-config", "Sync with debug output"),
     ]
     
     for num, cmd, desc in commands:
@@ -1245,7 +1329,10 @@ def quickstart():
     console.print(Panel(
         "[bold]Available Source Types:[/bold]\n"
         "[green]file_system[/green] - Local file system\n"
-        "[blue]sharepoint[/blue] - SharePoint documents",
+        "[blue]sharepoint[/blue] - SharePoint documents\n"
+        "[blue]enterprise_sharepoint[/blue] - Enterprise SharePoint\n"
+        "[cyan]onedrive[/cyan] - OneDrive (personal/business)\n"
+        "[yellow]Multi-source:[/yellow] Combine multiple sources in one KB",
         title="Document Sources",
         border_style="green",
         expand=False
@@ -1254,16 +1341,589 @@ def quickstart():
     console.print("\n")
     console.print(Panel(
         "For detailed help on any command:\n"
-        "[yellow]document-loader <command> --help[/yellow]\n\n"
+        "[yellow]document-loader <command> --help[/yellow]\n"
+        "[yellow]document-loader multi-source --help[/yellow]\n"
+        "[yellow]document-loader config --help[/yellow]\n\n"
         "For verbose output (DEBUG logging):\n"
         "[yellow]document-loader --verbose <command>[/yellow]\n\n"
         "Examples:\n"
-        "[yellow]document-loader create-kb --help[/yellow]\n"
-        "[yellow]document-loader --verbose sync --kb-name my-kb[/yellow]",
+        "[yellow]document-loader multi-source create-multi-kb --help[/yellow]\n"
+        "[yellow]document-loader config upload --help[/yellow]\n"
+        "[yellow]document-loader --verbose multi-source sync-multi-kb --config-name my-config[/yellow]",
         title="Getting Help",
         border_style="cyan",
         expand=False
     ))
+
+# Configuration management commands
+@cli.command()
+@click.argument('config_file')
+@click.option('--name', help='Configuration name (defaults to filename)')
+@click.option('--description', help='Configuration description')
+@click.option('--created-by', help='Admin username (defaults to current user)')
+def upload_config(config_file: str, name: str, description: str, created_by: str):
+    """Upload a configuration file to PostgreSQL."""
+    async def run_upload():
+        try:
+            config_manager = await create_config_manager()
+            
+            console.print(f"[yellow]Uploading configuration: {config_file}[/yellow]")
+            
+            result = await config_manager.upload_config_file(
+                file_path=config_file,
+                name=name,
+                description=description,
+                created_by=created_by
+            )
+            
+            if result['status'] == 'unchanged':
+                console.print(f"[yellow]⚠️  {result['message']}[/yellow]")
+            else:
+                console.print(f"[green]✅ {result['message']}[/green]")
+                console.print(f"   Config ID: {result['config_id']}")
+                console.print(f"   Version: {result['version']}")
+                console.print(f"   Sources: {result['source_count']}")
+                console.print(f"   RAG Type: {result['rag_type']}")
+            
+        except Exception as e:
+            console.print(f"[red]❌ Upload failed: {e}[/red]")
+            raise SystemExit(1)
+    
+    asyncio.run(run_upload())
+
+@cli.command()
+@click.option('--status', default='active', type=click.Choice(['active', 'archived', 'draft']),
+              help='Configuration status to list')
+def list_configs(status: str):
+    """List all stored configurations."""
+    async def run_list():
+        try:
+            config_manager = await create_config_manager()
+            configs = await config_manager.list_configs(status)
+            
+            if not configs:
+                console.print(f"[yellow]No {status} configurations found[/yellow]")
+                return
+            
+            table = Table(
+                title=f"{status.upper()} CONFIGURATIONS",
+                style="cyan",
+                header_style="bold magenta",
+            )
+            table.add_column("Name", style="green")
+            table.add_column("Version", style="blue", justify="center")
+            table.add_column("Sources", style="blue", justify="center")
+            table.add_column("RAG Type", style="yellow")
+            table.add_column("Created By", style="white")
+            table.add_column("Deployed", style="white", justify="center")
+            
+            for config in configs:
+                deployed = "✅ Yes" if config['last_deployed_at'] else "⏸️  No"
+                table.add_row(
+                    config['name'],
+                    str(config['version']),
+                    str(config['source_count']),
+                    config['rag_type'],
+                    config['created_by'],
+                    deployed
+                )
+            
+            console.print(table)
+            console.print(f"\n[dim]Total: {len(configs)} configurations[/dim]")
+            
+        except Exception as e:
+            console.print(f"[red]❌ List failed: {e}[/red]")
+            raise SystemExit(1)
+    
+    asyncio.run(run_list())
+
+@cli.command()
+@click.argument('name')
+@click.option('--version', type=int, help='Specific version to show')
+@click.option('--show-full', is_flag=True, help='Show full configuration JSON')
+def show_config(name: str, version: int, show_full: bool):
+    """Show detailed configuration information."""
+    async def run_show():
+        try:
+            config_manager = await create_config_manager()
+            config = await config_manager.get_config(name, version)
+            
+            if not config:
+                version_text = f" version {version}" if version else ""
+                console.print(f"[red]❌ Configuration '{name}'{version_text} not found[/red]")
+                return
+            
+            console.print(Panel(
+                f"[bold green]{config['name']}[/bold green]\n\n"
+                f"[bold]Configuration:[/bold]\n"
+                f"Version: {config['version']}\n"
+                f"Status: {config['status']}\n"
+                f"Description: {config['description']}\n"
+                f"Created by: {config['created_by']}\n"
+                f"Created at: {config['created_at']}\n"
+                f"File hash: {config['file_hash'][:16]}...",
+                title="Configuration Details",
+                border_style="blue"
+            ))
+            
+            # Show configuration content
+            config_content = config['config_content']
+            console.print(f"\n[bold]Knowledge Base Config:[/bold]")
+            console.print(f"Name: [green]{config_content['name']}[/green]")
+            console.print(f"RAG Type: [blue]{config_content['rag_type']}[/blue]")
+            console.print(f"Sources: [yellow]{len(config_content['sources'])}[/yellow]")
+            
+            console.print(f"\n[bold]Sources:[/bold]")
+            for i, source in enumerate(config_content['sources'], 1):
+                enabled = "✅" if source.get('enabled', True) else "⏸️ "
+                console.print(f"  {i}. {enabled} {source['source_id']} ({source['source_type']})")
+                if 'metadata_tags' in source and 'department' in source['metadata_tags']:
+                    console.print(f"     Department: {source['metadata_tags']['department']}")
+            
+            if show_full:
+                console.print(f"\n[bold]Full Configuration:[/bold]")
+                syntax = Syntax(json.dumps(config_content, indent=2), "json", theme="monokai")
+                console.print(syntax)
+            
+        except Exception as e:
+            console.print(f"[red]❌ Show failed: {e}[/red]")
+            raise SystemExit(1)
+    
+    asyncio.run(run_show())
+
+@cli.command()
+@click.argument('name')
+@click.option('--version', type=int, help='Specific version to deploy')
+def deploy_config(name: str, version: int):
+    """Deploy a configuration to create a knowledge base."""
+    async def run_deploy():
+        try:
+            config_manager = await create_config_manager()
+            
+            # Get the configuration
+            config = await config_manager.get_config(name, version)
+            if not config:
+                version_text = f" version {version}" if version else ""
+                console.print(f"[red]❌ Configuration '{name}'{version_text} not found[/red]")
+                return
+            
+            console.print(f"[yellow]🚀 Deploying configuration: {config['name']} v{config['version']}[/yellow]")
+            
+            # Create database connection for multi-source repository
+            db_config = DatabaseConfig()
+            db = Database(db_config)
+            await db.connect()
+            
+            try:
+                # Create multi-source KB from config
+                config_content = config['config_content']
+                multi_kb = create_multi_source_kb_from_config(config_content)
+                
+                # Save to database
+                repo = MultiSourceRepository(db)
+                kb_id = await repo.create_multi_source_kb(multi_kb)
+                
+                # Mark config as deployed
+                await config_manager.mark_deployed(config['id'])
+                
+                console.print(f"[green]✅ Knowledge base created successfully![/green]")
+                console.print(f"   KB ID: {kb_id}")
+                console.print(f"   Name: {multi_kb.name}")
+                console.print(f"   Sources: {len(multi_kb.sources)}")
+                console.print(f"   Config marked as deployed")
+                
+            finally:
+                await db.disconnect()
+            
+        except Exception as e:
+            console.print(f"[red]❌ Deployment failed: {e}[/red]")
+            raise SystemExit(1)
+    
+    asyncio.run(run_deploy())
+
+@cli.command()
+@click.argument('name')
+@click.argument('output_file')
+@click.option('--version', type=int, help='Specific version to export')
+def export_config(name: str, output_file: str, version: int):
+    """Export a configuration to a file."""
+    async def run_export():
+        try:
+            config_manager = await create_config_manager()
+            
+            success = await config_manager.export_config(name, output_file, version)
+            
+            if success:
+                console.print(f"[green]✅ Configuration exported to: {output_file}[/green]")
+            else:
+                version_text = f" version {version}" if version else ""
+                console.print(f"[red]❌ Configuration '{name}'{version_text} not found[/red]")
+            
+        except Exception as e:
+            console.print(f"[red]❌ Export failed: {e}[/red]")
+            raise SystemExit(1)
+    
+    asyncio.run(run_export())
+
+@cli.command()
+@click.argument('name')
+@click.option('--version', type=int, help='Specific version to delete')
+@click.option('--force', is_flag=True, help='Skip confirmation')
+def delete_config(name: str, version: int, force: bool):
+    """Delete (archive) a configuration."""
+    async def run_delete():
+        try:
+            if not force:
+                version_text = f" version {version}" if version else ""
+                if not click.confirm(f"Are you sure you want to delete '{name}'{version_text}?"):
+                    console.print("[yellow]❌ Delete cancelled[/yellow]")
+                    return
+            
+            config_manager = await create_config_manager()
+            success = await config_manager.delete_config(name, version)
+            
+            if success:
+                version_text = f" version {version}" if version else ""
+                console.print(f"[green]✅ Configuration '{name}'{version_text} archived[/green]")
+            else:
+                console.print(f"[red]❌ Configuration not found[/red]")
+            
+        except Exception as e:
+            console.print(f"[red]❌ Delete failed: {e}[/red]")
+            raise SystemExit(1)
+    
+    asyncio.run(run_delete())
+
+@cli.command()
+def config_summary():
+    """Show configuration management summary."""
+    async def run_summary():
+        try:
+            config_manager = await create_config_manager()
+            summary = await config_manager.get_config_summary()
+            
+            console.print(Panel(
+                f"[bold]Configuration Summary[/bold]\n\n"
+                f"Total configurations: {summary.get('total_configs', 0)}\n"
+                f"Active configurations: {summary.get('active_configs', 0)}\n"
+                f"Archived configurations: {summary.get('archived_configs', 0)}\n"
+                f"Deployed configurations: {summary.get('deployed_configs', 0)}\n"
+                f"Average deployments: {summary.get('avg_deployments', 0):.1f}\n" +
+                (f"Latest upload: {summary['latest_upload']}" if summary.get('latest_upload') else ""),
+                title="📊 Configuration Statistics",
+                border_style="cyan"
+            ))
+            
+        except Exception as e:
+            console.print(f"[red]❌ Summary failed: {e}[/red]")
+            raise SystemExit(1)
+    
+    asyncio.run(run_summary())
+
+# SharePoint Discovery Commands
+
+@cli.command()
+@click.argument('site_url')
+@click.option('--tenant-id', help='Azure tenant ID (or use env: AZURE_TENANT_ID)')
+@click.option('--client-id', help='Azure client ID (or use env: AZURE_CLIENT_ID)')
+@click.option('--client-secret', help='Azure client secret (or use env: AZURE_CLIENT_SECRET)')
+@click.option('--username', help='SharePoint username')
+@click.option('--password', help='SharePoint password')
+@click.option('--output', help='Output file to save discovery results as JSON')
+@click.option('--verbose', is_flag=True, help='Show detailed information')
+def discover_sharepoint(site_url: str, tenant_id: str, client_id: str, client_secret: str, 
+                       username: str, password: str, output: str, verbose: bool):
+    """Discover SharePoint site information from a URL.
+    
+    This command analyzes a SharePoint site and discovers:
+    - Site metadata (ID, name, web ID)
+    - Document libraries and their contents
+    - Lists and their contents  
+    - Site pages
+    
+    Examples:
+    
+    \b
+    # Using service principal authentication:
+    document-loader discover-sharepoint \\
+      "https://company.sharepoint.com/sites/marketing" \\
+      --tenant-id "your-tenant-id" \\
+      --client-id "your-client-id" \\
+      --client-secret "your-secret"
+    
+    \b
+    # Using username/password:
+    document-loader discover-sharepoint \\
+      "https://company.sharepoint.com/sites/marketing" \\
+      --username "user@company.com" \\
+      --password "your-password"
+    
+    \b
+    # Save results to file:
+    document-loader discover-sharepoint \\
+      "https://company.sharepoint.com/sites/marketing" \\
+      --tenant-id "your-tenant-id" \\
+      --client-id "your-client-id" \\
+      --client-secret "your-secret" \\
+      --output "site-discovery.json"
+    """
+    async def run_discovery():
+        try:
+            from src.utils.sharepoint_discovery import SharePointDiscovery
+        except ImportError:
+            console.print("[red]SharePoint discovery utilities not available[/red]")
+            return
+        
+        # Build auth config from environment and parameters
+        auth_config = {}
+        
+        # Try service principal auth first
+        tenant_id = tenant_id or os.getenv('AZURE_TENANT_ID')
+        client_id = client_id or os.getenv('AZURE_CLIENT_ID') 
+        client_secret = client_secret or os.getenv('AZURE_CLIENT_SECRET')
+        
+        if all([tenant_id, client_id, client_secret]):
+            auth_config = {
+                'tenant_id': tenant_id,
+                'client_id': client_id,
+                'client_secret': client_secret
+            }
+        elif username and password:
+            auth_config = {
+                'username': username,
+                'password': password
+            }
+        else:
+            console.print("[red]Error: Authentication required[/red]")
+            console.print("\n[yellow]Provide either:[/yellow]")
+            console.print("  1. Service Principal: --tenant-id, --client-id, --client-secret")
+            console.print("  2. User Credentials: --username, --password")
+            console.print("\n[yellow]Or set environment variables:[/yellow]")
+            console.print("  AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET")
+            return
+        
+        try:
+            console.print(Panel(
+                f"[bold blue]Discovering SharePoint Site[/bold blue]\n\n"
+                f"URL: [green]{site_url}[/green]\n"
+                f"Auth: [yellow]{'Service Principal' if 'tenant_id' in auth_config else 'User Credentials'}[/yellow]",
+                expand=False
+            ))
+            
+            # Initialize discovery client
+            discovery = SharePointDiscovery(auth_config)
+            await discovery.initialize()
+            
+            # Discover site information
+            with console.status("[bold green]Analyzing SharePoint site..."):
+                site_info = await discovery.discover_site(site_url)
+            
+            # Print summary
+            console.print("[green]✓[/green] Discovery completed successfully!")
+            
+            if verbose:
+                summary = discovery.print_discovery_summary()
+                console.print(summary)
+            else:
+                console.print(f"\n[bold]Site: [green]{site_info.site_name}[/green][/bold]")
+                console.print(f"Site ID: [yellow]{site_info.site_id}[/yellow]")
+                console.print(f"Libraries: [blue]{len(site_info.libraries)}[/blue]")
+                console.print(f"Lists: [blue]{len(site_info.lists)}[/blue]")
+                console.print(f"Pages: [blue]{len(site_info.pages)}[/blue]")
+            
+            # Save to file if requested
+            if output:
+                import json
+                discovery_data = {
+                    'site_info': {
+                        'site_url': site_info.site_url,
+                        'site_id': site_info.site_id,
+                        'site_name': site_info.site_name,
+                        'web_id': site_info.web_id,
+                        'tenant_name': site_info.tenant_name
+                    },
+                    'libraries': site_info.libraries,
+                    'lists': site_info.lists,
+                    'pages': site_info.pages,
+                    'discovered_at': datetime.utcnow().isoformat()
+                }
+                
+                with open(output, 'w') as f:
+                    json.dump(discovery_data, f, indent=2)
+                
+                console.print(f"\n[green]✓[/green] Discovery results saved to: [cyan]{output}[/cyan]")
+            
+            console.print(f"\n[bold cyan]Next steps:[/bold cyan]")
+            console.print(f"1. Generate configuration: [yellow]document-loader generate-sharepoint-config[/yellow]")
+            console.print(f"2. Create knowledge base with the generated config")
+            
+        except Exception as e:
+            console.print(f"[red]Discovery failed: {e}[/red]")
+            if verbose:
+                import traceback
+                console.print(f"[dim]{traceback.format_exc()}[/dim]")
+    
+    asyncio.run(run_discovery())
+
+@cli.command()
+@click.argument('site_url')
+@click.option('--tenant-id', help='Azure tenant ID (or use env: AZURE_TENANT_ID)')
+@click.option('--client-id', help='Azure client ID (or use env: AZURE_CLIENT_ID)')
+@click.option('--client-secret', help='Azure client secret (or use env: AZURE_CLIENT_SECRET)')
+@click.option('--username', help='SharePoint username')
+@click.option('--password', help='SharePoint password')
+@click.option('--libraries', help='Comma-separated list of library names to include (default: all)')
+@click.option('--lists', help='Comma-separated list of list names to include (default: none)')
+@click.option('--include-pages', is_flag=True, help='Include site pages')
+@click.option('--output', help='Output file for generated configuration')
+@click.option('--kb-name', help='Knowledge base name for the configuration')
+@click.option('--rag-type', default='mock', help='RAG system type (default: mock)')
+def generate_sharepoint_config(site_url: str, tenant_id: str, client_id: str, client_secret: str,
+                              username: str, password: str, libraries: str, lists: str,
+                              include_pages: bool, output: str, kb_name: str, rag_type: str):
+    """Generate SharePoint source configuration from site discovery.
+    
+    This command discovers a SharePoint site and generates a complete
+    configuration file that can be used to create a knowledge base.
+    
+    Examples:
+    
+    \b
+    # Generate config for all libraries:
+    document-loader generate-sharepoint-config \\
+      "https://company.sharepoint.com/sites/marketing" \\
+      --tenant-id "your-tenant-id" \\
+      --client-id "your-client-id" \\
+      --client-secret "your-secret" \\
+      --kb-name "marketing-docs" \\
+      --output "marketing-config.json"
+    
+    \b
+    # Generate config for specific libraries:
+    document-loader generate-sharepoint-config \\
+      "https://company.sharepoint.com/sites/marketing" \\
+      --username "user@company.com" \\
+      --password "your-password" \\
+      --libraries "Documents,Presentations" \\
+      --kb-name "marketing-docs" \\
+      --rag-type "azure_blob"
+    """
+    async def run_generate():
+        try:
+            from src.utils.sharepoint_discovery import SharePointDiscovery
+        except ImportError:
+            console.print("[red]SharePoint discovery utilities not available[/red]")
+            return
+        
+        # Build auth config
+        auth_config = {}
+        
+        # Try service principal auth first
+        tenant_id = tenant_id or os.getenv('AZURE_TENANT_ID')
+        client_id = client_id or os.getenv('AZURE_CLIENT_ID')
+        client_secret = client_secret or os.getenv('AZURE_CLIENT_SECRET')
+        
+        if all([tenant_id, client_id, client_secret]):
+            auth_config = {
+                'tenant_id': tenant_id,
+                'client_id': client_id,
+                'client_secret': client_secret
+            }
+        elif username and password:
+            auth_config = {
+                'username': username,
+                'password': password
+            }
+        else:
+            console.print("[red]Error: Authentication required[/red]")
+            return
+        
+        try:
+            console.print(Panel(
+                f"[bold blue]Generating SharePoint Configuration[/bold blue]\n\n"
+                f"URL: [green]{site_url}[/green]\n"
+                f"KB Name: [yellow]{kb_name or 'Auto-generated'}[/yellow]\n"
+                f"RAG Type: [blue]{rag_type}[/blue]",
+                expand=False
+            ))
+            
+            # Initialize discovery and discover site
+            discovery = SharePointDiscovery(auth_config)
+            await discovery.initialize()
+            
+            with console.status("[bold green]Discovering site and generating configuration..."):
+                site_info = await discovery.discover_site(site_url)
+                
+                # Parse library and list selections
+                selected_libraries = None
+                if libraries:
+                    selected_libraries = [lib.strip() for lib in libraries.split(',')]
+                
+                selected_lists = None
+                if lists:
+                    selected_lists = [lst.strip() for lst in lists.split(',')]
+                
+                # Generate source configuration
+                source_config = discovery.generate_source_config(
+                    libraries=selected_libraries,
+                    lists=selected_lists,
+                    include_pages=include_pages
+                )
+                
+                # Generate complete KB configuration
+                kb_config = {
+                    'name': kb_name or f"{site_info.site_name.lower().replace(' ', '-')}-kb",
+                    'source_type': 'sharepoint',
+                    'source_config': source_config,
+                    'rag_type': rag_type,
+                    'rag_config': {}
+                }
+            
+            console.print("[green]✓[/green] Configuration generated successfully!")
+            
+            # Display configuration summary
+            console.print(f"\n[bold]Configuration Summary:[/bold]")
+            console.print(f"Knowledge Base: [green]{kb_config['name']}[/green]")
+            console.print(f"Site: [yellow]{site_info.site_name}[/yellow]")
+            console.print(f"Sources: [blue]{len(source_config['sources'])}[/blue]")
+            
+            if source_config['sources']:
+                console.print("\n[bold]Included Sources:[/bold]")
+                for source in source_config['sources']:
+                    console.print(f"  - {source['title']} ({source['type']}, {source.get('item_count', 0)} items)")
+            
+            # Save or display configuration
+            if output:
+                import json
+                with open(output, 'w') as f:
+                    json.dump(kb_config, f, indent=2)
+                console.print(f"\n[green]✓[/green] Configuration saved to: [cyan]{output}[/cyan]")
+                
+                console.print(f"\n[bold cyan]Next steps:[/bold cyan]")
+                console.print(f"1. Review the configuration file: [yellow]{output}[/yellow]")
+                console.print(f"2. Create knowledge base: [yellow]document-loader create-kb --name {kb_config['name']} --source-type sharepoint --source-config @{output} --rag-type {rag_type}[/yellow]")
+            else:
+                # Display configuration
+                console.print(f"\n[bold]Generated Configuration:[/bold]")
+                from rich.syntax import Syntax
+                syntax = Syntax(json.dumps(kb_config, indent=2), "json", theme="monokai")
+                console.print(syntax)
+                
+                console.print(f"\n[yellow]Tip:[/yellow] Use --output to save this configuration to a file")
+            
+        except Exception as e:
+            console.print(f"[red]Configuration generation failed: {e}[/red]")
+            import traceback
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
+    
+    asyncio.run(run_generate())
+
+# Add multi-source commands to the CLI
+cli.add_command(multi_source)
+
+# Add config asset management commands to the CLI
+from src.cli.config_commands import config
+cli.add_command(config)
 
 def main():
     """Entry point for the CLI."""
@@ -1291,12 +1951,12 @@ def main():
         steps = [
             ("1", "document-loader check-connection", "Verify database connectivity"),
             ("2", "document-loader create-db", "Create database with schema"),
-            ("3", "document-loader create-kb \\\n     --name my-kb \\\n     --source-type file_system \\\n     --source-config '{\"root_path\": \"/docs\"}' \\\n     --rag-type mock", "Create a knowledge base"),
-            ("4", "document-loader list-kb", "List all knowledge bases"),
-            ("5", "document-loader init-azure \\\n     --kb-name my-kb", "Initialize Azure resources (only for azure_blob)"),
-            ("6", "document-loader update-kb \\\n     --name my-kb [options]", "Update configuration"),
-            ("7", "document-loader sync \\\n     --kb-name my-kb", "Sync documents to RAG"),
-            ("8", "document-loader --verbose sync \\\n     --kb-name my-kb", "Sync with verbose output"),
+            ("3", "document-loader config upload \\\n     --file configs/my-config.json \\\n     --name my-config", "Upload config to PostgreSQL"),
+            ("4", "document-loader multi-source create-multi-kb \\\n     --config-name my-config", "Create multi-source knowledge base"),
+            ("5", "document-loader multi-source sync-multi-kb \\\n     --config-name my-config", "Sync documents from all sources"),
+            ("6", "document-loader multi-source status-multi-kb \\\n     --config-name my-config", "Check sync status and statistics"),
+            ("7", "document-loader config list", "List all stored configurations"),
+            ("8", "document-loader --verbose multi-source sync-multi-kb \\\n     --config-name my-config", "Sync with verbose output"),
         ]
         
         for num, cmd, desc in steps:
@@ -1305,15 +1965,39 @@ def main():
         console.print("\n[bold cyan]AVAILABLE COMMANDS:[/bold cyan]")
         commands = [
             ("check-connection", "Test database connectivity"),
-            ("create-db", "Create database and schema"),  
-            ("create-kb", "Create a new knowledge base"),
-            ("list-kb", "List all knowledge bases"),
+            ("create-db", "Create database and schema"),
+            
+            # Multi-Source Commands
+            ("multi-source create-template", "Generate multi-source config template"),
+            ("multi-source create-multi-kb", "Create multi-source knowledge base"),
+            ("multi-source sync-multi-kb", "Sync multi-source knowledge base"),
+            ("multi-source status-multi-kb", "Show multi-source KB status"),
+            ("multi-source list-multi-kb", "List all multi-source KBs"),
+            ("multi-source delete-multi-kb", "Delete multi-source KB and data"),
+            
+            # Config Asset Management
+            ("config upload", "Upload configuration to PostgreSQL"),
+            ("config list", "List stored configurations"),
+            ("config show", "Show configuration details"),
+            ("config export", "Export configuration to file"),
+            ("config delete", "Delete stored configuration"),
+            ("config stats", "Show configuration statistics"),
+            
+            # Legacy Single-Source Commands
+            ("create-kb", "Create single-source knowledge base (legacy)"),
+            ("list-kb", "List single-source knowledge bases"),
             ("info", "Show KB details"),
             ("status", "Show sync history"),
             ("scan", "Preview what will be synced"),
-            ("sync", "Sync documents to RAG"),
+            ("sync", "Sync single-source KB documents"),
             ("init-azure", "Initialize Azure resources"),
             ("update-kb", "Update KB configuration"),
+            ("delete-kb", "Delete knowledge base and data"),
+            
+            # SharePoint Discovery
+            ("discover-sharepoint", "Discover SharePoint site from URL"),
+            ("generate-sharepoint-config", "Generate SharePoint config from discovery"),
+            
             ("quickstart", "Show color-coded guide"),
             ("--help", "Show this message and exit"),
         ]
@@ -1328,12 +2012,17 @@ def main():
         
         console.print("\n[bold cyan]ADDITIONAL INFO:[/bold cyan]")
         console.print("  [yellow]RAG types:[/yellow] mock | azure_blob | file_system_storage")
-        console.print("  [yellow]Source types:[/yellow] file_system | sharepoint")
+        console.print("  [yellow]Source types:[/yellow] file_system | sharepoint | onedrive | enterprise_sharepoint")
+        console.print("  [yellow]Multi-source:[/yellow] Combine multiple sources in one knowledge base")
+        console.print("  [yellow]Config storage:[/yellow] Store configurations in PostgreSQL as assets")
         
         console.print("\n[dim]For detailed help on any command:[/dim]")
         console.print("  [yellow]document-loader <command> --help[/yellow]")
-        console.print("\n[dim]Example:[/dim]")
-        console.print("  [yellow]document-loader create-kb --help[/yellow]\n")
+        console.print("  [yellow]document-loader multi-source --help[/yellow]")
+        console.print("  [yellow]document-loader config --help[/yellow]")
+        console.print("\n[dim]Examples:[/dim]")
+        console.print("  [yellow]document-loader multi-source create-multi-kb --help[/yellow]")
+        console.print("  [yellow]document-loader config upload --help[/yellow]\n")
         return
     
     cli()

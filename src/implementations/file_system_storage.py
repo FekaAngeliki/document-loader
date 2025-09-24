@@ -364,7 +364,18 @@ class FileSystemStorage(RAGSystem):
         )
         
         if self.metadata_format == 'json':
-            content = json.dumps(metadata, indent=2)
+            # Custom JSON encoder to handle datetime and filter out non-serializable objects
+            def json_serializer(obj):
+                if hasattr(obj, 'isoformat'):  # datetime objects
+                    return obj.isoformat()
+                elif asyncio.iscoroutine(obj):  # Skip coroutines
+                    return f"<coroutine: {obj.__name__ if hasattr(obj, '__name__') else 'unknown'}>"
+                elif callable(obj):  # Skip callable objects
+                    return f"<callable: {obj.__name__ if hasattr(obj, '__name__') else 'unknown'}>"
+                else:
+                    return str(obj)  # Convert everything else to string
+            
+            content = json.dumps(metadata, indent=2, default=json_serializer)
         else:  # yaml
             content = yaml.dump(metadata, default_flow_style=False)
         

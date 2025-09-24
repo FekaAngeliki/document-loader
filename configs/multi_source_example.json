@@ -1,0 +1,125 @@
+{
+  "name": "company-knowledge-base",
+  "description": "Multi-source knowledge base combining SharePoint, file system, and OneDrive into single RAG",
+  
+  "rag_type": "azure_blob",
+  "rag_config": {
+    "azure_tenant_id": "${AZURE_TENANT_ID}",
+    "azure_subscription_id": "${AZURE_SUBSCRIPTION_ID}",
+    "azure_client_id": "${AZURE_CLIENT_ID}",
+    "azure_client_secret": "${AZURE_CLIENT_SECRET}",
+    "azure_resource_group_name": "${AZURE_RESOURCE_GROUP_NAME}",
+    "azure_storage_account_name": "${AZURE_STORAGE_ACCOUNT_NAME}",
+    "azure_storage_container_name": "company-documents"
+  },
+
+  "sources": [
+    {
+      "source_id": "sharepoint_hr",
+      "source_type": "enterprise_sharepoint",
+      "enabled": true,
+      "source_config": {
+        "tenant_id": "${SHAREPOINT_TENANT_ID}",
+        "client_id": "${SHAREPOINT_CLIENT_ID}",
+        "client_secret": "${SHAREPOINT_CLIENT_SECRET}",
+        "site_url": "https://yourorg.sharepoint.com/sites/hr",
+        "include_libraries": true,
+        "include_lists": true,
+        "include_site_pages": false,
+        "library_filters": ["Shared Documents", "Policies", "Employee Handbook"],
+        "list_filters": ["Employee Directory", "Training Records"],
+        "include_extensions": [".pdf", ".docx", ".xlsx", ".pptx"],
+        "recursive": true
+      },
+      "metadata_tags": {
+        "department": "HR",
+        "source_system": "sharepoint",
+        "content_type": "hr_documents"
+      },
+      "sync_schedule": "0 2 * * *"
+    },
+
+    {
+      "source_id": "sharepoint_finance",
+      "source_type": "enterprise_sharepoint", 
+      "enabled": true,
+      "source_config": {
+        "tenant_id": "${SHAREPOINT_TENANT_ID}",
+        "client_id": "${SHAREPOINT_CLIENT_ID}",
+        "client_secret": "${SHAREPOINT_CLIENT_SECRET}",
+        "site_url": "https://yourorg.sharepoint.com/sites/finance",
+        "include_libraries": true,
+        "include_lists": true,
+        "include_site_pages": false,
+        "library_filters": ["Financial Reports", "Budgets", "Invoices"],
+        "list_filters": ["Expense Reports", "Budget Approvals"],
+        "include_extensions": [".pdf", ".xlsx", ".docx"],
+        "recursive": true
+      },
+      "metadata_tags": {
+        "department": "Finance",
+        "source_system": "sharepoint",
+        "content_type": "financial_documents"
+      },
+      "sync_schedule": "0 3 * * *"
+    },
+
+    {
+      "source_id": "network_archive",
+      "source_type": "file_system",
+      "enabled": true,
+      "source_config": {
+        "root_path": "/mnt/company/archive",
+        "include_patterns": ["**/*.pdf", "**/*.docx", "**/*.txt"],
+        "exclude_patterns": ["**/temp/**", "**/.git/**", "**/backup/**"],
+        "include_extensions": [".pdf", ".docx", ".xlsx", ".txt", ".md"],
+        "exclude_extensions": [".tmp", ".log", ".bak", ".old"],
+        "recursive": true
+      },
+      "metadata_tags": {
+        "department": "Archive",
+        "source_system": "file_system",
+        "content_type": "archived_documents"
+      },
+      "sync_schedule": "0 4 * * 0"
+    },
+
+    {
+      "source_id": "executive_onedrive",
+      "source_type": "onedrive",
+      "enabled": true,
+      "source_config": {
+        "user_id": "ceo@yourorg.com",
+        "root_folder": "/Documents/Company/Strategic",
+        "recursive": true,
+        "account_type": "business",
+        "include_extensions": [".pdf", ".docx", ".pptx"]
+      },
+      "metadata_tags": {
+        "department": "Executive",
+        "source_system": "onedrive",
+        "content_type": "strategic_documents",
+        "confidentiality": "high"
+      },
+      "sync_schedule": "0 5 * * *"
+    }
+  ],
+
+  "file_organization": {
+    "naming_convention": "{source_id}/{department}/{uuid}{extension}",
+    "folder_structure": "source_based",
+    "metadata_tagging": {
+      "source_id": "folder_prefix",
+      "department": "folder_structure", 
+      "content_type": "blob_metadata"
+    }
+  },
+
+  "sync_strategy": {
+    "default_mode": "parallel",
+    "batch_size": 50,
+    "rate_limiting": true,
+    "retry_attempts": 3,
+    "failure_handling": "continue_others"
+  }
+}

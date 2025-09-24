@@ -11,6 +11,9 @@ A flexible document management system for collecting files from various sources,
 - 🔌 Configurable RAG system integration
 - 💾 PostgreSQL database for tracking file history and sync runs
 - 🎨 Beautiful command-line interface with rich formatting
+- ⚙️ Configuration management system with version control
+- 👨‍💼 Admin CLI tools for enterprise configuration management
+- 🔄 Multi-source knowledge bases (mixed source types)
 
 ## Installation
 
@@ -232,6 +235,129 @@ document-loader sync --kb-name "my-docs"
 docloader sync --kb-name "my-docs"
 ```
 
+## 🏢 Configuration Management for Admins
+
+The system includes enterprise-grade configuration management tools for administrators to manage knowledge base configurations stored in PostgreSQL.
+
+### Admin CLI Tools
+
+#### Upload Configuration Files
+
+```bash
+# Upload a configuration file
+document-loader upload-config configs/production.json --name "prod-kb" --description "Production knowledge base"
+
+# Upload with specific admin user
+document-loader upload-config configs/production.json --name "prod-kb" --description "Production KB" --created-by "admin"
+```
+
+#### List and Manage Configurations
+
+```bash
+# List all stored configurations
+document-loader list-configs
+
+# List archived configurations
+document-loader list-configs --status archived
+
+# Show configuration details
+document-loader show-config prod-kb --show-full
+
+# Deploy configuration to create knowledge base
+document-loader deploy-config prod-kb
+
+# Export configuration back to file
+document-loader export-config prod-kb backup.json
+
+# Show system statistics
+document-loader config-summary
+```
+
+#### Configuration Management Operations
+
+```bash
+# Archive configuration (soft delete)
+document-loader delete-config prod-kb --force
+
+# Deploy specific version
+document-loader deploy-config prod-kb --version 2
+
+# Export specific version
+document-loader export-config prod-kb backup.json --version 1
+```
+
+### Configuration File Format for Multi-Source KBs
+
+```json
+{
+  "name": "multi-source-knowledge-base",
+  "description": "Knowledge base with multiple source types",
+  "rag_type": "azure_openai",
+  "rag_config": {
+    "api_endpoint": "https://your-openai.openai.azure.com/",
+    "api_key": "${AZURE_OPENAI_API_KEY}",
+    "deployment_name": "text-embedding-ada-002"
+  },
+  "sources": [
+    {
+      "source_id": "hr_file_system",
+      "source_type": "file_system",
+      "enabled": true,
+      "source_config": {
+        "root_path": "/data/hr",
+        "include_extensions": [".pdf", ".docx", ".txt"],
+        "recursive": true
+      },
+      "metadata_tags": {
+        "department": "HR",
+        "content_type": "hr_documents",
+        "security_level": "internal"
+      },
+      "sync_schedule": "0 2 * * *"
+    },
+    {
+      "source_id": "finance_sharepoint",
+      "source_type": "enterprise_sharepoint",
+      "enabled": true,
+      "source_config": {
+        "site_url": "https://company.sharepoint.com/sites/finance",
+        "document_library": "Financial Documents",
+        "folder_path": "/Reports",
+        "include_extensions": [".xlsx", ".pdf"],
+        "auth_method": "service_principal",
+        "client_id": "${SHAREPOINT_CLIENT_ID}",
+        "client_secret": "${SHAREPOINT_CLIENT_SECRET}",
+        "tenant_id": "${SHAREPOINT_TENANT_ID}"
+      },
+      "metadata_tags": {
+        "department": "Finance",
+        "content_type": "financial_reports",
+        "security_level": "confidential"
+      },
+      "sync_schedule": "0 3 * * *"
+    }
+  ],
+  "file_organization": {
+    "naming_convention": "{source_id}/{department}/{uuid}{extension}",
+    "folder_structure": "source_based"
+  },
+  "sync_strategy": {
+    "default_mode": "parallel",
+    "batch_size": 50,
+    "max_retries": 3
+  }
+}
+```
+
+### Configuration Management Features
+
+- **Version Control**: Automatic versioning when configurations are updated
+- **PostgreSQL Storage**: All configurations stored with SHA-256 integrity hashing
+- **Deployment Tracking**: Marks configurations as deployed with timestamps
+- **Mixed Source Types**: Support for combining different source types in one KB
+- **Rich Metadata**: Department, security level, content type tagging per source
+- **Audit Trails**: Complete history of uploads, deployments, and changes
+
 ## Troubleshooting
 
 ### Database Connection Issues
@@ -324,6 +450,15 @@ DOCUMENT_LOADER_DB_USER=postgres
 DOCUMENT_LOADER_DB_PASSWORD=your_password
 DOCUMENT_LOADER_DB_MIN_POOL_SIZE=10
 DOCUMENT_LOADER_DB_MAX_POOL_SIZE=20
+
+# SharePoint configuration (for enterprise_sharepoint sources)
+SHAREPOINT_CLIENT_ID=your_client_id
+SHAREPOINT_CLIENT_SECRET=your_client_secret
+SHAREPOINT_TENANT_ID=your_tenant_id
+
+# Azure OpenAI configuration (for azure_openai RAG)
+AZURE_OPENAI_API_KEY=your_api_key
+AZURE_OPENAI_ENDPOINT=https://your-openai.openai.azure.com/
 
 # Logging
 DOCUMENT_LOADER_LOG_LEVEL=INFO

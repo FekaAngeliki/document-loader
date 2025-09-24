@@ -1,0 +1,24 @@
+{
+  "exclude_extensions": [".ppt", ".pptx"],
+  "processing_pipeline": {
+    "enabled": true,
+    "queue_extensions": [".ppt", ".pptx"],
+    "processors": {
+      ".ppt": "ppt_to_text_converter",
+      ".pptx": "pptx_to_markdown_converter"
+    },
+    "output_format": ".md",
+    "processing_dir": "/tmp/document_processing",
+    "processed_dir": "/tmp/processed_docs"
+  },
+  "sources": [
+    {
+      "type": "file_system",
+      "config": {
+        "root_path": "/tmp/test_docs",
+        "include_extensions": [".txt", ".md", ".pdf"],
+        "exclude_patterns": ["temp/*", "*.tmp", ".*"]
+      }
+    }
+  ]
+}

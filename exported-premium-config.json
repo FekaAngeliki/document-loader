@@ -1,0 +1,63 @@
+{
+  "name": "PremiumRMs-kb",
+  "sources": [
+    {
+      "enabled": true,
+      "source_id": "Sharepoint_1",
+      "source_type": "enterprise_sharepoint",
+      "metadata_tags": {
+        "site_url": "https://groupnbg.sharepoint.com/sites/div991secb",
+        "department": "Premium RMs",
+        "source_system": "sharepoint"
+      },
+      "source_config": {
+        "site_id": "6f63c8f0-aa51-4681-8da5-5d48f6255f69",
+        "timeout": 60,
+        "site_url": "https://groupnbg.sharepoint.com/sites/div991secb",
+        "client_id": "${SHAREPOINT_CLIENT_ID}",
+        "recursive": true,
+        "tenant_id": "${SHAREPOINT_TENANT_ID}",
+        "batch_size": 100,
+        "max_retries": 3,
+        "client_secret": "${SHAREPOINT_CLIENT_SECRET}",
+        "include_lists": false,
+        "library_names": [
+          "Έγγραφα"
+        ],
+        "include_libraries": true,
+        "include_extensions": [
+          ".pdf",
+          ".docx",
+          ".xlsx",
+          ".pptx",
+          ".doc",
+          ".xls",
+          ".ppt",
+          ".txt",
+          ".odt",
+          ".ods",
+          ".odp",
+          ".xml",
+          ".json",
+          ".csv",
+          ".html",
+          ".htm"
+        ],
+        "include_site_pages": false
+      }
+    }
+  ],
+  "rag_type": "file_system_storage",
+  "rag_config": {
+    "storage_path": "/mnt/c/Users/E41297/Documents/NBG/sharepoint-files/premium-rms"
+  },
+  "description": "Knowledge Base for Premium RMs - Enhanced with comprehensive library and file type coverage",
+  "sync_strategy": {
+    "default_mode": "parallel",
+    "rate_limiting": true
+  },
+  "file_organization": {
+    "folder_structure": "source_based",
+    "naming_convention": "{source_id}/{uuid}{extension}"
+  }
+}

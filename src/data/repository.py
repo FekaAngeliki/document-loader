@@ -158,6 +158,34 @@ class Repository:
         rows = await self.db.fetch(query)
         return [dict(row) for row in rows]
     
+    async def get_all_source_types(self) -> List[SourceType]:
+        """Get all available source types as SourceType objects."""
+        query = "SELECT id, name, class_name, config_schema FROM source_type ORDER BY name"
+        rows = await self.db.fetch(query)
+        return [
+            SourceType(
+                id=row['id'],
+                name=row['name'],
+                class_name=row['class_name'],
+                config_schema=json.loads(row['config_schema']) if row['config_schema'] else {}
+            )
+            for row in rows
+        ]
+    
+    async def get_all_rag_types(self) -> List[RagType]:
+        """Get all available RAG types as RagType objects."""
+        query = "SELECT id, name, class_name, config_schema FROM rag_type ORDER BY name"
+        rows = await self.db.fetch(query)
+        return [
+            RagType(
+                id=row['id'],
+                name=row['name'],
+                class_name=row['class_name'],
+                config_schema=json.loads(row['config_schema']) if row['config_schema'] else {}
+            )
+            for row in rows
+        ]
+    
     async def create_sync_run(self, knowledge_base_id: int, status: str = 'running') -> int:
         """Create a new sync run."""
         query = """
@@ -197,12 +225,13 @@ class Repository:
         )
     
     async def create_file_record_original(self, file_record: FileRecord) -> int:
-        """Create a new file record."""
+        """Create a new file record with all enhanced fields."""
         query = """
             INSERT INTO file_record
             (sync_run_id, original_uri, rag_uri, file_hash, uuid_filename,
-             upload_time, file_size, status, error_message)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+             upload_time, file_size, status, error_message, source_id, source_type,
+             source_path, content_type, source_metadata, source_created_at, source_modified_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
             RETURNING id
         """
         
@@ -216,7 +245,14 @@ class Repository:
             file_record.upload_time,
             file_record.file_size,
             file_record.status,
-            file_record.error_message
+            file_record.error_message,
+            getattr(file_record, 'source_id', None),
+            getattr(file_record, 'source_type', None),
+            getattr(file_record, 'source_path', None),
+            getattr(file_record, 'content_type', None),
+            getattr(file_record, 'source_metadata', None),
+            getattr(file_record, 'source_created_at', None),
+            getattr(file_record, 'source_modified_at', None)
         )
     
     async def update_sync_run_status(self, sync_run_id: int, status: str, error_message: str = None):
