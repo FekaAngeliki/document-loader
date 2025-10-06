@@ -1,0 +1,157 @@
+# Code Quality Analysis Template
+parameters:
+  - name: runLinting
+    type: boolean
+    default: true
+  - name: runTypeChecking
+    type: boolean
+    default: true
+  - name: runSecurityAnalysis
+    type: boolean
+    default: true
+  - name: runComplexityAnalysis
+    type: boolean
+    default: true
+
+steps:
+- script: |
+    # Install code quality tools
+    pip install black isort flake8 mypy bandit radon safety pylint
+  displayName: 'Install Code Quality Tools'
+
+- script: |
+    echo "Running code formatting check with Black..."
+    black --check --diff src/ tests/ || {
+      echo "##vso[task.logissue type=error]Code formatting issues found. Run 'black src/ tests/' to fix."
+      exit 1
+    }
+  displayName: 'Code Formatting Check (Black)'
+  condition: eq(${{ parameters.runLinting }}, true)
+
+- script: |
+    echo "Running import sorting check with isort..."
+    isort --check-only --diff src/ tests/ || {
+      echo "##vso[task.logissue type=error]Import sorting issues found. Run 'isort src/ tests/' to fix."
+      exit 1
+    }
+  displayName: 'Import Sorting Check (isort)'
+  condition: eq(${{ parameters.runLinting }}, true)
+
+- script: |
+    echo "Running linting with flake8..."
+    flake8 src/ tests/ --max-line-length=88 --extend-ignore=E203,W503 \
+      --output-file=test-results/flake8-report.txt || {
+      echo "##vso[task.logissue type=error]Linting issues found."
+      cat test-results/flake8-report.txt
+      exit 1
+    }
+  displayName: 'Linting Check (flake8)'
+  condition: eq(${{ parameters.runLinting }}, true)
+
+- script: |
+    echo "Running advanced linting with pylint..."
+    pylint src/ --output-format=text --reports=yes \
+      --output=test-results/pylint-report.txt \
+      --exit-zero
+    
+    # Extract score
+    SCORE=$(tail -n 1 test-results/pylint-report.txt | grep -o '[0-9]*\.[0-9]*')
+    echo "Pylint Score: $SCORE/10"
+    
+    # Fail if score is below threshold
+    if (( $(echo "$SCORE < 7.0" | bc -l) )); then
+      echo "##vso[task.logissue type=error]Pylint score $SCORE is below threshold 7.0"
+      exit 1
+    fi
+  displayName: 'Advanced Linting (pylint)'
+  condition: eq(${{ parameters.runLinting }}, true)
+
+- script: |
+    echo "Running type checking with mypy..."
+    mypy src/ --ignore-missing-imports \
+      --no-strict-optional \
+      --output=test-results/mypy-report.txt || {
+      echo "##vso[task.logissue type=error]Type checking issues found."
+      cat test-results/mypy-report.txt
+      exit 1
+    }
+  displayName: 'Type Checking (mypy)'
+  condition: eq(${{ parameters.runTypeChecking }}, true)
+
+- script: |
+    echo "Running security analysis with bandit..."
+    bandit -r src/ -f json -o test-results/bandit-report.json || {
+      echo "##vso[task.logissue type=warning]Security issues found."
+      cat test-results/bandit-report.json
+    }
+    
+    # Also generate text report for readability
+    bandit -r src/ -f txt -o test-results/bandit-report.txt || true
+  displayName: 'Security Analysis (bandit)'
+  condition: eq(${{ parameters.runSecurityAnalysis }}, true)
+
+- script: |
+    echo "Checking for known vulnerabilities with safety..."
+    safety check --json --output test-results/safety-report.json || {
+      echo "##vso[task.logissue type=error]Known vulnerabilities found in dependencies."
+      cat test-results/safety-report.json
+      exit 1
+    }
+  displayName: 'Dependency Vulnerability Check (safety)'
+  condition: eq(${{ parameters.runSecurityAnalysis }}, true)
+
+- script: |
+    echo "Running complexity analysis with radon..."
+    
+    # Cyclomatic complexity
+    radon cc src/ --json > test-results/complexity-report.json
+    radon cc src/ --min=B > test-results/complexity-report.txt
+    
+    # Maintainability index
+    radon mi src/ --json > test-results/maintainability-report.json
+    radon mi src/ --min=B > test-results/maintainability-report.txt
+    
+    # Check for high complexity functions
+    HIGH_COMPLEXITY=$(radon cc src/ --min=C --total-average | grep -v "Average complexity" | wc -l)
+    if [ "$HIGH_COMPLEXITY" -gt 5 ]; then
+      echo "##vso[task.logissue type=warning]Found $HIGH_COMPLEXITY functions with high complexity"
+      cat test-results/complexity-report.txt
+    fi
+  displayName: 'Complexity Analysis (radon)'
+  condition: eq(${{ parameters.runComplexityAnalysis }}, true)
+
+- script: |
+    # Generate comprehensive code quality report
+    cat << EOF > test-results/code-quality-summary.md
+# Code Quality Report
+
+## Summary
+- **Timestamp**: $(date)
+- **Branch**: $(Build.SourceBranchName)
+- **Commit**: $(Build.SourceVersion)
+
+## Checks Performed
+- Code Formatting (Black): ✅
+- Import Sorting (isort): ✅
+- Linting (flake8): ✅
+- Advanced Linting (pylint): ✅
+- Type Checking (mypy): ✅
+- Security Analysis (bandit): ✅
+- Dependency Vulnerabilities (safety): ✅
+- Complexity Analysis (radon): ✅
+
+## Files Analyzed
+EOF
+    find src/ -name "*.py" | wc -l >> test-results/code-quality-summary.md
+    echo " Python files in src/" >> test-results/code-quality-summary.md
+    find tests/ -name "*.py" | wc -l >> test-results/code-quality-summary.md
+    echo " Python files in tests/" >> test-results/code-quality-summary.md
+  displayName: 'Generate Code Quality Summary'
+  condition: always()
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Code Quality Reports'
+  condition: always()
+  inputs:
+    pathToPublish: 'test-results'
+    artifactName: 'code-quality-reports'

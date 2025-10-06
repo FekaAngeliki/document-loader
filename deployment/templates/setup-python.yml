@@ -1,0 +1,50 @@
+# Python Setup Template
+parameters:
+  - name: pythonVersion
+    type: string
+    default: '3.11'
+  - name: installUV
+    type: boolean
+    default: true
+  - name: cacheDependencies
+    type: boolean
+    default: true
+
+steps:
+- task: UsePythonVersion@0
+  displayName: 'Set Python Version'
+  inputs:
+    versionSpec: ${{ parameters.pythonVersion }}
+    addToPath: true
+    architecture: 'x64'
+
+- task: Cache@2
+  displayName: 'Cache Python Dependencies'
+  condition: eq(${{ parameters.cacheDependencies }}, true)
+  inputs:
+    key: 'python | "$(Agent.OS)" | pyproject.toml | uv.lock'
+    restoreKeys: |
+      python | "$(Agent.OS)" | pyproject.toml
+      python | "$(Agent.OS)"
+    path: |
+      ~/.cache/pip
+      ~/.cache/uv
+    cacheHitVar: 'PythonDependenciesRestored'
+
+- script: |
+    python -m pip install --upgrade pip
+    pip install uv
+  displayName: 'Install UV Package Manager'
+  condition: eq(${{ parameters.installUV }}, true)
+
+- script: |
+    uv sync --dev
+  displayName: 'Install Dependencies with UV'
+  condition: and(eq(${{ parameters.installUV }}, true), ne(variables['PythonDependenciesRestored'], 'true'))
+
+- script: |
+    echo "Python version: $(python --version)"
+    echo "UV version: $(uv --version)"
+    echo "Installed packages:"
+    pip list
+  displayName: 'Display Python Environment Info'

@@ -582,26 +582,107 @@ class MultiSourceBatchRunner:
         """Generate UUID filename with source organization."""
         import uuid
         from pathlib import Path
+        from urllib.parse import urlparse, unquote
         
         # Generate base UUID
         file_uuid = str(uuid.uuid4())
         original_path = Path(original_uri)
         extension = original_path.suffix
         
+        # Get folder structure setting
+        folder_structure = file_organization.get("folder_structure", "source_based")
+        
+        # Extract folder hierarchy for SharePoint URLs
+        folder_path = ""
+        if folder_structure == "preserve_hierarchy" and "sharepoint.com" in original_uri:
+            folder_path = self._extract_sharepoint_folder_path(original_uri)
+        elif folder_structure == "preserve_hierarchy":
+            # For other sources, try to extract relative path
+            folder_path = self._extract_relative_folder_path(original_uri)
+        
         # Apply file organization strategy
         naming_convention = file_organization.get("naming_convention", "{uuid}{extension}")
         
-        if "{source_id}" in naming_convention:
+        # Prepare the filename based on convention
+        if "{folder_path}" in naming_convention:
             filename = naming_convention.format(
                 source_id=source_id,
                 uuid=file_uuid,
                 extension=extension,
-                original_name=original_path.stem
+                original_name=original_path.stem,
+                folder_path=folder_path
             )
+        elif "{source_id}" in naming_convention:
+            if folder_path and folder_structure == "preserve_hierarchy":
+                # Insert folder path between source_id and uuid
+                base_filename = naming_convention.format(
+                    source_id=source_id,
+                    uuid=file_uuid,
+                    extension=extension,
+                    original_name=original_path.stem
+                )
+                # Replace source_id/ with source_id/folder_path/
+                if base_filename.startswith(f"{source_id}/"):
+                    filename = f"{source_id}/{folder_path}/{file_uuid}{extension}"
+                else:
+                    filename = base_filename
+            else:
+                filename = naming_convention.format(
+                    source_id=source_id,
+                    uuid=file_uuid,
+                    extension=extension,
+                    original_name=original_path.stem
+                )
         else:
             filename = f"{file_uuid}{extension}"
         
         return filename
+    
+    def _extract_sharepoint_folder_path(self, sharepoint_url: str) -> str:
+        """Extract folder path from SharePoint webUrl, preserving hierarchy."""
+        try:
+            from urllib.parse import urlparse, unquote
+            
+            parsed = urlparse(sharepoint_url)
+            path_parts = [unquote(part) for part in parsed.path.split('/') if part]
+            
+            # SharePoint URL pattern: /sites/sitename/LibraryName/folder1/folder2/file.ext
+            if 'sites' in path_parts:
+                sites_index = path_parts.index('sites')
+                # Skip: sites, sitename, libraryname
+                if sites_index + 3 < len(path_parts):
+                    # Get folder path (everything except the filename)
+                    folder_parts = path_parts[sites_index + 3:-1]  # -1 to exclude filename
+                    if folder_parts:
+                        return '/'.join(folder_parts)
+            
+            return ""
+        except Exception as e:
+            logger.warning(f"Could not extract folder path from SharePoint URL {sharepoint_url}: {e}")
+            return ""
+    
+    def _extract_relative_folder_path(self, file_uri: str) -> str:
+        """Extract relative folder path for non-SharePoint sources."""
+        try:
+            from pathlib import Path
+            from urllib.parse import urlparse
+            
+            # Handle file:// URLs or local paths
+            if file_uri.startswith('file://'):
+                parsed = urlparse(file_uri)
+                path = Path(parsed.path)
+            else:
+                path = Path(file_uri)
+            
+            # Get parent directory relative to some root
+            # For now, just get immediate parent folder name
+            if path.parent != path.parent.parent:  # Has a parent folder
+                return path.parent.name
+            
+            return ""
+        except Exception as e:
+            logger.warning(f"Could not extract folder path from URI {file_uri}: {e}")
+            return ""
     
     async def _load_multi_source_kb(self, kb_name: str) -> Optional[MultiSourceKnowledgeBase]:
         """Load multi-source knowledge base configuration."""

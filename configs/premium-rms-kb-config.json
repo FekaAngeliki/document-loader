@@ -34,14 +34,18 @@
       "metadata_tags": {
         "source_system": "sharepoint",
         "department": "Premium RMs",
-        "site_url": "https://groupnbg.sharepoint.com/sites/div991secb"
+        "site_url": "https://groupnbg.sharepoint.com/sites/div991secb",
+        "modified_date": "{Modified}",
+        "author": "{Author}",
+        "content_type": "{ContentType}",
+        "file_size": "{File_x0020_Size}"
       },
       "enabled": true
     }
   ],
   "file_organization": {
     "naming_convention": "{source_id}/{uuid}{extension}",
-    "folder_structure": "source_based"
+    "folder_structure": "preserve_hierarchy"
   },
   "sync_strategy": {
     "default_mode": "parallel",

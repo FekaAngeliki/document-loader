@@ -1,0 +1,141 @@
+# Integration Testing Template
+parameters:
+  - name: environment
+    type: string
+  - name: testSuite
+    type: string
+    default: 'smoke'
+  - name: testTimeout
+    type: number
+    default: 1800
+  - name: parallelExecution
+    type: boolean
+    default: true
+
+steps:
+- script: |
+    # Install test dependencies
+    pip install pytest pytest-asyncio pytest-xdist requests aiohttp
+  displayName: 'Install Test Dependencies'
+
+- script: |
+    # Set up test environment variables
+    export TEST_ENVIRONMENT="${{ parameters.environment }}"
+    export TEST_SUITE="${{ parameters.testSuite }}"
+    
+    # Get application URL from deployment
+    if [ "${{ parameters.environment }}" = "development" ]; then
+      export APP_URL="https://docloader-dev-app.azurecontainerapps.io"
+    elif [ "${{ parameters.environment }}" = "staging" ]; then
+      export APP_URL="https://docloader-staging-app.azurecontainerapps.io"
+    elif [ "${{ parameters.environment }}" = "production" ]; then
+      export APP_URL="https://docloader-prod-app.azurecontainerapps.io"
+    fi
+    
+    echo "Testing against: $APP_URL"
+    echo "##vso[task.setvariable variable=testAppUrl]$APP_URL"
+    
+  displayName: 'Set Test Environment Variables'
+
+- script: |
+    mkdir -p test-results/integration
+    
+    case "${{ parameters.testSuite }}" in
+      "smoke")
+        echo "Running smoke tests..."
+        python -m pytest tests/integration/smoke/ \
+          --junitxml=test-results/integration/smoke-results.xml \
+          --tb=short \
+          -v \
+          --timeout=${{ parameters.testTimeout }} \
+          $( [ "${{ parameters.parallelExecution }}" = "true" ] && echo "-n auto" || echo "" )
+        ;;
+        
+      "integration")
+        echo "Running full integration tests..."
+        python -m pytest tests/integration/ \
+          --junitxml=test-results/integration/integration-results.xml \
+          --tb=short \
+          -v \
+          --timeout=${{ parameters.testTimeout }} \
+          $( [ "${{ parameters.parallelExecution }}" = "true" ] && echo "-n auto" || echo "" )
+        ;;
+        
+      "load")
+        echo "Running load tests..."
+        python -m pytest tests/load/ \
+          --junitxml=test-results/integration/load-results.xml \
+          --tb=short \
+          -v \
+          --timeout=${{ parameters.testTimeout }}
+        ;;
+        
+      "security")
+        echo "Running security tests..."
+        python -m pytest tests/security/ \
+          --junitxml=test-results/integration/security-results.xml \
+          --tb=short \
+          -v \
+          --timeout=${{ parameters.testTimeout }}
+        ;;
+        
+      "all")
+        echo "Running all integration tests..."
+        python -m pytest tests/integration/ tests/load/ tests/security/ \
+          --junitxml=test-results/integration/all-results.xml \
+          --tb=short \
+          -v \
+          --timeout=${{ parameters.testTimeout }} \
+          $( [ "${{ parameters.parallelExecution }}" = "true" ] && echo "-n auto" || echo "" )
+        ;;
+        
+      *)
+        echo "Unknown test suite: ${{ parameters.testSuite }}"
+        exit 1
+        ;;
+    esac
+    
+  displayName: 'Run Integration Tests: ${{ parameters.testSuite }}'
+  env:
+    TEST_APP_URL: $(testAppUrl)
+    TEST_ENVIRONMENT: ${{ parameters.environment }}
+  timeoutInMinutes: ${{ parameters.testTimeout }}
+
+- task: PublishTestResults@2
+  displayName: 'Publish Integration Test Results'
+  condition: always()
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: 'test-results/integration/*-results.xml'
+    failTaskOnFailedTests: true
+    testRunTitle: 'Integration Tests - ${{ parameters.testSuite }} - ${{ parameters.environment }}'
+
+- script: |
+    # Generate test report
+    cat << EOF > test-results/integration/test-report.md
+# Integration Test Report
+
+## Test Details
+- **Environment**: ${{ parameters.environment }}
+- **Test Suite**: ${{ parameters.testSuite }}
+- **Application URL**: $(testAppUrl)
+- **Timestamp**: $(date)
+- **Parallel Execution**: ${{ parameters.parallelExecution }}
+
+## Test Results
+EOF
+    
+    # Count test results
+    if [ -f "test-results/integration/${{ parameters.testSuite }}-results.xml" ]; then
+      TOTAL_TESTS=$(grep -o 'tests="[0-9]*"' test-results/integration/${{ parameters.testSuite }}-results.xml | sed 's/tests="//;s/"//' || echo "0")
+      FAILED_TESTS=$(grep -o 'failures="[0-9]*"' test-results/integration/${{ parameters.testSuite }}-results.xml | sed 's/failures="//;s/"//' || echo "0")
+      ERROR_TESTS=$(grep -o 'errors="[0-9]*"' test-results/integration/${{ parameters.testSuite }}-results.xml | sed 's/errors="//;s/"//' || echo "0")
+      
+      echo "- **Total Tests**: $TOTAL_TESTS" >> test-results/integration/test-report.md
+      echo "- **Passed Tests**: $((TOTAL_TESTS - FAILED_TESTS - ERROR_TESTS))" >> test-results/integration/test-report.md
+      echo "- **Failed Tests**: $FAILED_TESTS" >> test-results/integration/test-report.md
+      echo "- **Error Tests**: $ERROR_TESTS" >> test-results/integration/test-report.md
+    fi
+    
+  displayName: 'Generate Test Report'
+  condition: always()

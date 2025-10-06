@@ -1925,6 +1925,10 @@ cli.add_command(multi_source)
 from src.cli.config_commands import config
 cli.add_command(config)
 
+# Add database inspection commands to the CLI
+from src.cli.db_commands import db
+cli.add_command(db)
+
 def main():
     """Entry point for the CLI."""
     import sys
@@ -1982,6 +1986,16 @@ def main():
             ("config export", "Export configuration to file"),
             ("config delete", "Delete stored configuration"),
             ("config stats", "Show configuration statistics"),
+            
+            # Database Inspection
+            ("db tables", "List database tables with statistics"),
+            ("db schema", "Show complete database schema"),
+            ("db sync-runs", "Show sync run history and status"),
+            ("db files", "Show file records and processing status"),
+            ("db registry", "Show registered source and RAG types"),
+            ("db stats", "Show database statistics and health"),
+            ("db integrity", "Check database integrity"),
+            ("db cleanup", "Clean up orphaned records"),
             
             # Legacy Single-Source Commands
             ("create-kb", "Create single-source knowledge base (legacy)"),

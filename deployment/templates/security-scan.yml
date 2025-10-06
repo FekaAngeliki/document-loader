@@ -1,0 +1,225 @@
+# Security Scanning Template
+parameters:
+  - name: scanCode
+    type: boolean
+    default: true
+  - name: scanDependencies
+    type: boolean
+    default: true
+  - name: scanSecrets
+    type: boolean
+    default: true
+  - name: scanContainerImage
+    type: boolean
+    default: false
+  - name: imageName
+    type: string
+    default: ''
+
+steps:
+- script: |
+    # Install security scanning tools
+    pip install bandit safety semgrep
+    
+    # Install additional tools via npm/other package managers
+    npm install -g retire
+  displayName: 'Install Security Tools'
+
+- script: |
+    echo "Running comprehensive security scan with bandit..."
+    bandit -r src/ \
+      -f json \
+      -o test-results/security-bandit.json \
+      --severity-level medium \
+      --confidence-level medium
+    
+    # Generate human-readable report
+    bandit -r src/ \
+      -f txt \
+      -o test-results/security-bandit.txt \
+      --severity-level medium \
+      --confidence-level medium
+    
+    # Check exit code and handle results
+    BANDIT_EXIT_CODE=$?
+    if [ $BANDIT_EXIT_CODE -ne 0 ]; then
+      echo "##vso[task.logissue type=warning]Security issues found by bandit"
+      cat test-results/security-bandit.txt
+    fi
+  displayName: 'Code Security Scan (Bandit)'
+  condition: eq(${{ parameters.scanCode }}, true)
+  continueOnError: true
+
+- script: |
+    echo "Running dependency vulnerability scan with safety..."
+    safety check \
+      --json \
+      --output test-results/security-safety.json \
+      --full-report
+    
+    SAFETY_EXIT_CODE=$?
+    if [ $SAFETY_EXIT_CODE -ne 0 ]; then
+      echo "##vso[task.logissue type=error]Vulnerable dependencies found"
+      cat test-results/security-safety.json
+    fi
+  displayName: 'Dependency Vulnerability Scan (Safety)'
+  condition: eq(${{ parameters.scanDependencies }}, true)
+
+- script: |
+    echo "Running advanced security scan with semgrep..."
+    semgrep --config=auto src/ \
+      --json \
+      --output=test-results/security-semgrep.json \
+      --severity=WARNING \
+      --severity=ERROR
+    
+    SEMGREP_EXIT_CODE=$?
+    if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
+      echo "##vso[task.logissue type=warning]Security patterns found by semgrep"
+      # Generate readable report
+      semgrep --config=auto src/ --output=test-results/security-semgrep.txt
+      cat test-results/security-semgrep.txt
+    fi
+  displayName: 'Advanced Security Patterns (Semgrep)'
+  condition: eq(${{ parameters.scanCode }}, true)
+  continueOnError: true
+
+- script: |
+    echo "Scanning for secrets and sensitive data..."
+    
+    # Check for common secret patterns
+    cat << 'EOF' > .secrets-patterns
+# Common secret patterns
+password\s*=\s*['""][^'""]{8,}['""]
+api_key\s*=\s*['""][^'""]{16,}['""]
+secret\s*=\s*['""][^'""]{16,}['""]
+token\s*=\s*['""][^'""]{16,}['""]
+private_key
+-----BEGIN.*PRIVATE KEY-----
+AWS_SECRET_ACCESS_KEY
+AZURE_CLIENT_SECRET
+EOF
+    
+    # Scan for secrets
+    grep -r -E -f .secrets-patterns src/ tests/ configs/ || true > test-results/secrets-scan.txt
+    
+    # Check for hardcoded IPs
+    grep -r -E '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' src/ tests/ configs/ || true >> test-results/secrets-scan.txt
+    
+    # Check for TODO/FIXME with sensitive context
+    grep -r -i -E "(TODO|FIXME|HACK).*(password|secret|key|token)" src/ tests/ || true >> test-results/secrets-scan.txt
+    
+    if [ -s test-results/secrets-scan.txt ]; then
+      echo "##vso[task.logissue type=warning]Potential secrets or sensitive data found"
+      cat test-results/secrets-scan.txt
+    fi
+  displayName: 'Secret Scanning'
+  condition: eq(${{ parameters.scanSecrets }}, true)
+
+- script: |
+    echo "Scanning JavaScript dependencies for vulnerabilities..."
+    if [ -f "package.json" ]; then
+      retire --js --outputformat json --outputpath test-results/security-retire.json || {
+        echo "##vso[task.logissue type=warning]Vulnerable JavaScript dependencies found"
+        cat test-results/security-retire.json
+      }
+    else
+      echo "No package.json found, skipping JavaScript dependency scan"
+    fi
+  displayName: 'JavaScript Dependency Scan (Retire.js)'
+  condition: eq(${{ parameters.scanDependencies }}, true)
+  continueOnError: true
+
+- script: |
+    echo "Running container image security scan..."
+    if [ -n "${{ parameters.imageName }}" ]; then
+      # Install trivy
+      wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+      echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+      sudo apt-get update
+      sudo apt-get install trivy
+      
+      # Scan the image
+      trivy image \
+        --format json \
+        --output test-results/security-trivy.json \
+        --severity HIGH,CRITICAL \
+        ${{ parameters.imageName }}
+      
+      # Generate readable report
+      trivy image \
+        --format table \
+        --output test-results/security-trivy.txt \
+        --severity HIGH,CRITICAL \
+        ${{ parameters.imageName }}
+      
+      TRIVY_EXIT_CODE=$?
+      if [ $TRIVY_EXIT_CODE -ne 0 ]; then
+        echo "##vso[task.logissue type=error]High/Critical vulnerabilities found in container image"
+        cat test-results/security-trivy.txt
+      fi
+    else
+      echo "No image name provided, skipping container scan"
+    fi
+  displayName: 'Container Image Security Scan (Trivy)'
+  condition: eq(${{ parameters.scanContainerImage }}, true)
+
+- script: |
+    # Generate comprehensive security report
+    cat << EOF > test-results/security-summary.md
+# Security Scan Report
+
+## Scan Overview
+- **Timestamp**: $(date)
+- **Branch**: $(Build.SourceBranchName)
+- **Commit**: $(Build.SourceVersion)
+
+## Scans Performed
+EOF
+
+    if [ "${{ parameters.scanCode }}" = "true" ]; then
+      echo "- ✅ Static Code Analysis (Bandit)" >> test-results/security-summary.md
+      echo "- ✅ Security Patterns (Semgrep)" >> test-results/security-summary.md
+    fi
+    
+    if [ "${{ parameters.scanDependencies }}" = "true" ]; then
+      echo "- ✅ Python Dependencies (Safety)" >> test-results/security-summary.md
+      echo "- ✅ JavaScript Dependencies (Retire.js)" >> test-results/security-summary.md
+    fi
+    
+    if [ "${{ parameters.scanSecrets }}" = "true" ]; then
+      echo "- ✅ Secret Detection" >> test-results/security-summary.md
+    fi
+    
+    if [ "${{ parameters.scanContainerImage }}" = "true" ]; then
+      echo "- ✅ Container Image Scan (Trivy)" >> test-results/security-summary.md
+    fi
+    
+    echo "" >> test-results/security-summary.md
+    echo "## Findings Summary" >> test-results/security-summary.md
+    
+    # Count findings from each tool
+    if [ -f "test-results/security-bandit.json" ]; then
+      BANDIT_COUNT=$(jq '.results | length' test-results/security-bandit.json 2>/dev/null || echo "0")
+      echo "- Bandit: $BANDIT_COUNT issues" >> test-results/security-summary.md
+    fi
+    
+    if [ -f "test-results/security-safety.json" ]; then
+      SAFETY_COUNT=$(jq '.vulnerabilities | length' test-results/security-safety.json 2>/dev/null || echo "0")
+      echo "- Safety: $SAFETY_COUNT vulnerabilities" >> test-results/security-summary.md
+    fi
+    
+    if [ -f "test-results/secrets-scan.txt" ]; then
+      SECRET_COUNT=$(cat test-results/secrets-scan.txt | wc -l)
+      echo "- Secret Scan: $SECRET_COUNT potential issues" >> test-results/security-summary.md
+    fi
+    
+  displayName: 'Generate Security Summary'
+  condition: always()
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Security Reports'
+  condition: always()
+  inputs:
+    pathToPublish: 'test-results'
+    artifactName: 'security-reports'

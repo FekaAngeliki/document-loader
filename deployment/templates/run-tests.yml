@@ -1,0 +1,96 @@
+# Test Execution Template
+parameters:
+  - name: testSuite
+    type: string
+    default: 'all'
+  - name: publishResults
+    type: boolean
+    default: true
+  - name: coverageThreshold
+    type: number
+    default: 80
+
+steps:
+- script: |
+    # Create test results directory
+    mkdir -p test-results
+    
+    # Run unit tests
+    if [ "${{ parameters.testSuite }}" = "unit" ] || [ "${{ parameters.testSuite }}" = "all" ]; then
+      echo "Running unit tests..."
+      python -m pytest tests/unit/ \
+        --junitxml=test-results/unit-test-results.xml \
+        --cov=src \
+        --cov-report=xml:test-results/coverage.xml \
+        --cov-report=html:test-results/coverage-html \
+        --cov-fail-under=${{ parameters.coverageThreshold }} \
+        -v
+    fi
+    
+    # Run integration tests
+    if [ "${{ parameters.testSuite }}" = "integration" ] || [ "${{ parameters.testSuite }}" = "all" ]; then
+      echo "Running integration tests..."
+      python -m pytest tests/integration/ \
+        --junitxml=test-results/integration-test-results.xml \
+        -v
+    fi
+    
+    # Run smoke tests
+    if [ "${{ parameters.testSuite }}" = "smoke" ]; then
+      echo "Running smoke tests..."
+      python -m pytest tests/smoke/ \
+        --junitxml=test-results/smoke-test-results.xml \
+        -v
+    fi
+    
+    # Run security tests
+    if [ "${{ parameters.testSuite }}" = "security" ] || [ "${{ parameters.testSuite }}" = "all" ]; then
+      echo "Running security tests..."
+      python -m pytest tests/security/ \
+        --junitxml=test-results/security-test-results.xml \
+        -v
+    fi
+    
+  displayName: 'Run Test Suite: ${{ parameters.testSuite }}'
+  env:
+    PYTHONPATH: $(Build.SourcesDirectory)/src
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  condition: and(always(), eq(${{ parameters.publishResults }}, true))
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: 'test-results/*-test-results.xml'
+    failTaskOnFailedTests: true
+    testRunTitle: 'Python Tests - ${{ parameters.testSuite }}'
+
+- task: PublishCodeCoverageResults@1
+  displayName: 'Publish Code Coverage'
+  condition: and(always(), eq(${{ parameters.publishResults }}, true))
+  inputs:
+    codeCoverageTool: 'Cobertura'
+    summaryFileLocation: 'test-results/coverage.xml'
+    reportDirectory: 'test-results/coverage-html'
+    failIfCoverageEmpty: true
+
+- script: |
+    # Generate test summary
+    echo "## Test Summary" > test-results/test-summary.md
+    echo "- Test Suite: ${{ parameters.testSuite }}" >> test-results/test-summary.md
+    echo "- Coverage Threshold: ${{ parameters.coverageThreshold }}%" >> test-results/test-summary.md
+    echo "- Timestamp: $(date)" >> test-results/test-summary.md
+    
+    # Check if coverage file exists and extract coverage percentage
+    if [ -f "test-results/coverage.xml" ]; then
+      COVERAGE=$(python -c "
+import xml.etree.ElementTree as ET
+tree = ET.parse('test-results/coverage.xml')
+root = tree.getroot()
+coverage = root.get('line-rate')
+print(f'{float(coverage)*100:.1f}%')
+      ")
+      echo "- Coverage Achieved: $COVERAGE" >> test-results/test-summary.md
+    fi
+    
+  displayName: 'Generate Test Summary'
+  condition: always()

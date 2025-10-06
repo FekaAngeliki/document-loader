@@ -1,9 +1,9 @@
 {
-  "name": "PremiumRMs-kb",
-  "description": "Knowledge Base for Premium RMs - Enhanced with comprehensive library and file type coverage",
+  "name": "PremiumRMs-hierarchy-example",
+  "description": "Example showing SharePoint folder hierarchy preservation",
   "rag_type": "file_system_storage",
   "rag_config": {
-    "storage_path": "/mnt/c/Users/E41297/Documents/NBG/sharepoint-files/premium-rms"
+    "storage_path": "/mnt/c/Users/E41297/Documents/NBG/sharepoint-files/premium-rms-hierarchy"
   },
   "sources": [
     {
@@ -17,27 +17,14 @@
         "site_id": "6f63c8f0-aa51-4681-8da5-5d48f6255f69",
         "include_libraries": true,
         "library_names": [
-          "\u0388\u03b3\u03b3\u03c1\u03b1\u03c6\u03b1"
+          "Έγγραφα"
         ],
         "include_lists": false,
         "include_site_pages": false,
         "include_extensions": [
-          ".pdf",
-          ".docx",
-          ".xlsx",
-          ".pptx",
-          ".doc",
-          ".xls",
-          ".ppt",
-          ".txt",
-          ".odt",
-          ".ods",
-          ".odp",
-          ".xml",
-          ".json",
-          ".csv",
-          ".html",
-          ".htm"
+          ".pdf", ".docx", ".xlsx", ".pptx", ".doc", ".xls", ".ppt",
+          ".txt", ".odt", ".ods", ".odp",
+          ".xml", ".json", ".csv", ".html", ".htm"
         ],
         "recursive": true,
         "timeout": 60,
@@ -53,8 +40,12 @@
     }
   ],
   "file_organization": {
-    "naming_convention": "{source_id}/{uuid}{extension}",
-    "folder_structure": "source_based"
+    "naming_convention": "{source_id}/{folder_path}/{original_name}_{uuid}{extension}",
+    "folder_structure": "preserve_hierarchy",
+    "_example_output": {
+      "flat_structure": "Sharepoint_1/550e8400-e29b-41d4-a716-446655440000.pdf",
+      "preserve_hierarchy": "Sharepoint_1/Policies/HR/Employee_Handbook_550e8400-e29b-41d4-a716-446655440000.pdf"
+    }
   },
   "sync_strategy": {
     "default_mode": "parallel",

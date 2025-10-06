@@ -1,0 +1,97 @@
+# Development Environment Variables
+variables:
+  # Environment Configuration
+  - name: environmentName
+    value: 'dev'
+  - name: resourceGroupName
+    value: 'rg-docloader-dev'
+  - name: location
+    value: 'East US'
+  
+  # Container App Configuration
+  - name: containerAppName
+    value: 'docloader-dev-app'
+  - name: containerAppEnvironment
+    value: 'docloader-dev-env'
+  
+  # Database Configuration
+  - name: postgresServerName
+    value: 'docloader-dev-postgres'
+  - name: databaseName
+    value: 'document_loader'
+  - name: databaseUser
+    value: 'dbadmin'
+  - name: minPoolSize
+    value: '5'
+  - name: maxPoolSize
+    value: '10'
+  
+  # Storage Configuration
+  - name: storageAccountName
+    value: 'docloaderdevstorage'
+  - name: containerName
+    value: 'documents'
+  
+  # Key Vault Configuration
+  - name: keyVaultName
+    value: 'docloader-dev-kv'
+  
+  # Monitoring Configuration
+  - name: logAnalyticsWorkspace
+    value: 'docloader-dev-logs'
+  - name: applicationInsightsName
+    value: 'docloader-dev-insights'
+  
+  # Container Registry Configuration
+  - name: containerRegistryName
+    value: 'docloaderdevacr'
+  
+  # Scaling Configuration
+  - name: minReplicas
+    value: '1'
+  - name: maxReplicas
+    value: '3'
+  - name: cpuLimit
+    value: '1.0'
+  - name: memoryLimit
+    value: '2Gi'
+  
+  # Feature Flags
+  - name: enableDetailedLogging
+    value: 'true'
+  - name: enableMetrics
+    value: 'true'
+  - name: enableHealthChecks
+    value: 'true'
+  - name: enableSwagger
+    value: 'true'
+  
+  # Performance Configuration
+  - name: requestTimeout
+    value: '300'
+  - name: maxConcurrentRequests
+    value: '100'
+  - name: enableCaching
+    value: 'false'
+  
+  # Security Configuration
+  - name: enableHttpsOnly
+    value: 'true'
+  - name: allowedOrigins
+    value: '*'
+  - name: enableCors
+    value: 'true'
+  
+  # Backup Configuration
+  - name: backupRetentionDays
+    value: '7'
+  - name: enableAutomaticBackup
+    value: 'true'
+  
+  # Cost Management
+  - name: costCenter
+    value: 'development'
+  - name: project
+    value: 'document-loader'
+  - name: owner
+    value: 'dev-team'

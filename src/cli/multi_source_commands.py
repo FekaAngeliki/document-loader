@@ -1244,7 +1244,16 @@ def create_template(name: str, sharepoint_sites, file_paths, onedrive_users, con
         "sources": [],
         "file_organization": {
             "naming_convention": "{source_id}/{uuid}{extension}",
-            "folder_structure": "source_based"
+            "folder_structure": "preserve_hierarchy",
+            "_structure_options": {
+                "source_based": "Flat structure: source_id/uuid.ext",
+                "preserve_hierarchy": "Hierarchical: source_id/original/folder/path/uuid.ext"
+            },
+            "_naming_options": {
+                "basic": "{source_id}/{uuid}{extension}",
+                "with_folder": "{source_id}/{folder_path}/{uuid}{extension}",
+                "with_original_name": "{source_id}/{folder_path}/{original_name}_{uuid}{extension}"
+            }
         },
         "sync_strategy": {
             "default_mode": "parallel",

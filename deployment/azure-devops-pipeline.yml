@@ -1,0 +1,309 @@
+# Azure DevOps Pipeline for Scheduled SharePoint Delta Sync
+# This pipeline runs on a schedule to perform delta sync of SharePoint documents
+
+trigger: none  # Disable CI triggers - only run on schedule
+
+# Schedule: Daily at 2:00 AM UTC (4:00 AM Greece time during winter)
+schedules:
+- cron: "0 2 * * *"
+  displayName: Daily SharePoint Delta Sync
+  branches:
+    include:
+    - main
+  always: true  # Run even if no code changes
+
+# Alternative schedules (uncomment as needed):
+# - cron: "0 */6 * * *"     # Every 6 hours
+# - cron: "0 8,14,20 * * *" # Three times daily: 8 AM, 2 PM, 8 PM UTC
+# - cron: "0 2 * * 1-5"     # Weekdays only at 2 AM
+
+variables:
+- group: document-loader-secrets  # Azure DevOps variable group
+- group: document-loader-config   # Configuration variables
+- name: containerRegistry
+  value: 'nbgregistry.azurecr.io'  # Update with your registry
+- name: imageName
+  value: 'document-loader'
+- name: imageTag
+  value: 'latest'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: PreSyncValidation
+  displayName: 'Pre-Sync Validation'
+  jobs:
+  - job: ValidateEnvironment
+    displayName: 'Validate Environment and Connectivity'
+    steps:
+    
+    - task: AzureCLI@2
+      displayName: 'Check Azure Resources'
+      inputs:
+        azureSubscription: 'NBG-Production'  # Service connection name
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "Checking database connectivity..."
+          # Test database connection
+          az postgres flexible-server show \
+            --name $(DB_SERVER_NAME) \
+            --resource-group $(DB_RESOURCE_GROUP)
+          
+          echo "Checking container registry access..."
+          # Test container registry access
+          az acr login --name $(echo $(containerRegistry) | cut -d'.' -f1)
+    
+    - task: Docker@2
+      displayName: 'Pull Latest Document Loader Image'
+      inputs:
+        containerRegistry: 'NBG Container Registry'  # Service connection
+        command: 'pull'
+        arguments: '$(containerRegistry)/$(imageName):$(imageTag)'
+    
+    - task: Docker@2
+      displayName: 'Test Configuration Validation'
+      inputs:
+        command: 'run'
+        arguments: |
+          --rm \
+          -e SHAREPOINT_TENANT_ID="$(SHAREPOINT_TENANT_ID)" \
+          -e SHAREPOINT_CLIENT_ID="$(SHAREPOINT_CLIENT_ID)" \
+          -e SHAREPOINT_CLIENT_SECRET="$(SHAREPOINT_CLIENT_SECRET)" \
+          -e DOCUMENT_LOADER_DB_HOST="$(DB_HOST)" \
+          -e DOCUMENT_LOADER_DB_NAME="$(DB_NAME)" \
+          -e DOCUMENT_LOADER_DB_USER="$(DB_USER)" \
+          -e DOCUMENT_LOADER_DB_PASSWORD="$(DB_PASSWORD)" \
+          $(containerRegistry)/$(imageName):$(imageTag) \
+          document-loader db tables --with-counts
+
+- stage: ExecuteDeltaSync
+  displayName: 'Execute Delta Sync'
+  dependsOn: PreSyncValidation
+  condition: succeeded()
+  jobs:
+  - job: SyncPremiumRMs
+    displayName: 'Sync Premium RMs Knowledge Base'
+    timeoutInMinutes: 120  # 2 hour timeout
+    steps:
+    
+    - task: Docker@2
+      displayName: 'Execute SharePoint Delta Sync'
+      inputs:
+        command: 'run'
+        arguments: |
+          --rm \
+          -v /tmp/sync-logs:/app/logs \
+          -e SHAREPOINT_TENANT_ID="$(SHAREPOINT_TENANT_ID)" \
+          -e SHAREPOINT_CLIENT_ID="$(SHAREPOINT_CLIENT_ID)" \
+          -e SHAREPOINT_CLIENT_SECRET="$(SHAREPOINT_CLIENT_SECRET)" \
+          -e DOCUMENT_LOADER_DB_HOST="$(DB_HOST)" \
+          -e DOCUMENT_LOADER_DB_NAME="$(DB_NAME)" \
+          -e DOCUMENT_LOADER_DB_USER="$(DB_USER)" \
+          -e DOCUMENT_LOADER_DB_PASSWORD="$(DB_PASSWORD)" \
+          -e DOCUMENT_LOADER_LOG_LEVEL="INFO" \
+          $(containerRegistry)/$(imageName):$(imageTag) \
+          document-loader multi-source sync-kb PremiumRMs-kb --sync-mode parallel
+      
+      # Continue on error to capture logs and metrics
+      continueOnError: true
+    
+    - task: CopyFiles@2
+      displayName: 'Copy Sync Logs'
+      condition: always()
+      inputs:
+        sourceFolder: '/tmp/sync-logs'
+        contents: '**/*.log'
+        targetFolder: '$(Build.ArtifactStagingDirectory)/logs'
+    
+    - task: Docker@2
+      displayName: 'Generate Sync Statistics'
+      condition: always()
+      inputs:
+        command: 'run'
+        arguments: |
+          --rm \
+          -e DOCUMENT_LOADER_DB_HOST="$(DB_HOST)" \
+          -e DOCUMENT_LOADER_DB_NAME="$(DB_NAME)" \
+          -e DOCUMENT_LOADER_DB_USER="$(DB_USER)" \
+          -e DOCUMENT_LOADER_DB_PASSWORD="$(DB_PASSWORD)" \
+          $(containerRegistry)/$(imageName):$(imageTag) \
+          document-loader db sync-runs --limit 1 --detailed > $(Build.ArtifactStagingDirectory)/sync-stats.txt
+
+- stage: PostSyncValidation
+  displayName: 'Post-Sync Validation and Reporting'
+  dependsOn: ExecuteDeltaSync
+  condition: always()
+  jobs:
+  - job: ValidateResults
+    displayName: 'Validate Sync Results'
+    steps:
+    
+    - task: Docker@2
+      displayName: 'Check Database Health'
+      inputs:
+        command: 'run'
+        arguments: |
+          --rm \
+          -e DOCUMENT_LOADER_DB_HOST="$(DB_HOST)" \
+          -e DOCUMENT_LOADER_DB_NAME="$(DB_NAME)" \
+          -e DOCUMENT_LOADER_DB_USER="$(DB_USER)" \
+          -e DOCUMENT_LOADER_DB_PASSWORD="$(DB_PASSWORD)" \
+          $(containerRegistry)/$(imageName):$(imageTag) \
+          document-loader db integrity
+    
+    - task: Docker@2
+      displayName: 'Generate File Statistics'
+      inputs:
+        command: 'run'
+        arguments: |
+          --rm \
+          -e DOCUMENT_LOADER_DB_HOST="$(DB_HOST)" \
+          -e DOCUMENT_LOADER_DB_NAME="$(DB_NAME)" \
+          -e DOCUMENT_LOADER_DB_USER="$(DB_USER)" \
+          -e DOCUMENT_LOADER_DB_PASSWORD="$(DB_PASSWORD)" \
+          $(containerRegistry)/$(imageName):$(imageTag) \
+          document-loader db files --kb-name "PremiumRMs-kb_placeholder" --limit 10
+    
+    - task: PowerShell@2
+      displayName: 'Parse Sync Results'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Parse sync results and set pipeline variables
+          $syncStats = Get-Content "$(Build.ArtifactStagingDirectory)/sync-stats.txt"
+          Write-Host "Sync Statistics:"
+          Write-Host $syncStats
+          
+          # Extract key metrics (customize based on your output format)
+          $newFiles = 0
+          $modifiedFiles = 0
+          $errors = 0
+          
+          # Set pipeline variables for reporting
+          Write-Host "##vso[task.setvariable variable=NewFiles]$newFiles"
+          Write-Host "##vso[task.setvariable variable=ModifiedFiles]$modifiedFiles"
+          Write-Host "##vso[task.setvariable variable=SyncErrors]$errors"
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Sync Logs and Reports'
+      condition: always()
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)'
+        artifactName: 'sync-reports'
+        publishLocation: 'Container'
+
+- stage: NotifyResults
+  displayName: 'Notify Stakeholders'
+  dependsOn: 
+  - ExecuteDeltaSync
+  - PostSyncValidation
+  condition: always()
+  jobs:
+  - job: SendNotifications
+    displayName: 'Send Email Notifications'
+    steps:
+    
+    - task: PowerShell@2
+      displayName: 'Prepare Notification Content'
+      inputs:
+        targetType: 'inline'
+        script: |
+          $syncStatus = "$(Agent.JobStatus)"
+          $buildNumber = "$(Build.BuildNumber)"
+          $buildUrl = "$(System.CollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)"
+          
+          $subject = "SharePoint Delta Sync - $syncStatus - Build $buildNumber"
+          
+          $body = @"
+          SharePoint Delta Sync Execution Report
+          
+          Build: $buildNumber
+          Status: $syncStatus
+          Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') UTC
+          
+          Results:
+          - New Files: $(NewFiles)
+          - Modified Files: $(ModifiedFiles) 
+          - Sync Errors: $(SyncErrors)
+          
+          View detailed results: $buildUrl
+          
+          Knowledge Base: PremiumRMs-kb
+          Source: SharePoint Enterprise (https://groupnbg.sharepoint.com/sites/div991secb)
+          
+          This is an automated message from the Document Loader system.
+          "@
+          
+          Write-Host "##vso[task.setvariable variable=EmailSubject]$subject"
+          Write-Host "##vso[task.setvariable variable=EmailBody]$body"
+    
+    - task: emailReport@1
+      displayName: 'Send Email Report'
+      condition: always()
+      inputs:
+        sendMailConditionConfig: 'Always'
+        subject: '$(EmailSubject)'
+        to: '$(NOTIFICATION_EMAIL_LIST)'  # Variable group setting
+        body: '$(EmailBody)'
+        attachments: '$(Build.ArtifactStagingDirectory)/sync-stats.txt'
+
+# Optional: Slack notification
+- stage: SlackNotification
+  displayName: 'Slack Notification'
+  dependsOn: ExecuteDeltaSync
+  condition: and(always(), ne(variables['SLACK_WEBHOOK_URL'], ''))
+  jobs:
+  - job: PostToSlack
+    displayName: 'Post Results to Slack'
+    steps:
+    
+    - task: PowerShell@2
+      displayName: 'Send Slack Message'
+      inputs:
+        targetType: 'inline'
+        script: |
+          $status = "$(Agent.JobStatus)"
+          $icon = if ($status -eq "Succeeded") { ":white_check_mark:" } else { ":x:" }
+          $color = if ($status -eq "Succeeded") { "good" } else { "danger" }
+          
+          $payload = @{
+            text = "$icon SharePoint Delta Sync - $status"
+            attachments = @(
+              @{
+                color = $color
+                fields = @(
+                  @{
+                    title = "Knowledge Base"
+                    value = "PremiumRMs-kb"
+                    short = $true
+                  },
+                  @{
+                    title = "Build"
+                    value = "$(Build.BuildNumber)"
+                    short = $true
+                  },
+                  @{
+                    title = "New Files"
+                    value = "$(NewFiles)"
+                    short = $true
+                  },
+                  @{
+                    title = "Modified Files"
+                    value = "$(ModifiedFiles)"
+                    short = $true
+                  }
+                )
+                actions = @(
+                  @{
+                    type = "button"
+                    text = "View Build"
+                    url = "$(System.CollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)"
+                  }
+                )
+              }
+            )
+          } | ConvertTo-Json -Depth 4
+          
+          Invoke-RestMethod -Uri "$(SLACK_WEBHOOK_URL)" -Method Post -Body $payload -ContentType "application/json"

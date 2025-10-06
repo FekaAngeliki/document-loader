@@ -1,0 +1,422 @@
+# Azure DevOps Pipeline for Document Loader
+# Comprehensive pipeline with all execution options and advanced features
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+      - feature/*
+      - hotfix/*
+  paths:
+    exclude:
+      - docs/*
+      - README.md
+      - '*.md'
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    exclude:
+      - docs/*
+      - README.md
+      - '*.md'
+
+parameters:
+  - name: deploymentMode
+    displayName: 'Deployment Mode'
+    type: string
+    default: 'auto'
+    values:
+      - auto
+      - manual
+      - hotfix
+      - rollback
+      - maintenance
+      - disaster-recovery
+
+  - name: targetEnvironment
+    displayName: 'Target Environment'
+    type: string
+    default: 'dev'
+    values:
+      - dev
+      - staging
+      - prod
+      - all
+      - custom
+
+  - name: runTests
+    displayName: 'Run Tests'
+    type: boolean
+    default: true
+
+  - name: runSecurityScan
+    displayName: 'Run Security Scan'
+    type: boolean
+    default: true
+
+  - name: deployInfrastructure
+    displayName: 'Deploy Infrastructure'
+    type: boolean
+    default: false
+
+  - name: runDatabaseMigration
+    displayName: 'Run Database Migration'
+    type: boolean
+    default: true
+
+  - name: imageTag
+    displayName: 'Custom Image Tag (for rollback)'
+    type: string
+    default: '$(Build.BuildId)'
+
+  - name: deploymentStrategy
+    displayName: 'Deployment Strategy'
+    type: string
+    default: 'rolling'
+    values:
+      - rolling
+      - blueGreen
+      - canary
+      - immediate
+
+  - name: testSuite
+    displayName: 'Test Suite to Run'
+    type: string
+    default: 'all'
+    values:
+      - unit
+      - integration
+      - smoke
+      - load
+      - security
+      - all
+
+  - name: approvalRequired
+    displayName: 'Require Manual Approval'
+    type: boolean
+    default: true
+
+variables:
+  # Container registry configuration
+  dockerRegistryServiceConnection: 'acr-connection'
+  imageRepository: 'document-loader'
+  containerRegistry: 'docloaderacr.azurecr.io'
+  dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
+  tag: ${{ parameters.imageTag }}
+  
+  # Agent configuration
+  vmImageName: 'ubuntu-latest'
+  pythonVersion: '3.11'
+  
+  # Quality gates
+  coverageThreshold: 80
+  securityScanThreshold: 'high'
+  
+  # Deployment configuration
+  deploymentMode: ${{ parameters.deploymentMode }}
+  targetEnvironment: ${{ parameters.targetEnvironment }}
+  deploymentStrategy: ${{ parameters.deploymentStrategy }}
+  
+  # Feature flags
+  runTests: ${{ parameters.runTests }}
+  runSecurityScan: ${{ parameters.runSecurityScan }}
+  deployInfrastructure: ${{ parameters.deployInfrastructure }}
+  runDatabaseMigration: ${{ parameters.runDatabaseMigration }}
+  testSuite: ${{ parameters.testSuite }}
+  approvalRequired: ${{ parameters.approvalRequired }}
+
+stages:
+# =====================================
+# CONTINUOUS INTEGRATION STAGE
+# =====================================
+- stage: CI
+  displayName: 'Continuous Integration'
+  condition: or(eq(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.Reason'], 'IndividualCI'))
+  jobs:
+  - job: CodeQuality
+    displayName: 'Code Quality & Testing'
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - template: templates/setup-python.yml
+    - template: templates/run-tests.yml
+      parameters:
+        testSuite: $(testSuite)
+    - template: templates/code-quality.yml
+    
+  - job: SecurityScan
+    displayName: 'Security Scanning'
+    condition: eq(variables.runSecurityScan, true)
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - template: templates/security-scan.yml
+
+# =====================================
+# BUILD STAGE
+# =====================================
+- stage: Build
+  displayName: 'Build & Package'
+  dependsOn: []
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+  jobs:
+  - job: BuildApplication
+    displayName: 'Build Application'
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - template: templates/setup-python.yml
+    
+    - task: Docker@2
+      displayName: 'Build Docker Image'
+      inputs:
+        command: build
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
+        tags: |
+          $(tag)
+          latest
+        arguments: '--build-arg BUILD_DATE=$(Build.BuildNumber) --build-arg VERSION=$(Build.BuildId)'
+    
+    - task: Docker@2
+      displayName: 'Run Security Scan on Image'
+      condition: eq(variables.runSecurityScan, true)
+      inputs:
+        command: run
+        arguments: '--rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image $(imageRepository):$(tag)'
+    
+    - task: Docker@2
+      displayName: 'Push to Container Registry'
+      inputs:
+        command: push
+        repository: $(imageRepository)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        tags: |
+          $(tag)
+          latest
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Deployment Scripts'
+      inputs:
+        pathToPublish: 'deployment'
+        artifactName: 'deployment-scripts'
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Test Results'
+      condition: eq(variables.runTests, true)
+      inputs:
+        pathToPublish: 'test-results'
+        artifactName: 'test-results'
+
+# =====================================
+# INFRASTRUCTURE STAGE
+# =====================================
+- stage: Infrastructure
+  displayName: 'Deploy Infrastructure'
+  dependsOn: []
+  condition: eq(variables.deployInfrastructure, true)
+  jobs:
+  - template: templates/infrastructure-deployment.yml
+    parameters:
+      environment: 'infrastructure'
+      serviceConnection: 'azure-subscription'
+
+# =====================================
+# DEVELOPMENT DEPLOYMENT
+# =====================================
+- stage: DeployDev
+  displayName: 'Deploy to Development'
+  dependsOn: ['Build']
+  condition: and(succeeded(), or(eq(variables.targetEnvironment, 'dev'), eq(variables.targetEnvironment, 'all')))
+  variables:
+  - group: 'dev-variables'
+  - name: environmentName
+    value: 'dev'
+  jobs:
+  - template: templates/deployment-job.yml
+    parameters:
+      environment: 'development'
+      environmentName: 'dev'
+      serviceConnection: 'azure-dev-subscription'
+      resourceGroup: 'rg-docloader-dev'
+      containerAppName: 'docloader-dev-app'
+      requireApproval: false
+      deploymentStrategy: $(deploymentStrategy)
+
+# =====================================
+# STAGING DEPLOYMENT
+# =====================================
+- stage: DeployStaging
+  displayName: 'Deploy to Staging'
+  dependsOn: ['Build', 'DeployDev']
+  condition: and(succeeded(), or(eq(variables.targetEnvironment, 'staging'), eq(variables.targetEnvironment, 'all')))
+  variables:
+  - group: 'staging-variables'
+  - name: environmentName
+    value: 'staging'
+  jobs:
+  - template: templates/deployment-job.yml
+    parameters:
+      environment: 'staging'
+      environmentName: 'staging'
+      serviceConnection: 'azure-staging-subscription'
+      resourceGroup: 'rg-docloader-staging'
+      containerAppName: 'docloader-staging-app'
+      requireApproval: $(approvalRequired)
+      deploymentStrategy: $(deploymentStrategy)
+
+  - job: StagingTests
+    displayName: 'Staging Environment Tests'
+    dependsOn: 'DeployToStaging'
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - template: templates/integration-tests.yml
+      parameters:
+        environment: 'staging'
+        testSuite: $(testSuite)
+
+# =====================================
+# PRODUCTION DEPLOYMENT
+# =====================================
+- stage: DeployProd
+  displayName: 'Deploy to Production'
+  dependsOn: ['Build', 'DeployStaging']
+  condition: and(succeeded(), or(eq(variables.targetEnvironment, 'prod'), eq(variables.targetEnvironment, 'all'), eq(variables['Build.SourceBranch'], 'refs/heads/main')))
+  variables:
+  - group: 'prod-variables'
+  - name: environmentName
+    value: 'prod'
+  jobs:
+  - template: templates/pre-deployment-checks.yml
+    parameters:
+      environment: 'production'
+      serviceConnection: 'azure-prod-subscription'
+
+  - template: templates/deployment-job.yml
+    parameters:
+      environment: 'production'
+      environmentName: 'prod'
+      serviceConnection: 'azure-prod-subscription'
+      resourceGroup: 'rg-docloader-prod'
+      containerAppName: 'docloader-prod-app'
+      requireApproval: true
+      deploymentStrategy: $(deploymentStrategy)
+
+  - job: ProductionTests
+    displayName: 'Production Smoke Tests'
+    dependsOn: 'DeployToProduction'
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - template: templates/integration-tests.yml
+      parameters:
+        environment: 'production'
+        testSuite: 'smoke'
+
+# =====================================
+# LOAD TESTING STAGE
+# =====================================
+- stage: LoadTesting
+  displayName: 'Load Testing'
+  dependsOn: ['DeployStaging']
+  condition: and(succeeded(), or(eq(variables.testSuite, 'load'), eq(variables.testSuite, 'all')))
+  jobs:
+  - template: templates/load-testing.yml
+    parameters:
+      environment: 'staging'
+      testDuration: '10m'
+      virtualUsers: 100
+
+# =====================================
+# MAINTENANCE & OPERATIONS
+# =====================================
+- stage: Maintenance
+  displayName: 'Maintenance Operations'
+  dependsOn: []
+  condition: eq(variables.deploymentMode, 'maintenance')
+  jobs:
+  - job: DatabaseMaintenance
+    displayName: 'Database Maintenance'
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - template: templates/database-maintenance.yml
+
+  - job: LogCleanup
+    displayName: 'Log Cleanup'
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - template: templates/log-cleanup.yml
+
+  - job: SecurityPatching
+    displayName: 'Security Patching'
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - template: templates/security-patching.yml
+
+  - job: BackupOperations
+    displayName: 'Backup Operations'
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - template: templates/backup-operations.yml
+
+# =====================================
+# DISASTER RECOVERY STAGE
+# =====================================
+- stage: DisasterRecovery
+  displayName: 'Disaster Recovery'
+  dependsOn: []
+  condition: eq(variables.deploymentMode, 'disaster-recovery')
+  jobs:
+  - job: FailoverPreparation
+    displayName: 'Failover Preparation'
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - template: templates/disaster-recovery.yml
+      parameters:
+        operation: 'prepare'
+
+  - job: FailoverExecution
+    displayName: 'Failover Execution'
+    dependsOn: 'FailoverPreparation'
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - template: templates/disaster-recovery.yml
+      parameters:
+        operation: 'execute'
+
+# =====================================
+# ROLLBACK STAGE
+# =====================================
+- stage: Rollback
+  displayName: 'Rollback Deployment'
+  dependsOn: []
+  condition: eq(variables.deploymentMode, 'rollback')
+  jobs:
+  - template: templates/rollback-deployment.yml
+    parameters:
+      targetEnvironment: $(targetEnvironment)
+      rollbackImageTag: $(imageTag)
+
+# =====================================
+# MONITORING & ALERTING
+# =====================================
+- stage: MonitoringSetup
+  displayName: 'Setup Monitoring'
+  dependsOn: ['DeployProd']
+  condition: and(succeeded(), eq(variables.targetEnvironment, 'prod'))
+  jobs:
+  - template: templates/monitoring-setup.yml
+    parameters:
+      environment: 'production'

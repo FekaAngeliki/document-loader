@@ -1,0 +1,312 @@
+# Deployment Job Template
+parameters:
+  - name: environment
+    type: string
+  - name: environmentName
+    type: string
+  - name: serviceConnection
+    type: string
+  - name: resourceGroup
+    type: string
+  - name: containerAppName
+    type: string
+  - name: requireApproval
+    type: boolean
+    default: false
+  - name: deploymentStrategy
+    type: string
+    default: 'rolling'
+  - name: healthCheckUrl
+    type: string
+    default: ''
+  - name: deploymentTimeout
+    type: number
+    default: 1800
+
+jobs:
+- deployment: DeployTo${{ parameters.environmentName }}
+  displayName: 'Deploy to ${{ parameters.environment }}'
+  pool:
+    vmImage: 'ubuntu-latest'
+  environment: ${{ parameters.environment }}
+  timeoutInMinutes: ${{ parameters.deploymentTimeout }}
+  strategy:
+    runOnce:
+      preDeploy:
+        steps:
+        - download: current
+          artifact: deployment-scripts
+        
+        - task: AzureKeyVault@2
+          displayName: 'Get Secrets from Key Vault'
+          inputs:
+            azureSubscription: ${{ parameters.serviceConnection }}
+            KeyVaultName: 'docloader-${{ parameters.environmentName }}-kv'
+            SecretsFilter: '*'
+            RunAsPreJob: false
+        
+        - script: |
+            echo "Pre-deployment validation for ${{ parameters.environment }}"
+            echo "Environment: ${{ parameters.environmentName }}"
+            echo "Resource Group: ${{ parameters.resourceGroup }}"
+            echo "Container App: ${{ parameters.containerAppName }}"
+            echo "Deployment Strategy: ${{ parameters.deploymentStrategy }}"
+            
+            # Validate Azure CLI is available
+            az version
+            
+            # Check if resource group exists
+            if ! az group show --name ${{ parameters.resourceGroup }} &>/dev/null; then
+              echo "##vso[task.logissue type=error]Resource group ${{ parameters.resourceGroup }} not found"
+              exit 1
+            fi
+            
+            # Check if container app exists
+            if ! az containerapp show --name ${{ parameters.containerAppName }} --resource-group ${{ parameters.resourceGroup }} &>/dev/null; then
+              echo "##vso[task.logissue type=warning]Container app ${{ parameters.containerAppName }} not found, will create new"
+            fi
+            
+          displayName: 'Pre-deployment Validation'
+
+      deploy:
+        steps:
+        - script: |
+            echo "Starting deployment to ${{ parameters.environment }}"
+            
+            # Get current revision for rollback if needed
+            CURRENT_REVISION=$(az containerapp revision list \
+              --name ${{ parameters.containerAppName }} \
+              --resource-group ${{ parameters.resourceGroup }} \
+              --query '[0].name' -o tsv 2>/dev/null || echo "none")
+            
+            echo "Current revision: $CURRENT_REVISION"
+            echo "##vso[task.setvariable variable=previousRevision]$CURRENT_REVISION"
+            
+          displayName: 'Get Current Revision'
+        
+        - script: |
+            echo "Deploying with strategy: ${{ parameters.deploymentStrategy }}"
+            
+            case "${{ parameters.deploymentStrategy }}" in
+              "blueGreen")
+                echo "Implementing Blue-Green deployment..."
+                # Create new revision with traffic split
+                az containerapp update \
+                  --name ${{ parameters.containerAppName }} \
+                  --resource-group ${{ parameters.resourceGroup }} \
+                  --image $(containerRegistry)/$(imageRepository):$(tag) \
+                  --revision-suffix $(Build.BuildId) \
+                  --set-env-vars \
+                    DOCUMENT_LOADER_DB_HOST="$(DB-HOST)" \
+                    DOCUMENT_LOADER_DB_PORT="$(DB-PORT)" \
+                    DOCUMENT_LOADER_DB_NAME="$(DB-NAME)" \
+                    DOCUMENT_LOADER_DB_USER="$(DB-USER)" \
+                    DOCUMENT_LOADER_DB_PASSWORD="$(DB-PASSWORD)" \
+                    DOCUMENT_LOADER_DB_MIN_POOL_SIZE="10" \
+                    DOCUMENT_LOADER_DB_MAX_POOL_SIZE="20" \
+                    APPLICATIONINSIGHTS_CONNECTION_STRING="$(APPINSIGHTS-CONNECTIONSTRING)" \
+                    BUILD_VERSION="$(Build.BuildId)" \
+                    DEPLOYMENT_TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+                
+                # Initially route 10% traffic to new revision
+                NEW_REVISION=$(az containerapp revision list \
+                  --name ${{ parameters.containerAppName }} \
+                  --resource-group ${{ parameters.resourceGroup }} \
+                  --query '[0].name' -o tsv)
+                
+                if [ "$(previousRevision)" != "none" ]; then
+                  az containerapp ingress traffic set \
+                    --name ${{ parameters.containerAppName }} \
+                    --resource-group ${{ parameters.resourceGroup }} \
+                    --revision-weight $(previousRevision)=90 $NEW_REVISION=10
+                fi
+                ;;
+                
+              "canary")
+                echo "Implementing Canary deployment..."
+                # Similar to blue-green but with even smaller traffic percentage
+                az containerapp update \
+                  --name ${{ parameters.containerAppName }} \
+                  --resource-group ${{ parameters.resourceGroup }} \
+                  --image $(containerRegistry)/$(imageRepository):$(tag) \
+                  --revision-suffix $(Build.BuildId) \
+                  --set-env-vars \
+                    DOCUMENT_LOADER_DB_HOST="$(DB-HOST)" \
+                    DOCUMENT_LOADER_DB_PORT="$(DB-PORT)" \
+                    DOCUMENT_LOADER_DB_NAME="$(DB-NAME)" \
+                    DOCUMENT_LOADER_DB_USER="$(DB-USER)" \
+                    DOCUMENT_LOADER_DB_PASSWORD="$(DB-PASSWORD)" \
+                    DOCUMENT_LOADER_DB_MIN_POOL_SIZE="10" \
+                    DOCUMENT_LOADER_DB_MAX_POOL_SIZE="20" \
+                    APPLICATIONINSIGHTS_CONNECTION_STRING="$(APPINSIGHTS-CONNECTIONSTRING)" \
+                    BUILD_VERSION="$(Build.BuildId)" \
+                    DEPLOYMENT_TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+                
+                NEW_REVISION=$(az containerapp revision list \
+                  --name ${{ parameters.containerAppName }} \
+                  --resource-group ${{ parameters.resourceGroup }} \
+                  --query '[0].name' -o tsv)
+                
+                if [ "$(previousRevision)" != "none" ]; then
+                  az containerapp ingress traffic set \
+                    --name ${{ parameters.containerAppName }} \
+                    --resource-group ${{ parameters.resourceGroup }} \
+                    --revision-weight $(previousRevision)=95 $NEW_REVISION=5
+                fi
+                ;;
+                
+              *)
+                echo "Implementing Rolling deployment..."
+                az containerapp update \
+                  --name ${{ parameters.containerAppName }} \
+                  --resource-group ${{ parameters.resourceGroup }} \
+                  --image $(containerRegistry)/$(imageRepository):$(tag) \
+                  --set-env-vars \
+                    DOCUMENT_LOADER_DB_HOST="$(DB-HOST)" \
+                    DOCUMENT_LOADER_DB_PORT="$(DB-PORT)" \
+                    DOCUMENT_LOADER_DB_NAME="$(DB-NAME)" \
+                    DOCUMENT_LOADER_DB_USER="$(DB-USER)" \
+                    DOCUMENT_LOADER_DB_PASSWORD="$(DB-PASSWORD)" \
+                    DOCUMENT_LOADER_DB_MIN_POOL_SIZE="10" \
+                    DOCUMENT_LOADER_DB_MAX_POOL_SIZE="20" \
+                    APPLICATIONINSIGHTS_CONNECTION_STRING="$(APPINSIGHTS-CONNECTIONSTRING)" \
+                    BUILD_VERSION="$(Build.BuildId)" \
+                    DEPLOYMENT_TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+                ;;
+            esac
+            
+          displayName: 'Deploy Application'
+        
+        - script: |
+            echo "Running database migrations..."
+            if [ "$(runDatabaseMigration)" = "true" ]; then
+              # Run database initialization/migration
+              az containerapp exec \
+                --name ${{ parameters.containerAppName }} \
+                --resource-group ${{ parameters.resourceGroup }} \
+                --command "document-loader init-db" || {
+                echo "##vso[task.logissue type=warning]Database migration failed, continuing with deployment"
+              }
+            else
+              echo "Skipping database migration (disabled)"
+            fi
+          displayName: 'Run Database Migration'
+          condition: eq(variables.runDatabaseMigration, true)
+
+      postRouteTraffic:
+        steps:
+        - script: |
+            echo "Post-deployment verification for ${{ parameters.environment }}"
+            
+            # Get application URL
+            APP_URL=$(az containerapp show \
+              --name ${{ parameters.containerAppName }} \
+              --resource-group ${{ parameters.resourceGroup }} \
+              --query 'properties.configuration.ingress.fqdn' -o tsv)
+            
+            echo "Application URL: https://$APP_URL"
+            echo "##vso[task.setvariable variable=applicationUrl]https://$APP_URL"
+            
+            # Wait for application to be ready
+            echo "Waiting for application to be ready..."
+            sleep 30
+            
+            # Basic health check
+            if [ -n "${{ parameters.healthCheckUrl }}" ]; then
+              HEALTH_URL="${{ parameters.healthCheckUrl }}"
+            else
+              HEALTH_URL="https://$APP_URL/health"
+            fi
+            
+            echo "Checking health endpoint: $HEALTH_URL"
+            for i in {1..10}; do
+              if curl -f -s "$HEALTH_URL" >/dev/null 2>&1; then
+                echo "Health check passed"
+                break
+              else
+                echo "Health check attempt $i failed, retrying in 30 seconds..."
+                sleep 30
+              fi
+              
+              if [ $i -eq 10 ]; then
+                echo "##vso[task.logissue type=error]Health check failed after 10 attempts"
+                exit 1
+              fi
+            done
+            
+          displayName: 'Post-Deployment Health Check'
+        
+        - script: |
+            # For blue-green and canary deployments, gradually shift traffic
+            if [ "${{ parameters.deploymentStrategy }}" = "blueGreen" ] || [ "${{ parameters.deploymentStrategy }}" = "canary" ]; then
+              echo "Gradually shifting traffic to new revision..."
+              
+              NEW_REVISION=$(az containerapp revision list \
+                --name ${{ parameters.containerAppName }} \
+                --resource-group ${{ parameters.resourceGroup }} \
+                --query '[0].name' -o tsv)
+              
+              if [ "$(previousRevision)" != "none" ]; then
+                # Shift to 50% traffic
+                echo "Shifting to 50% traffic split..."
+                az containerapp ingress traffic set \
+                  --name ${{ parameters.containerAppName }} \
+                  --resource-group ${{ parameters.resourceGroup }} \
+                  --revision-weight $(previousRevision)=50 $NEW_REVISION=50
+                
+                sleep 60  # Monitor for 1 minute
+                
+                # Shift to 100% traffic
+                echo "Shifting to 100% traffic to new revision..."
+                az containerapp ingress traffic set \
+                  --name ${{ parameters.containerAppName }} \
+                  --resource-group ${{ parameters.resourceGroup }} \
+                  --revision-weight $NEW_REVISION=100
+                
+                # Deactivate old revision after successful deployment
+                if [ "$(previousRevision)" != "none" ]; then
+                  az containerapp revision deactivate \
+                    --name ${{ parameters.containerAppName }} \
+                    --resource-group ${{ parameters.resourceGroup }} \
+                    --revision $(previousRevision)
+                fi
+              fi
+            fi
+          displayName: 'Complete Traffic Shift'
+          condition: or(eq('${{ parameters.deploymentStrategy }}', 'blueGreen'), eq('${{ parameters.deploymentStrategy }}', 'canary'))
+        
+        - script: |
+            echo "Deployment completed successfully!"
+            echo "Application URL: $(applicationUrl)"
+            echo "Environment: ${{ parameters.environment }}"
+            echo "Build: $(Build.BuildId)"
+            echo "Image: $(containerRegistry)/$(imageRepository):$(tag)"
+            
+            # Log deployment details
+            az containerapp show \
+              --name ${{ parameters.containerAppName }} \
+              --resource-group ${{ parameters.resourceGroup }} \
+              --query '{name:name,status:properties.runningStatus,fqdn:properties.configuration.ingress.fqdn,image:properties.template.containers[0].image}' \
+              --output table
+            
+          displayName: 'Deployment Summary'
+
+      on:
+        failure:
+          steps:
+          - script: |
+              echo "Deployment failed, initiating rollback..."
+              
+              if [ "$(previousRevision)" != "none" ]; then
+                echo "Rolling back to previous revision: $(previousRevision)"
+                az containerapp ingress traffic set \
+                  --name ${{ parameters.containerAppName }} \
+                  --resource-group ${{ parameters.resourceGroup }} \
+                  --revision-weight $(previousRevision)=100
+                
+                echo "Rollback completed"
+              else
+                echo "No previous revision available for rollback"
+              fi
+              
+            displayName: 'Automatic Rollback on Failure'

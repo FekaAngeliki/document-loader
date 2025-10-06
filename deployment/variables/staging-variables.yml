@@ -1,0 +1,105 @@
+# Staging Environment Variables
+variables:
+  # Environment Configuration
+  - name: environmentName
+    value: 'staging'
+  - name: resourceGroupName
+    value: 'rg-docloader-staging'
+  - name: location
+    value: 'East US'
+  
+  # Container App Configuration
+  - name: containerAppName
+    value: 'docloader-staging-app'
+  - name: containerAppEnvironment
+    value: 'docloader-staging-env'
+  
+  # Database Configuration
+  - name: postgresServerName
+    value: 'docloader-staging-postgres'
+  - name: databaseName
+    value: 'document_loader'
+  - name: databaseUser
+    value: 'dbadmin'
+  - name: minPoolSize
+    value: '10'
+  - name: maxPoolSize
+    value: '20'
+  
+  # Storage Configuration
+  - name: storageAccountName
+    value: 'docloaderstagingstorage'
+  - name: containerName
+    value: 'documents'
+  
+  # Key Vault Configuration
+  - name: keyVaultName
+    value: 'docloader-staging-kv'
+  
+  # Monitoring Configuration
+  - name: logAnalyticsWorkspace
+    value: 'docloader-staging-logs'
+  - name: applicationInsightsName
+    value: 'docloader-staging-insights'
+  
+  # Container Registry Configuration
+  - name: containerRegistryName
+    value: 'docloaderstgacr'
+  
+  # Scaling Configuration
+  - name: minReplicas
+    value: '2'
+  - name: maxReplicas
+    value: '5'
+  - name: cpuLimit
+    value: '1.5'
+  - name: memoryLimit
+    value: '3Gi'
+  
+  # Feature Flags
+  - name: enableDetailedLogging
+    value: 'true'
+  - name: enableMetrics
+    value: 'true'
+  - name: enableHealthChecks
+    value: 'true'
+  - name: enableSwagger
+    value: 'false'
+  
+  # Performance Configuration
+  - name: requestTimeout
+    value: '300'
+  - name: maxConcurrentRequests
+    value: '200'
+  - name: enableCaching
+    value: 'true'
+  
+  # Security Configuration
+  - name: enableHttpsOnly
+    value: 'true'
+  - name: allowedOrigins
+    value: 'https://staging.company.com'
+  - name: enableCors
+    value: 'true'
+  
+  # Backup Configuration
+  - name: backupRetentionDays
+    value: '14'
+  - name: enableAutomaticBackup
+    value: 'true'
+  
+  # Load Testing Configuration
+  - name: enableLoadTesting
+    value: 'true'
+  - name: loadTestVirtualUsers
+    value: '100'
+  - name: loadTestDuration
+    value: '10m'
+  
+  # Cost Management
+  - name: costCenter
+    value: 'staging'
+  - name: project
+    value: 'document-loader'
+  - name: owner
+    value: 'qa-team'

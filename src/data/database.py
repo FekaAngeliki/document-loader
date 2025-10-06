@@ -9,10 +9,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class DatabaseConfig:
-    def __init__(self):
+    def __init__(self, database_name: str = None):
         self.host = os.getenv('DOCUMENT_LOADER_DB_HOST', 'localhost')
         self.port = int(os.getenv('DOCUMENT_LOADER_DB_PORT', '5432'))
-        self.database = os.getenv('DOCUMENT_LOADER_DB_NAME', 'document_loader')
+        self.database = database_name or os.getenv('DOCUMENT_LOADER_DB_NAME', 'document_loader')
         self.user = os.getenv('DOCUMENT_LOADER_DB_USER', 'postgres')
         self.password = os.getenv('DOCUMENT_LOADER_DB_PASSWORD', 'password')
         self.min_pool_size = int(os.getenv('DOCUMENT_LOADER_DB_MIN_POOL_SIZE', '10'))
@@ -20,6 +20,23 @@ class DatabaseConfig:
     
     def get_connection_string(self):
         return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+    
+    @staticmethod
+    def get_available_databases():
+        """Get list of available database names from environment."""
+        db_names = os.getenv('DOCUMENT_LOADER_DB_NAMES', '')
+        if db_names:
+            return [name.strip() for name in db_names.split(',')]
+        
+        # Fallback to default database name
+        default_db = os.getenv('DOCUMENT_LOADER_DB_NAME', 'document_loader')
+        return [default_db]
+    
+    @staticmethod
+    def get_default_database():
+        """Get the default database name."""
+        available = DatabaseConfig.get_available_databases()
+        return available[0] if available else 'document_loader'
 
 class Database:
     def __init__(self, config: DatabaseConfig):

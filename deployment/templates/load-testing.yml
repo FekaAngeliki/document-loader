@@ -1,0 +1,317 @@
+# Load Testing Template
+parameters:
+  - name: environment
+    type: string
+  - name: testDuration
+    type: string
+    default: '5m'
+  - name: virtualUsers
+    type: number
+    default: 50
+  - name: rampUpTime
+    type: string
+    default: '1m'
+  - name: targetUrl
+    type: string
+    default: ''
+
+jobs:
+- job: LoadTesting
+  displayName: 'Load Testing'
+  pool:
+    vmImage: 'ubuntu-latest'
+  timeoutInMinutes: 60
+  
+  steps:
+  - script: |
+      # Install k6 for load testing
+      sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+      echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+      sudo apt-get update
+      sudo apt-get install k6
+      
+      # Install additional tools
+      sudo apt-get install jq bc
+      
+    displayName: 'Install Load Testing Tools'
+
+  - script: |
+      # Determine target URL
+      if [ -n "${{ parameters.targetUrl }}" ]; then
+        TARGET_URL="${{ parameters.targetUrl }}"
+      else
+        case "${{ parameters.environment }}" in
+          "staging")
+            TARGET_URL="https://docloader-staging-app.azurecontainerapps.io"
+            ;;
+          "production")
+            TARGET_URL="https://docloader-prod-app.azurecontainerapps.io"
+            ;;
+          *)
+            TARGET_URL="https://docloader-dev-app.azurecontainerapps.io"
+            ;;
+        esac
+      fi
+      
+      echo "Target URL: $TARGET_URL"
+      echo "##vso[task.setvariable variable=loadTestUrl]$TARGET_URL"
+      
+    displayName: 'Set Load Test Target'
+
+  - script: |
+      # Create k6 load test script
+      mkdir -p test-results/load
+      
+      cat << 'EOF' > load-test-script.js
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+import { Counter, Rate, Trend } from 'k6/metrics';
+
+// Custom metrics
+const apiCalls = new Counter('api_calls_total');
+const apiFailures = new Rate('api_failure_rate');
+const apiDuration = new Trend('api_duration');
+
+export let options = {
+  stages: [
+    { duration: '${{ parameters.rampUpTime }}', target: ${{ parameters.virtualUsers }} },
+    { duration: '${{ parameters.testDuration }}', target: ${{ parameters.virtualUsers }} },
+    { duration: '${{ parameters.rampUpTime }}', target: 0 },
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)<2000', 'p(99)<5000'],
+    http_req_failed: ['rate<0.05'],
+    api_failure_rate: ['rate<0.05'],
+  },
+};
+
+const BASE_URL = __ENV.TARGET_URL;
+
+export default function() {
+  // Test scenarios
+  
+  // 1. Health check endpoint
+  let healthResponse = http.get(`${BASE_URL}/health`);
+  check(healthResponse, {
+    'health check status is 200': (r) => r.status === 200,
+    'health check response time < 500ms': (r) => r.timings.duration < 500,
+  });
+  
+  apiCalls.add(1);
+  apiDuration.add(healthResponse.timings.duration);
+  if (healthResponse.status !== 200) {
+    apiFailures.add(1);
+  }
+  
+  sleep(1);
+  
+  // 2. List knowledge bases endpoint (if available)
+  let listKbResponse = http.get(`${BASE_URL}/api/kb`, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  
+  check(listKbResponse, {
+    'list KB status is 200 or 404': (r) => r.status === 200 || r.status === 404,
+    'list KB response time < 1000ms': (r) => r.timings.duration < 1000,
+  });
+  
+  apiCalls.add(1);
+  apiDuration.add(listKbResponse.timings.duration);
+  if (listKbResponse.status >= 400 && listKbResponse.status !== 404) {
+    apiFailures.add(1);
+  }
+  
+  sleep(2);
+  
+  // 3. Simulate file scanning operation (if endpoint exists)
+  let scanResponse = http.post(`${BASE_URL}/api/scan`, 
+    JSON.stringify({
+      path: '/tmp/test',
+      dryRun: true
+    }), 
+    {
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+  
+  check(scanResponse, {
+    'scan endpoint responds': (r) => r.status >= 200 && r.status < 500,
+    'scan response time < 3000ms': (r) => r.timings.duration < 3000,
+  });
+  
+  apiCalls.add(1);
+  apiDuration.add(scanResponse.timings.duration);
+  if (scanResponse.status >= 500) {
+    apiFailures.add(1);
+  }
+  
+  sleep(3);
+}
+
+export function handleSummary(data) {
+  return {
+    'test-results/load/load-test-summary.json': JSON.stringify(data, null, 2),
+    'test-results/load/load-test-report.html': htmlReport(data),
+  };
+}
+
+function htmlReport(data) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Load Test Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .metric { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
+        .passed { background-color: #d4edda; }
+        .failed { background-color: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h1>Load Test Report</h1>
+    <h2>Test Configuration</h2>
+    <p><strong>Target URL:</strong> ${data.options.ext?.TARGET_URL || 'N/A'}</p>
+    <p><strong>Virtual Users:</strong> ${{ parameters.virtualUsers }}</p>
+    <p><strong>Duration:</strong> ${{ parameters.testDuration }}</p>
+    <p><strong>Ramp-up Time:</strong> ${{ parameters.rampUpTime }}</p>
+    
+    <h2>Results</h2>
+    <div class="metric">
+        <strong>Total Requests:</strong> ${data.metrics.http_reqs.count}
+    </div>
+    <div class="metric">
+        <strong>Failed Requests:</strong> ${data.metrics.http_req_failed.count} (${(data.metrics.http_req_failed.rate * 100).toFixed(2)}%)
+    </div>
+    <div class="metric">
+        <strong>Average Response Time:</strong> ${data.metrics.http_req_duration.avg.toFixed(2)}ms
+    </div>
+    <div class="metric">
+        <strong>95th Percentile:</strong> ${data.metrics.http_req_duration['p(95)'].toFixed(2)}ms
+    </div>
+    <div class="metric">
+        <strong>99th Percentile:</strong> ${data.metrics.http_req_duration['p(99)'].toFixed(2)}ms
+    </div>
+</body>
+</html>
+  `;
+}
+EOF
+
+    displayName: 'Create Load Test Script'
+
+  - script: |
+      echo "Starting load test against: $(loadTestUrl)"
+      echo "Virtual Users: ${{ parameters.virtualUsers }}"
+      echo "Duration: ${{ parameters.testDuration }}"
+      echo "Ramp-up: ${{ parameters.rampUpTime }}"
+      
+      # Run k6 load test
+      k6 run \
+        --env TARGET_URL=$(loadTestUrl) \
+        --out json=test-results/load/load-test-results.json \
+        load-test-script.js
+      
+      # Store exit code
+      LOAD_TEST_EXIT_CODE=$?
+      echo "##vso[task.setvariable variable=loadTestExitCode]$LOAD_TEST_EXIT_CODE"
+      
+      if [ $LOAD_TEST_EXIT_CODE -ne 0 ]; then
+        echo "##vso[task.logissue type=warning]Load test failed performance thresholds"
+      fi
+      
+    displayName: 'Execute Load Test'
+    env:
+      TARGET_URL: $(loadTestUrl)
+
+  - script: |
+      # Parse load test results and generate detailed report
+      if [ -f "test-results/load/load-test-summary.json" ]; then
+        cat << EOF > test-results/load/load-test-analysis.md
+# Load Test Analysis Report
+
+## Test Configuration
+- **Target URL**: $(loadTestUrl)
+- **Environment**: ${{ parameters.environment }}
+- **Virtual Users**: ${{ parameters.virtualUsers }}
+- **Test Duration**: ${{ parameters.testDuration }}
+- **Ramp-up Time**: ${{ parameters.rampUpTime }}
+- **Timestamp**: $(date)
+
+## Performance Metrics
+EOF
+        
+        # Extract key metrics from JSON
+        if command -v jq &> /dev/null; then
+          TOTAL_REQUESTS=$(jq -r '.metrics.http_reqs.count' test-results/load/load-test-summary.json)
+          FAILED_REQUESTS=$(jq -r '.metrics.http_req_failed.count' test-results/load/load-test-summary.json)
+          FAILURE_RATE=$(jq -r '.metrics.http_req_failed.rate * 100' test-results/load/load-test-summary.json)
+          AVG_RESPONSE_TIME=$(jq -r '.metrics.http_req_duration.avg' test-results/load/load-test-summary.json)
+          P95_RESPONSE_TIME=$(jq -r '.metrics.http_req_duration["p(95)"]' test-results/load/load-test-summary.json)
+          P99_RESPONSE_TIME=$(jq -r '.metrics.http_req_duration["p(99)"]' test-results/load/load-test-summary.json)
+          
+          cat << EOF >> test-results/load/load-test-analysis.md
+- **Total Requests**: $TOTAL_REQUESTS
+- **Failed Requests**: $FAILED_REQUESTS
+- **Failure Rate**: ${FAILURE_RATE}%
+- **Average Response Time**: ${AVG_RESPONSE_TIME}ms
+- **95th Percentile**: ${P95_RESPONSE_TIME}ms
+- **99th Percentile**: ${P99_RESPONSE_TIME}ms
+
+## Performance Assessment
+EOF
+          
+          # Performance assessment
+          if (( $(echo "$FAILURE_RATE < 5" | bc -l) )); then
+            echo "- ✅ **Failure Rate**: Acceptable (<5%)" >> test-results/load/load-test-analysis.md
+          else
+            echo "- ❌ **Failure Rate**: Too high (≥5%)" >> test-results/load/load-test-analysis.md
+          fi
+          
+          if (( $(echo "$P95_RESPONSE_TIME < 2000" | bc -l) )); then
+            echo "- ✅ **95th Percentile**: Acceptable (<2000ms)" >> test-results/load/load-test-analysis.md
+          else
+            echo "- ❌ **95th Percentile**: Too slow (≥2000ms)" >> test-results/load/load-test-analysis.md
+          fi
+          
+          if (( $(echo "$P99_RESPONSE_TIME < 5000" | bc -l) )); then
+            echo "- ✅ **99th Percentile**: Acceptable (<5000ms)" >> test-results/load/load-test-analysis.md
+          else
+            echo "- ❌ **99th Percentile**: Too slow (≥5000ms)" >> test-results/load/load-test-analysis.md
+          fi
+        fi
+        
+        echo "" >> test-results/load/load-test-analysis.md
+        echo "## Recommendations" >> test-results/load/load-test-analysis.md
+        
+        if [ "$(loadTestExitCode)" -ne 0 ]; then
+          cat << EOF >> test-results/load/load-test-analysis.md
+- Consider scaling up the application resources
+- Review application performance bottlenecks
+- Optimize database queries and connections
+- Consider implementing caching strategies
+- Review container resource limits
+EOF
+        else
+          echo "- Performance is within acceptable thresholds" >> test-results/load/load-test-analysis.md
+        fi
+      fi
+      
+    displayName: 'Analyze Load Test Results'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Load Test Results'
+    condition: always()
+    inputs:
+      pathToPublish: 'test-results/load'
+      artifactName: 'load-test-results'
+
+  - script: |
+      if [ "$(loadTestExitCode)" -ne 0 ]; then
+        echo "##vso[task.logissue type=warning]Load test performance thresholds were not met"
+        echo "Please review the load test results and consider performance improvements"
+      else
+        echo "Load test completed successfully - all performance thresholds met"
+      fi
+    displayName: 'Load Test Summary'
+    condition: always()
