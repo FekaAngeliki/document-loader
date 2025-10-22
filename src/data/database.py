@@ -80,15 +80,17 @@ class Database:
     
     async def fetch(self, query: str, *args, timeout: float = None):
         """Execute a query and fetch all results."""
+        from psycopg.rows import dict_row
         async with self.pool.connection() as connection:
-            async with connection.cursor() as cursor:
+            async with connection.cursor(row_factory=dict_row) as cursor:
                 await cursor.execute(query, args)
                 return await cursor.fetchall()
     
     async def fetchrow(self, query: str, *args, timeout: float = None):
         """Execute a query and fetch one result."""
+        from psycopg.rows import dict_row
         async with self.pool.connection() as connection:
-            async with connection.cursor() as cursor:
+            async with connection.cursor(row_factory=dict_row) as cursor:
                 await cursor.execute(query, args)
                 return await cursor.fetchone()
     
