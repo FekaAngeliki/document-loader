@@ -37,7 +37,8 @@ class Settings(BaseSettings):
     CORS_ORIGINS: List[str] = Field(
         default=[
             "https://bankportal.internal",
-            "https://documentloader-ui.bank.com"
+            "https://documentloader-ui.bank.com",
+            "https://nbg-webapp-knowledgebase-we-dev-01-frg5bmawebf8cqh6.westeurope-01.azurewebsites.net"
         ],
         description="Allowed CORS origins"
     )
@@ -47,7 +48,8 @@ class Settings(BaseSettings):
         default=[
             "documentloader-api.bank.com",
             "localhost",
-            "127.0.0.1"
+            "127.0.0.1",
+            "https://nbg-webapp-knowledgebase-we-dev-01-frg5bmawebf8cqh6.westeurope-01.azurewebsites.net"
         ],
         description="Allowed host headers"
     )

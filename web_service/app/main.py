@@ -53,20 +53,20 @@ def create_app() -> FastAPI:
         lifespan=lifespan
     )
     
-    # Security middleware
-    app.add_middleware(
-        TrustedHostMiddleware,
-        allowed_hosts=settings.ALLOWED_HOSTS
-    )
+    # Security middleware - disabled for flexibility
+    # app.add_middleware(
+    #     TrustedHostMiddleware,
+    #     allowed_hosts=settings.ALLOWED_HOSTS
+    # )
     
-    # CORS for banking web applications
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.CORS_ORIGINS,
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE"],
-        allow_headers=["*"],
-    )
+    # CORS restrictions removed for API flexibility
+    # app.add_middleware(
+    #     CORSMiddleware,
+    #     allow_origins=settings.CORS_ORIGINS,
+    #     allow_credentials=True,
+    #     allow_methods=["GET", "POST", "PUT", "DELETE"],
+    #     allow_headers=["*"],
+    # )
     
     # Custom middleware for audit logging (disabled for local development)
     # app.middleware("http")(audit_middleware)
