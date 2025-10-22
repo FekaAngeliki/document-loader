@@ -8,7 +8,7 @@ to ensure data integrity and prevent runtime errors.
 import re
 import json
 import asyncio
-import asyncpg
+import psycopg
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from pathlib import Path
@@ -304,34 +304,29 @@ class DatabaseValidator:
     async def _validate_database_connectivity(self, result: ValidationResult):
         """Test database server connectivity."""
         try:
-            conn = await asyncpg.connect(
-                host=self.config.host,
-                port=self.config.port,
-                user=self.config.user,
-                password=self.config.password,
-                database='postgres'  # Connect to default postgres database
+            conn = await psycopg.AsyncConnection.connect(
+                f"postgresql://{self.config.user}:{self.config.password}@{self.config.host}:{self.config.port}/postgres"
             )
             await conn.close()
-        except asyncpg.InvalidAuthorizationSpecificationError:
-            result.add_error('credentials', "Invalid database credentials")
-        except asyncpg.CannotConnectNowError:
-            result.add_error('connection', "Cannot connect to database server")
+        except psycopg.OperationalError as e:
+            if "authentication failed" in str(e).lower():
+                result.add_error('credentials', "Invalid database credentials")
+            else:
+                result.add_error('connection', "Cannot connect to database server")
         except Exception as e:
             result.add_error('connection', f"Database connection failed: {str(e)}")
     
     async def _validate_database_existence(self, database_name: str, result: ValidationResult):
         """Check if database already exists."""
         try:
-            conn = await asyncpg.connect(
-                host=self.config.host,
-                port=self.config.port,
-                user=self.config.user,
-                password=self.config.password,
-                database='postgres'
+            conn = await psycopg.AsyncConnection.connect(
+                f"postgresql://{self.config.user}:{self.config.password}@{self.config.host}:{self.config.port}/postgres"
             )
             
-            query = "SELECT 1 FROM pg_database WHERE datname = $1"
-            exists = await conn.fetchval(query, database_name)
+            async with conn.cursor() as cursor:
+                query = "SELECT 1 FROM pg_database WHERE datname = %s"
+                await cursor.execute(query, (database_name,))
+                exists = await cursor.fetchone()
             
             if exists:
                 result.add_error('database_name', f"Database '{database_name}' already exists")
@@ -343,17 +338,16 @@ class DatabaseValidator:
     async def _validate_create_permissions(self, result: ValidationResult):
         """Check if user has CREATE DATABASE permissions."""
         try:
-            conn = await asyncpg.connect(
-                host=self.config.host,
-                port=self.config.port,
-                user=self.config.user,
-                password=self.config.password,
-                database='postgres'
+            conn = await psycopg.AsyncConnection.connect(
+                f"postgresql://{self.config.user}:{self.config.password}@{self.config.host}:{self.config.port}/postgres"
             )
             
             # Check if user has createdb privilege
-            query = "SELECT rolcreatedb FROM pg_roles WHERE rolname = $1"
-            can_create = await conn.fetchval(query, self.config.user)
+            async with conn.cursor() as cursor:
+                query = "SELECT rolcreatedb FROM pg_roles WHERE rolname = %s"
+                await cursor.execute(query, (self.config.user,))
+                result_row = await cursor.fetchone()
+                can_create = result_row[0] if result_row else False
             
             if not can_create:
                 result.add_error('permissions', f"User '{self.config.user}' does not have CREATE DATABASE privileges")

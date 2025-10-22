@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', '..
 from src.data.database import DatabaseConfig, Database
 from src.data.schema import create_schema_sql
 from ..core.auth import User, get_current_user, require_roles, UserRole
-import asyncpg
+import psycopg
 
 router = APIRouter()
 
@@ -73,7 +73,7 @@ async def create_schema(
         try:
             # Check if schema already exists
             existing_schemas = await db.fetch(
-                "SELECT schema_name FROM information_schema.schemata WHERE schema_name = $1",
+                "SELECT schema_name FROM information_schema.schemata WHERE schema_name = %s",
                 request.name
             )
             
@@ -233,7 +233,7 @@ async def get_schema_info(
         try:
             # Check if schema exists
             schema_exists = await db.fetchval(
-                "SELECT EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = $1)",
+                "SELECT EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = %s)",
                 schema_name
             )
             
@@ -242,7 +242,7 @@ async def get_schema_info(
             
             # Get schema description
             description = await db.fetchval(
-                "SELECT obj_description(quote_ident($1)::regnamespace, 'pg_namespace')",
+                "SELECT obj_description(quote_ident(%s)::regnamespace, 'pg_namespace')",
                 schema_name
             )
             
@@ -250,7 +250,7 @@ async def get_schema_info(
             table_count = await db.fetchval("""
                 SELECT COUNT(*) 
                 FROM information_schema.tables 
-                WHERE table_schema = $1 
+                WHERE table_schema = %s 
                 AND table_name IN ('knowledge_base', 'sync_run', 'file_record', 'source_type', 'rag_type')
             """, schema_name)
             
@@ -302,7 +302,7 @@ async def drop_schema(
         try:
             # Check if schema exists
             schema_exists = await db.fetchval(
-                "SELECT EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = $1)",
+                "SELECT EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = %s)",
                 schema_name
             )
             
@@ -384,32 +384,27 @@ async def check_connection(
         
         try:
             # Check if we can connect to postgres database (server connection)
-            connection = await asyncpg.connect(
-                host=config.host,
-                port=config.port,
-                user=config.user,
-                password=config.password,
-                database='postgres'  # Connect to default postgres database
+            connection = await psycopg.AsyncConnection.connect(
+                f"postgresql://{config.user}:{config.password}@{config.host}:{config.port}/postgres"
             )
             postgres_reachable = True
             
             # Check if target database exists
-            exists = await connection.fetchval(
-                "SELECT 1 FROM pg_database WHERE datname = $1",
-                config.database
-            )
+            async with connection.cursor() as cursor:
+                await cursor.execute(
+                    "SELECT 1 FROM pg_database WHERE datname = %s",
+                    (config.database,)
+                )
+                result = await cursor.fetchone()
+                exists = bool(result)
             target_database_exists = bool(exists)
             
             await connection.close()
             
             if target_database_exists:
                 # Try connecting to the target database
-                target_connection = await asyncpg.connect(
-                    host=config.host,
-                    port=config.port,
-                    user=config.user,
-                    password=config.password,
-                    database=config.database
+                target_connection = await psycopg.AsyncConnection.connect(
+                    f"postgresql://{config.user}:{config.password}@{config.host}:{config.port}/{config.database}"
                 )
                 await target_connection.close()
                 message = f"Successfully connected to database '{config.database}'"
@@ -447,20 +442,19 @@ async def create_database(
         config = DatabaseConfig(request.database_name) if request.database_name else DatabaseConfig()
         
         # Connect to postgres database to create the target database
-        connection = await asyncpg.connect(
-            host=config.host,
-            port=config.port,
-            user=config.user,
-            password=config.password,
-            database='postgres'
+        connection = await psycopg.AsyncConnection.connect(
+            f"postgresql://{config.user}:{config.password}@{config.host}:{config.port}/postgres"
         )
         
         try:
             # Check if database already exists
-            exists = await connection.fetchval(
-                "SELECT 1 FROM pg_database WHERE datname = $1",
-                config.database
-            )
+            async with connection.cursor() as cursor:
+                await cursor.execute(
+                    "SELECT 1 FROM pg_database WHERE datname = %s",
+                    (config.database,)
+                )
+                result = await cursor.fetchone()
+                exists = bool(result)
             
             if exists:
                 await connection.close()
@@ -470,7 +464,8 @@ async def create_database(
                 )
             
             # Create the database
-            await connection.execute(f'CREATE DATABASE "{config.database}"')
+            async with connection.cursor() as cursor:
+                await cursor.execute(f'CREATE DATABASE "{config.database}"')
             await connection.close()
             
             message = f"Database '{config.database}' created successfully"

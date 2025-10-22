@@ -89,8 +89,8 @@ def list_databases():
             try:
                 config = DatabaseConfig(db_name)
                 # Try to connect briefly
-                import asyncpg
-                conn = await asyncpg.connect(config.get_connection_string())
+                import psycopg
+                conn = await psycopg.AsyncConnection.connect(config.get_connection_string())
                 await conn.close()
                 status = "[green]✓ Available[/green]"
             except Exception as e:

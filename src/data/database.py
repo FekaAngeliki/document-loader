@@ -1,5 +1,5 @@
-import asyncpg
-from asyncpg import Pool
+import psycopg
+from psycopg_pool import AsyncConnectionPool
 import json
 from typing import Optional
 from datetime import datetime
@@ -56,15 +56,16 @@ class DatabaseConfig:
 class Database:
     def __init__(self, config: DatabaseConfig):
         self.config = config
-        self.pool: Optional[Pool] = None
+        self.pool: Optional[AsyncConnectionPool] = None
     
     async def connect(self):
         """Create database connection pool."""
-        self.pool = await asyncpg.create_pool(
-            self.config.get_connection_string(),
+        self.pool = AsyncConnectionPool(
+            conninfo=self.config.get_connection_string(),
             min_size=self.config.min_pool_size,
             max_size=self.config.max_pool_size,
         )
+        await self.pool.open()
     
     async def disconnect(self):
         """Close database connection pool."""
@@ -73,23 +74,31 @@ class Database:
     
     async def execute(self, query: str, *args, timeout: float = None):
         """Execute a query without returning results."""
-        async with self.pool.acquire() as connection:
-            return await connection.execute(query, *args, timeout=timeout)
+        async with self.pool.connection() as connection:
+            async with connection.cursor() as cursor:
+                return await cursor.execute(query, args)
     
     async def fetch(self, query: str, *args, timeout: float = None):
         """Execute a query and fetch all results."""
-        async with self.pool.acquire() as connection:
-            return await connection.fetch(query, *args, timeout=timeout)
+        async with self.pool.connection() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute(query, args)
+                return await cursor.fetchall()
     
     async def fetchrow(self, query: str, *args, timeout: float = None):
         """Execute a query and fetch one result."""
-        async with self.pool.acquire() as connection:
-            return await connection.fetchrow(query, *args, timeout=timeout)
+        async with self.pool.connection() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute(query, args)
+                return await cursor.fetchone()
     
     async def fetchval(self, query: str, *args, timeout: float = None):
         """Execute a query and fetch a single value."""
-        async with self.pool.acquire() as connection:
-            return await connection.fetchval(query, *args, timeout=timeout)
+        async with self.pool.connection() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute(query, args)
+                row = await cursor.fetchone()
+                return row[0] if row else None
 
 class JSONEncoder(json.JSONEncoder):
     """Custom JSON encoder for datetime objects."""
