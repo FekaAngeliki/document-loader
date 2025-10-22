@@ -23,7 +23,7 @@ parameters:
 - name: imageRepositoryAndTag
   displayName: "[=] buildAndPushNewImage only. the image repository followed by the tag like ( bd/pothenesxes:v3.1 )"
   type: string
-  default: ai/document-loader:latest
+  default: ai/knowledge-base:latest
 - name: dockerfilePath
   displayName: "[=] buildAndPushNewImage only. the path to the Dockerfile from the root of the project repo ( foo/bar/Dockerfile )"
   type: string

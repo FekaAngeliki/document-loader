@@ -387,8 +387,7 @@ async def list_schema_knowledge_bases(
 
 @router.post("/connection/check", response_model=ConnectionStatus)
 async def check_connection(
-    request: ConnectionCheckRequest,
-    current_user: User = Depends(get_current_user)
+    request: ConnectionCheckRequest
 ):
     """
     Test database connectivity and check if target database exists.
