@@ -48,7 +48,16 @@ class ConnectionStatus(BaseModel):
     database: str
     user: str
     postgres_reachable: bool
-    target_database_exists: bool
+
+class SchemaInfoRequest(BaseModel):
+    schema_name: str
+
+class SchemaDeleteRequest(BaseModel):
+    schema_name: str
+    force: bool = False
+
+class SchemaKnowledgeBasesRequest(BaseModel):
+    schema_name: str
 
 class DatabaseCreateRequest(BaseModel):
     database_name: Optional[str] = None
@@ -236,17 +245,18 @@ async def list_schemas(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to list schemas: {str(e)}")
 
-@router.get("/schemas/{schema_name}", response_model=SchemaInfo)
+@router.post("/schemas/info", response_model=SchemaInfo)
 async def get_schema_info(
-    schema_name: str,
+    request: SchemaInfoRequest,
     current_user: User = Depends(get_current_user)
 ):
     """
     Get detailed information about a specific schema.
+    Uses secure request body instead of URL parameters.
     Equivalent to CLI: document-loader --schema {schema_name} schema-info
     """
     try:
-        config = DatabaseConfig(schema_name=schema_name)
+        config = DatabaseConfig(schema_name=request.schema_name)
         db = Database(config)
         await db.connect()
         
@@ -254,16 +264,16 @@ async def get_schema_info(
             # Check if schema exists
             schema_exists = await db.fetchval(
                 "SELECT EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = %s)",
-                schema_name
+                request.schema_name
             )
             
             if not schema_exists:
-                raise HTTPException(status_code=404, detail=f"Schema '{schema_name}' not found")
+                raise HTTPException(status_code=404, detail=f"Schema '{request.schema_name}' not found")
             
             # Get schema description
             description = await db.fetchval(
                 "SELECT obj_description(quote_ident(%s)::regnamespace, 'pg_namespace')",
-                schema_name
+                request.schema_name
             )
             
             # Count tables
@@ -272,7 +282,7 @@ async def get_schema_info(
                 FROM information_schema.tables 
                 WHERE table_schema = %s 
                 AND table_name IN ('knowledge_base', 'sync_run', 'file_record', 'source_type', 'rag_type')
-            """, schema_name)
+            """, request.schema_name)
             
             # Count knowledge bases
             try:
@@ -283,8 +293,8 @@ async def get_schema_info(
                 kb_count = 0
             
             return SchemaInfo(
-                schema_name=schema_name,
-                is_isolated=schema_name != 'public',
+                schema_name=request.schema_name,
+                is_isolated=request.schema_name != 'public',
                 table_count=table_count or 0,
                 knowledge_bases_count=kb_count or 0,
                 description=description
@@ -298,21 +308,21 @@ async def get_schema_info(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get schema info: {str(e)}")
 
-@router.delete("/schemas/{schema_name}", response_model=OperationResponse)
+@router.post("/schemas/delete", response_model=OperationResponse)
 async def drop_schema(
-    schema_name: str,
-    force: bool = Query(False, description="Force drop without confirmation"),
+    request: SchemaDeleteRequest,
     current_user: User = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.ADMIN]))
 ):
     """
     Drop a schema and all its contents.
+    Uses secure request body instead of URL parameters.
     Equivalent to CLI: document-loader drop-schema --name {schema_name} [--force]
     """
     try:
-        if schema_name in ['public', 'information_schema', 'pg_catalog']:
+        if request.schema_name in ['public', 'information_schema', 'pg_catalog']:
             raise HTTPException(
                 status_code=400, 
-                detail=f"Cannot drop system schema '{schema_name}'"
+                detail=f"Cannot drop system schema '{request.schema_name}'"
             )
         
         config = DatabaseConfig()
@@ -323,22 +333,22 @@ async def drop_schema(
             # Check if schema exists
             schema_exists = await db.fetchval(
                 "SELECT EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = %s)",
-                schema_name
+                request.schema_name
             )
             
             if not schema_exists:
-                raise HTTPException(status_code=404, detail=f"Schema '{schema_name}' not found")
+                raise HTTPException(status_code=404, detail=f"Schema '{request.schema_name}' not found")
             
             # In a real corporate environment, you might want additional safety checks here
             # such as checking if schema has active connections, recent activity, etc.
             
             # Drop the schema
-            await db.execute(f'DROP SCHEMA "{schema_name}" CASCADE')
+            await db.execute(f'DROP SCHEMA "{request.schema_name}" CASCADE')
             
             return OperationResponse(
                 success=True,
-                message=f"Schema '{schema_name}' dropped successfully",
-                schema_name=schema_name
+                message=f"Schema '{request.schema_name}' dropped successfully",
+                schema_name=request.schema_name
             )
             
         finally:
@@ -349,17 +359,18 @@ async def drop_schema(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to drop schema: {str(e)}")
 
-@router.get("/schemas/{schema_name}/knowledge-bases")
+@router.post("/schemas/knowledge-bases", response_model=dict)
 async def list_schema_knowledge_bases(
-    schema_name: str,
+    request: SchemaKnowledgeBasesRequest,
     current_user: User = Depends(get_current_user)
 ):
     """
     List all knowledge bases in a specific schema.
+    Uses secure request body instead of URL parameters.
     Equivalent to CLI: document-loader --schema {schema_name} list
     """
     try:
-        config = DatabaseConfig(schema_name=schema_name)
+        config = DatabaseConfig(schema_name=request.schema_name)
         db = Database(config)
         await db.connect()
         
@@ -372,7 +383,7 @@ async def list_schema_knowledge_bases(
             """)
             
             return {
-                "schema_name": schema_name,
+                "schema_name": request.schema_name,
                 "knowledge_bases": [dict(kb) for kb in knowledge_bases],
                 "count": len(knowledge_bases)
             }
@@ -382,7 +393,7 @@ async def list_schema_knowledge_bases(
     except Exception as e:
         raise HTTPException(
             status_code=500, 
-            detail=f"Failed to list knowledge bases for schema '{schema_name}': {str(e)}"
+            detail=f"Failed to list knowledge bases for schema '{request.schema_name}': {str(e)}"
         )
 
 @router.post("/connection/check", response_model=ConnectionStatus)
@@ -396,7 +407,13 @@ async def check_connection(
     """
     try:
         # Use custom database name if provided, otherwise use default from config
-        config = DatabaseConfig(request.database_name) if request.database_name else DatabaseConfig()
+        try:
+            config = DatabaseConfig(request.database_name) if request.database_name else DatabaseConfig()
+        except Exception as config_error:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Database configuration error: {str(config_error)}"
+            )
         
         postgres_reachable = False
         target_database_exists = False
