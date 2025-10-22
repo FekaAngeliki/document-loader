@@ -21,7 +21,7 @@ RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted
 # Copy application code
 COPY src/ ./src/
 COPY web_service/ ./web_service/
-COPY .env .env
+# Environment variables should be provided at runtime via container orchestration
 
 # Create necessary directories
 RUN mkdir -p /app/logs /app/data && \
