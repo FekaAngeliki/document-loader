@@ -2,7 +2,10 @@
 __pycache__/
 *.py[cod]
 *$py.class
-.env.*
+.env
+.env.localhost
+.env.azure
+.env.admin
 
 # C extensions
 *.so
