@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Component-Based Scheduler Integration</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .scheduler-widget {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .metric-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+        }
+        .scheduler-section {
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <!-- Your Existing Dashboard Header -->
+        <div class="row">
+            <div class="col-12">
+                <h1 class="h3 mb-4">
+                    <i class="bi bi-speedometer2 me-2 text-primary"></i>
+                    Your Existing Dashboard with Scheduler Components
+                </h1>
+            </div>
+        </div>
+
+        <!-- Your Existing Content -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-8">
+                <!-- Your existing dashboard content stays here -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Your Existing Features</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>All your current dashboard functionality continues to work normally.</p>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-graph-up fs-2 text-success"></i>
+                                        <h6>Performance</h6>
+                                        <span class="badge bg-success">Good</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-database fs-2 text-info"></i>
+                                        <h6>Data Status</h6>
+                                        <span class="badge bg-info">Synced</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🎯 Scheduler Widget (Integrated Component) -->
+            <div class="col-md-4">
+                <div class="scheduler-widget">
+                    <h6 class="mb-3">
+                        <i class="bi bi-clock me-2"></i>
+                        Scheduler Status
+                    </h6>
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="metric-card">
+                                <i class="bi bi-play-circle fs-4 mb-2" id="widget-status-icon"></i>
+                                <div class="small">Status</div>
+                                <strong id="widget-status-text">Running</strong>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="metric-card">
+                                <i class="bi bi-calendar-check fs-4 mb-2"></i>
+                                <div class="small">Active</div>
+                                <strong id="widget-active-count">3</strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-light btn-sm" onclick="openFullSchedulerView()">
+                            <i class="bi bi-gear me-2"></i>
+                            Manage Scheduler
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="refreshSchedulerWidget()">
+                            <i class="bi bi-arrow-clockwise me-2"></i>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🎯 Expandable Scheduler Section -->
+        <div class="row" id="fullSchedulerSection" style="display: none;">
+            <div class="col-12">
+                <div class="card scheduler-section">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-calendar-week me-2"></i>
+                            Full Scheduler Management
+                        </h5>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="closeFullSchedulerView()">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- Scheduler Controls -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <div class="card text-center h-100">
+                                    <div class="card-body">
+                                        <i class="bi bi-play-circle-fill text-success fs-2 mb-2" id="full-status-icon"></i>
+                                        <h6>Scheduler</h6>
+                                        <span class="badge bg-success" id="full-status-badge">Running</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center h-100">
+                                    <div class="card-body">
+                                        <i class="bi bi-calendar-check text-info fs-2 mb-2"></i>
+                                        <h6>Active Schedules</h6>
+                                        <span class="display-6 fw-bold text-info" id="full-active-count">3</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center h-100">
+                                    <div class="card-body">
+                                        <i class="bi bi-arrow-repeat text-warning fs-2 mb-2"></i>
+                                        <h6>Running</h6>
+                                        <span class="display-6 fw-bold text-warning" id="full-running-count">1</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center h-100">
+                                    <div class="card-body">
+                                        <i class="bi bi-hourglass-split text-secondary fs-2 mb-2"></i>
+                                        <h6>Pending</h6>
+                                        <span class="display-6 fw-bold text-secondary" id="full-pending-count">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Control Buttons -->
+                        <div class="row g-2 mb-4">
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-secondary w-100" onclick="refreshSchedulerData()">
+                                    <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-info w-100" onclick="reloadConfigurations()">
+                                    <i class="bi bi-cloud-download me-2"></i>Reload Configs
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-primary w-100" onclick="toggleAutoRefresh()">
+                                    <i class="bi bi-play me-2"></i><span id="autoRefreshText">Auto-Refresh</span>
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-warning w-100" onclick="showTriggerDialog()">
+                                    <i class="bi bi-lightning me-2"></i>Trigger Sync
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Quick Schedules List -->
+                        <h6 class="mb-3">Quick Schedule Access</h6>
+                        <div class="row g-2" id="quickSchedulesList">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Continue with your existing dashboard content -->
+        <div class="row g-4 mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Your Other Dashboard Sections</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>All your existing dashboard sections continue to work normally.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container for Notifications -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" id="toastContainer"></div>
+
+    <script>
+        // 🎯 Scheduler Component Integration JavaScript
+
+        // Mock data - replace with real API calls
+        let schedulerData = {
+            running: true,
+            active_schedules: 3,
+            running_executions: 1,
+            pending_executions: 0,
+            schedules: [
+                { name: 'production-sync', enabled: true, frequency: 'daily' },
+                { name: 'hourly-updates', enabled: true, frequency: 'hourly' },
+                { name: 'weekly-backup', enabled: false, frequency: 'weekly' }
+            ]
+        };
+
+        // Initialize scheduler components
+        function initializeSchedulerComponents() {
+            updateSchedulerWidget();
+            updateFullSchedulerView();
+            populateQuickSchedulesList();
+            
+            // Set up periodic refresh
+            setInterval(refreshSchedulerWidget, 60000); // Every minute
+            
+            console.log('🎯 Scheduler components initialized');
+        }
+
+        // Update the small scheduler widget
+        function updateSchedulerWidget() {
+            document.getElementById('widget-status-icon').className = 
+                schedulerData.running ? 'bi bi-play-circle fs-4 mb-2' : 'bi bi-pause-circle fs-4 mb-2';
+            document.getElementById('widget-status-text').textContent = 
+                schedulerData.running ? 'Running' : 'Stopped';
+            document.getElementById('widget-active-count').textContent = 
+                schedulerData.active_schedules.toString();
+        }
+
+        // Update the full scheduler view
+        function updateFullSchedulerView() {
+            document.getElementById('full-status-icon').className = 
+                schedulerData.running ? 'bi bi-play-circle-fill text-success fs-2 mb-2' : 'bi bi-pause-circle-fill text-secondary fs-2 mb-2';
+            document.getElementById('full-status-badge').textContent = 
+                schedulerData.running ? 'Running' : 'Stopped';
+            document.getElementById('full-status-badge').className = 
+                schedulerData.running ? 'badge bg-success' : 'badge bg-secondary';
+            document.getElementById('full-active-count').textContent = 
+                schedulerData.active_schedules.toString();
+            document.getElementById('full-running-count').textContent = 
+                schedulerData.running_executions.toString();
+            document.getElementById('full-pending-count').textContent = 
+                schedulerData.pending_executions.toString();
+        }
+
+        // Populate quick schedules list
+        function populateQuickSchedulesList() {
+            const container = document.getElementById('quickSchedulesList');
+            container.innerHTML = '';
+            
+            schedulerData.schedules.forEach(schedule => {
+                const scheduleCard = `
+                    <div class="col-md-4">
+                        <div class="card ${schedule.enabled ? 'border-success' : 'border-secondary'}">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">${schedule.name}</h6>
+                                        <small class="text-muted">${schedule.frequency}</small>
+                                    </div>
+                                    <div>
+                                        <span class="badge ${schedule.enabled ? 'bg-success' : 'bg-secondary'} mb-2">
+                                            ${schedule.enabled ? 'Enabled' : 'Disabled'}
+                                        </span>
+                                        <br>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="triggerSchedule('${schedule.name}')">
+                                            <i class="bi bi-play"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', scheduleCard);
+            });
+        }
+
+        // Component Actions
+        function openFullSchedulerView() {
+            document.getElementById('fullSchedulerSection').style.display = 'block';
+            document.getElementById('fullSchedulerSection').scrollIntoView({ behavior: 'smooth' });
+            showToast('Scheduler management opened', 'success');
+        }
+
+        function closeFullSchedulerView() {
+            document.getElementById('fullSchedulerSection').style.display = 'none';
+            showToast('Scheduler management closed', 'info');
+        }
+
+        function refreshSchedulerWidget() {
+            // Simulate API call to refresh data
+            console.log('🔄 Refreshing scheduler widget...');
+            
+            // In real implementation, make API call here
+            // For demo, we'll just update the timestamp
+            const now = new Date();
+            console.log(`📊 Widget refreshed at ${now.toLocaleTimeString()}`);
+            
+            // Update UI (in real implementation, update with fresh API data)
+            updateSchedulerWidget();
+            
+            showToast('Scheduler status refreshed', 'success');
+        }
+
+        function refreshSchedulerData() {
+            console.log('🔄 Refreshing full scheduler data...');
+            
+            // Simulate API call
+            setTimeout(() => {
+                updateFullSchedulerView();
+                populateQuickSchedulesList();
+                showToast('Scheduler data refreshed', 'success');
+            }, 500);
+        }
+
+        function reloadConfigurations() {
+            console.log('📥 Reloading configurations...');
+            showToast('Reloading configurations...', 'info');
+            
+            // Simulate API call
+            setTimeout(() => {
+                showToast('Configurations reloaded successfully', 'success');
+                refreshSchedulerData();
+            }, 1500);
+        }
+
+        function triggerSchedule(scheduleName) {
+            console.log(`⚡ Triggering schedule: ${scheduleName}`);
+            showToast(`Triggering sync for ${scheduleName}...`, 'warning');
+            
+            // Simulate API call
+            setTimeout(() => {
+                showToast(`Sync triggered for ${scheduleName}`, 'success');
+                refreshSchedulerData();
+            }, 1000);
+        }
+
+        function showTriggerDialog() {
+            const schedules = schedulerData.schedules.map(s => s.name);
+            const selectedSchedule = prompt(`Select schedule to trigger:\n\n${schedules.join('\n')}`);
+            
+            if (selectedSchedule && schedules.includes(selectedSchedule)) {
+                triggerSchedule(selectedSchedule);
+            }
+        }
+
+        let autoRefreshInterval = null;
+        function toggleAutoRefresh() {
+            const button = document.getElementById('autoRefreshText');
+            
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                button.textContent = 'Auto-Refresh';
+                showToast('Auto-refresh disabled', 'info');
+            } else {
+                autoRefreshInterval = setInterval(refreshSchedulerData, 30000);
+                button.textContent = 'Stop Auto-Refresh';
+                showToast('Auto-refresh enabled (30s)', 'success');
+            }
+        }
+
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toastId = 'toast-' + Date.now();
+            
+            const toastHTML = `
+                <div class="toast show" role="alert" id="${toastId}">
+                    <div class="toast-header">
+                        <i class="bi bi-${type === 'success' ? 'check-circle text-success' : type === 'warning' ? 'exclamation-triangle text-warning' : 'info-circle text-info'} me-2"></i>
+                        <strong class="me-auto">Scheduler</strong>
+                        <button type="button" class="btn-close" onclick="document.getElementById('${toastId}').remove()"></button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            
+            // Auto-remove after 4 seconds
+            setTimeout(() => {
+                const toast = document.getElementById(toastId);
+                if (toast) toast.remove();
+            }, 4000);
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSchedulerComponents();
+            
+            console.log('🎯 Component Integration Ready');
+            console.log('📊 Scheduler widget added to your dashboard');
+            console.log('🎛️ Click "Manage Scheduler" for full controls');
+        });
+    </script>
+</body>
+</html>

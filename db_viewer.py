@@ -27,7 +27,7 @@ class DatabaseViewer:
             self.connection = await asyncpg.connect(
                 host=os.getenv('DOCUMENT_LOADER_DB_HOST', 'localhost'),
                 port=int(os.getenv('DOCUMENT_LOADER_DB_PORT', '5432')),
-                database=os.getenv('DOCUMENT_LOADER_DB_NAME', 'document_loader'),
+                database=os.getenv('DOCUMENT_LOADER_DB_NAME'),
                 user=os.getenv('DOCUMENT_LOADER_DB_USER', 'feka'),
                 password=os.getenv('DOCUMENT_LOADER_DB_PASSWORD', '123456')
             )

@@ -33,6 +33,7 @@ from src.data.repository import Repository
 from src.data.repository_ext import ExtendedRepository
 from src.data.models import KnowledgeBase, SyncRunStatus
 from src.cli.multi_source_commands import multi_source
+from src.cli.analytics_commands import analytics
 from src.core.batch_runner import BatchRunner
 from src.core.scanner import FileScanner
 from src.data.schema import create_schema_sql
@@ -207,12 +208,36 @@ async def get_database():
 @click.group()
 @click.version_option(version='0.1.0')
 @click.option('--verbose', is_flag=True, help='Enable verbose logging (DEBUG level)')
+@click.option('--database', '-d', help='Database name override (for multi-tenant deployments)')
+@click.option('--schema', '-s', help='Schema name for isolated RAG use cases')
 @click.pass_context
-def cli(ctx, verbose):
+def cli(ctx, verbose, database, schema):
     """Document Management System for RAG systems."""
     # Initialize command line parameters
     params = init_params(ctx)
     params.verbose = verbose
+    
+    # Initialize context for passing parameters
+    ctx.ensure_object(dict)
+    
+    # Handle database override for multi-tenant deployments
+    if database:
+        original_db = os.environ.get('DOCUMENT_LOADER_DB_NAME')
+        os.environ['DOCUMENT_LOADER_DB_NAME'] = database
+        ctx.obj['database_override'] = database
+        ctx.obj['original_database'] = original_db
+        console.print(f"[blue]Database override:[/blue] {database}")
+        if original_db:
+            console.print(f"[dim]Original database: {original_db}[/dim]")
+    
+    # Handle schema override for RAG use case isolation
+    if schema:
+        ctx.obj['schema'] = schema
+        # Convert to valid PostgreSQL identifier
+        ctx.obj['schema_name'] = schema.lower().replace('-', '_')
+        os.environ['DOCUMENT_LOADER_DB_SCHEMA'] = ctx.obj['schema_name']
+        console.print(f"[blue]Schema override:[/blue] {schema} -> {ctx.obj['schema_name']}")
+        console.print(f"[dim]All operations will be isolated to schema '{ctx.obj['schema_name']}'[/dim]")
     
     # Configure logging based on verbose flag
     log_level = params.get_log_level()
@@ -387,10 +412,12 @@ def create_db(no_schema: bool, force: bool):
     asyncio.run(run_create())
 
 @cli.command()
-def check_connection():
+@click.option('--database-name', help='PostgreSQL database name (overrides .env setting)')
+def check_connection(database_name):
     """Check database connectivity."""
     async def run_check():
-        config = DatabaseConfig()
+        # Use custom database name if provided, otherwise use default from .env
+        config = DatabaseConfig(database_name) if database_name else DatabaseConfig()
         
         console.print("[yellow]Checking database connection...[/yellow]")
         console.print(f"\n[cyan]Configuration:[/cyan]")
@@ -457,6 +484,354 @@ def check_connection():
             console.print(f"\n[red]Connection check failed: {e}[/red]")
     
     asyncio.run(run_check())
+
+@cli.command()
+@click.option('--name', required=True, help='Schema name for the RAG use case')
+@click.option('--description', help='Description of the RAG use case')
+@click.option('--force', is_flag=True, help='Skip confirmation prompt')
+def create_schema(name: str, description: str, force: bool):
+    """Create a new schema for a specific RAG knowledge base use case."""
+    async def run_create_schema():
+        config = DatabaseConfig()
+        
+        # Validate schema name (PostgreSQL naming rules)
+        if not name.replace('_', '').replace('-', '').isalnum():
+            console.print("[red]❌ Schema name must contain only letters, numbers, underscores, and hyphens[/red]")
+            return
+        
+        # Convert to valid PostgreSQL identifier
+        schema_name = name.lower().replace('-', '_')
+        
+        console.print(f"[yellow]Creating schema for RAG use case...[/yellow]")
+        console.print(f"\n[cyan]Configuration:[/cyan]")
+        console.print(f"  Database: {config.database}")
+        console.print(f"  Schema Name: {schema_name}")
+        console.print(f"  Description: {description or 'None'}")
+        console.print(f"  User: {config.user}")
+        
+        if not force:
+            console.print(f"\n[yellow]This will create schema '{schema_name}' in database '{config.database}'[/yellow]")
+            if not click.confirm("Continue?"):
+                console.print("[yellow]Operation cancelled.[/yellow]")
+                return
+        
+        try:
+            # Connect to the database
+            connection = await asyncpg.connect(
+                host=config.host,
+                port=config.port,
+                user=config.user,
+                password=config.password,
+                database=config.database
+            )
+            
+            # Check if schema already exists
+            existing = await connection.fetchval(
+                "SELECT schema_name FROM information_schema.schemata WHERE schema_name = $1",
+                schema_name
+            )
+            
+            if existing:
+                console.print(f"[yellow]⚠️  Schema '{schema_name}' already exists[/yellow]")
+                await connection.close()
+                return
+            
+            # Create the schema
+            await connection.execute(f'CREATE SCHEMA "{schema_name}"')
+            
+            # Create all core tables within the schema
+            console.print("  Creating core tables...")
+            
+            # Import schema creation function
+            from src.data.schema import create_schema_sql
+            
+            # Get the schema SQL and modify it to target our specific schema
+            base_sql = create_schema_sql()
+            
+            # Replace table references to be schema-specific
+            schema_sql = base_sql.replace(
+                "CREATE TABLE IF NOT EXISTS ",
+                f'CREATE TABLE IF NOT EXISTS "{schema_name}".'
+            ).replace(
+                "CREATE INDEX IF NOT EXISTS ",
+                f'CREATE INDEX IF NOT EXISTS '
+            ).replace(
+                "INSERT INTO source_type",
+                f'INSERT INTO "{schema_name}".source_type'
+            ).replace(
+                "INSERT INTO rag_type", 
+                f'INSERT INTO "{schema_name}".rag_type'
+            ).replace(
+                "ON file_record(", 
+                f'ON "{schema_name}".file_record('
+            ).replace(
+                "ON sync_run(",
+                f'ON "{schema_name}".sync_run('
+            )
+            
+            # Fix foreign key references to be schema-specific
+            schema_sql = schema_sql.replace(
+                "REFERENCES knowledge_base(id)",
+                f'REFERENCES "{schema_name}".knowledge_base(id)'
+            ).replace(
+                "REFERENCES sync_run(id)",
+                f'REFERENCES "{schema_name}".sync_run(id)'
+            )
+            
+            # Execute the schema creation
+            await connection.execute(schema_sql)
+            
+            # Create a metadata table for this RAG use case
+            await connection.execute(f'''
+                CREATE TABLE "{schema_name}".rag_metadata (
+                    id SERIAL PRIMARY KEY,
+                    use_case_name TEXT NOT NULL DEFAULT '{name}',
+                    description TEXT DEFAULT '{description or ''}',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    schema_version TEXT DEFAULT '1.0',
+                    status TEXT DEFAULT 'active'
+                )
+            ''')
+            
+            # Insert metadata record
+            await connection.execute(f'''
+                INSERT INTO "{schema_name}".rag_metadata (use_case_name, description)
+                VALUES ($1, $2)
+            ''', name, description or '')
+            
+            console.print("  ✅ Core tables created")
+            console.print("  ✅ Source and RAG types populated")
+            console.print("  ✅ Metadata table created")
+            
+            await connection.close()
+            
+            console.print(f"\n[green]✅ Schema '{schema_name}' created successfully![/green]")
+            console.print("\n[cyan]Next steps:[/cyan]")
+            console.print(f"  1. List schemas: [cyan]document-loader list-schemas[/cyan]")
+            console.print(f"  2. Create knowledge base in this schema")
+            console.print(f"  3. When done: [cyan]document-loader drop-schema --name {name}[/cyan]")
+            
+        except asyncpg.exceptions.InsufficientPrivilegeError:
+            console.print(f"[red]❌ Insufficient privileges to create schema[/red]")
+            console.print("The database user needs CREATE privileges on the database")
+        except Exception as e:
+            console.print(f"[red]❌ Error creating schema: {e}[/red]")
+    
+    asyncio.run(run_create_schema())
+
+@cli.command()
+@click.pass_context
+def list_schemas(ctx):
+    """List all RAG schemas in the database."""
+    async def run_list_schemas():
+        config = DatabaseConfig()
+        
+        # Show current schema context if any
+        active_schema = ctx.obj.get('schema_name') if ctx.obj else None
+        if active_schema:
+            console.print(f"[blue]Active Schema:[/blue] {active_schema}")
+            console.print(f"[dim]Commands will operate within this schema[/dim]\n")
+        
+        console.print("[yellow]Listing RAG schemas...[/yellow]")
+        
+        try:
+            connection = await asyncpg.connect(
+                host=config.host,
+                port=config.port,
+                user=config.user,
+                password=config.password,
+                database=config.database
+            )
+            
+            # Get all schemas (exclude system schemas)
+            schemas = await connection.fetch('''
+                SELECT 
+                    schema_name,
+                    schema_owner
+                FROM information_schema.schemata 
+                WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast', 'public')
+                ORDER BY schema_name
+            ''')
+            
+            if not schemas:
+                console.print("\n[yellow]No custom schemas found[/yellow]")
+                await connection.close()
+                return
+            
+            console.print(f"\n[bold cyan]Schemas in database '{config.database}':[/bold cyan]")
+            console.print()
+            
+            from rich.table import Table
+            table = Table()
+            table.add_column("Schema Name", style="bold green")
+            table.add_column("Owner", style="cyan")
+            table.add_column("Use Case", style="yellow")
+            table.add_column("Description", style="dim")
+            table.add_column("Created", style="dim")
+            
+            for schema in schemas:
+                schema_name = schema['schema_name']
+                
+                # Try to get metadata from rag_metadata table
+                try:
+                    metadata = await connection.fetchrow(f'''
+                        SELECT use_case_name, description, created_at
+                        FROM "{schema_name}".rag_metadata
+                        ORDER BY created_at DESC LIMIT 1
+                    ''')
+                    
+                    if metadata:
+                        use_case = metadata['use_case_name'] or schema_name
+                        description = metadata['description'] or 'No description'
+                        created = metadata['created_at'].strftime('%Y-%m-%d %H:%M') if metadata['created_at'] else 'Unknown'
+                    else:
+                        use_case = 'Unknown'
+                        description = 'No metadata'
+                        created = 'Unknown'
+                except:
+                    use_case = 'Unknown'
+                    description = 'No metadata table'
+                    created = 'Unknown'
+                
+                table.add_row(
+                    schema_name,
+                    schema['schema_owner'],
+                    use_case,
+                    description,
+                    created
+                )
+            
+            console.print(table)
+            await connection.close()
+            
+        except Exception as e:
+            console.print(f"[red]❌ Error listing schemas: {e}[/red]")
+    
+    asyncio.run(run_list_schemas())
+
+@cli.command()
+@click.option('--name', required=True, help='Schema name to drop')
+@click.option('--force', is_flag=True, help='Skip confirmation prompt')
+def drop_schema(name: str, force: bool):
+    """Drop a RAG schema and all its data."""
+    async def run_drop_schema():
+        config = DatabaseConfig()
+        
+        # Convert to valid PostgreSQL identifier
+        schema_name = name.lower().replace('-', '_')
+        
+        console.print(f"[yellow]Preparing to drop schema...[/yellow]")
+        console.print(f"\n[cyan]Configuration:[/cyan]")
+        console.print(f"  Database: {config.database}")
+        console.print(f"  Schema Name: {schema_name}")
+        console.print(f"  User: {config.user}")
+        
+        try:
+            connection = await asyncpg.connect(
+                host=config.host,
+                port=config.port,
+                user=config.user,
+                password=config.password,
+                database=config.database
+            )
+            
+            # Check if schema exists
+            existing = await connection.fetchval(
+                "SELECT schema_name FROM information_schema.schemata WHERE schema_name = $1",
+                schema_name
+            )
+            
+            if not existing:
+                console.print(f"[yellow]⚠️  Schema '{schema_name}' does not exist[/yellow]")
+                await connection.close()
+                return
+            
+            # Get table count
+            table_count = await connection.fetchval(f'''
+                SELECT count(*)
+                FROM information_schema.tables 
+                WHERE table_schema = '{schema_name}'
+            ''')
+            
+            console.print(f"\n[red]⚠️  WARNING: This will permanently delete:[/red]")
+            console.print(f"  - Schema: {schema_name}")
+            console.print(f"  - Tables: {table_count}")
+            console.print(f"  - All data in the schema")
+            
+            if not force:
+                console.print(f"\n[red]Are you sure you want to drop schema '{schema_name}' and ALL its data?[/red]")
+                if not click.confirm("This action cannot be undone"):
+                    console.print("[yellow]Operation cancelled.[/yellow]")
+                    await connection.close()
+                    return
+            
+            # Drop the schema with CASCADE to remove all objects
+            await connection.execute(f'DROP SCHEMA "{schema_name}" CASCADE')
+            
+            await connection.close()
+            
+            console.print(f"\n[green]✅ Schema '{schema_name}' dropped successfully[/green]")
+            
+        except asyncpg.exceptions.InsufficientPrivilegeError:
+            console.print(f"[red]❌ Insufficient privileges to drop schema[/red]")
+        except Exception as e:
+            console.print(f"[red]❌ Error dropping schema: {e}[/red]")
+    
+    asyncio.run(run_drop_schema())
+
+@cli.command()
+@click.pass_context
+def schema_info(ctx):
+    """Show current schema configuration and table access."""
+    async def run_schema_info():
+        config = DatabaseConfig()
+        schema_info = config.get_schema_info()
+        
+        console.print("[yellow]Schema Configuration:[/yellow]")
+        console.print(f"  Current Schema: [cyan]{config.schema}[/cyan]")
+        console.print(f"  Isolated Mode: [cyan]{schema_info['is_isolated']}[/cyan]")
+        console.print(f"  Table Prefix: [cyan]{schema_info['qualified_prefix']}[/cyan]")
+        
+        # Show active schema from CLI context
+        active_schema = ctx.obj.get('schema_name') if ctx.obj else None
+        if active_schema:
+            console.print(f"  CLI Override: [blue]{active_schema}[/blue]")
+        
+        try:
+            connection = await asyncpg.connect(
+                host=config.host,
+                port=config.port,
+                user=config.user,
+                password=config.password,
+                database=config.database
+            )
+            
+            # Test table access in current schema
+            tables_query = f"""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = '{config.schema}'
+                AND table_type = 'BASE TABLE'
+                ORDER BY table_name
+            """
+            
+            tables = await connection.fetch(tables_query)
+            
+            console.print(f"\n[yellow]Tables in schema '{config.schema}':[/yellow]")
+            if tables:
+                for table in tables:
+                    qualified_name = config.qualify_table(table['table_name'])
+                    console.print(f"  • {qualified_name}")
+            else:
+                console.print("  [dim]No tables found[/dim]")
+                
+            await connection.close()
+            
+        except Exception as e:
+            console.print(f"[red]❌ Error checking schema: {e}[/red]")
+    
+    asyncio.run(run_schema_info())
 
 @cli.command()
 @click.option('--kb-name', required=True, help='Knowledge base name')
@@ -1298,6 +1673,7 @@ def quickstart():
     table.add_column("Description", style="cyan")
     
     commands = [
+        ("0", "./setup-database.sh", "Install PostgreSQL and set up database/users"),
         ("1", "document-loader check-connection", "Verify database connectivity"),
         ("2", "document-loader create-db", "Create database with schema"),
         ("3", "document-loader config upload \\\n  --file configs/my-config.json \\\n  --name my-config", "Upload config to PostgreSQL"),
@@ -1929,12 +2305,23 @@ cli.add_command(config)
 from src.cli.db_commands import db
 cli.add_command(db)
 
+# Add analytics commands to the CLI
+cli.add_command(analytics)
+
+# Add scheduler commands to the CLI
+from src.cli.scheduler_commands import scheduler
+cli.add_command(scheduler)
+
+# Add connectivity commands to the CLI
+from src.cli.connectivity_commands import connectivity
+cli.add_command(connectivity)
+
 def main():
     """Entry point for the CLI."""
     import sys
     
     # Add ASCII art banner
-    banner = """
+    banner = r"""
 ====================================================
      ____                                        __  
     / __ \____  _______  ______ ___  ___  ____  / /_ 
@@ -1953,14 +2340,15 @@ def main():
         console.print("[bold cyan]QUICK START:[/bold cyan]\n")
         
         steps = [
+            ("0", "./setup-database.sh", "Install PostgreSQL and set up database/users"),
             ("1", "document-loader check-connection", "Verify database connectivity"),
-            ("2", "document-loader create-db", "Create database with schema"),
-            ("3", "document-loader config upload \\\n     --file configs/my-config.json \\\n     --name my-config", "Upload config to PostgreSQL"),
-            ("4", "document-loader multi-source create-multi-kb \\\n     --config-name my-config", "Create multi-source knowledge base"),
-            ("5", "document-loader multi-source sync-multi-kb \\\n     --config-name my-config", "Sync documents from all sources"),
-            ("6", "document-loader multi-source status-multi-kb \\\n     --config-name my-config", "Check sync status and statistics"),
-            ("7", "document-loader config list", "List all stored configurations"),
-            ("8", "document-loader --verbose multi-source sync-multi-kb \\\n     --config-name my-config", "Sync with verbose output"),
+            ("2", "document-loader create-schema --name finance-dept", "Create isolated schema for RAG use case"),
+            ("3", "document-loader list-schemas", "List all RAG schemas"),
+            ("4", "document-loader --schema finance-dept config upload \\\n     --file configs/my-config.json \\\n     --name my-config", "Upload config to specific schema"),
+            ("5", "document-loader --schema finance-dept multi-source create-multi-kb \\\n     --config-name my-config", "Create knowledge base in isolated schema"),
+            ("6", "document-loader --schema finance-dept multi-source sync-multi-kb \\\n     --config-name my-config", "Sync documents in isolated environment"),
+            ("7", "document-loader --schema finance-dept list-schemas", "Check schema status and isolation"),
+            ("8", "document-loader drop-schema --name finance-dept", "Clean up when done"),
         ]
         
         for num, cmd, desc in steps:
@@ -1969,6 +2357,10 @@ def main():
         console.print("\n[bold cyan]AVAILABLE COMMANDS:[/bold cyan]")
         commands = [
             ("check-connection", "Test database connectivity"),
+            ("create-schema", "Create schema for RAG use case"),
+            ("list-schemas", "List all RAG schemas"),
+            ("drop-schema", "Drop RAG schema and data"),
+            ("schema-info", "Show current schema configuration"),
             ("create-db", "Create database and schema"),
             
             # Multi-Source Commands
@@ -1997,6 +2389,23 @@ def main():
             ("db integrity", "Check database integrity"),
             ("db cleanup", "Clean up orphaned records"),
             
+            # Analytics Commands
+            ("analytics knowledge-base", "Generate KB-specific analytics"),
+            ("analytics business-summary", "Generate business-level analytics"),
+            ("analytics trends", "Show performance trends"),
+            
+            # Scheduler Commands  
+            ("scheduler start", "Start the config-based scheduler service"),
+            ("scheduler stop", "Stop the scheduler service"),
+            ("scheduler status", "Show scheduler status and active schedules"),
+            ("scheduler executions", "Show recent scheduled executions"),
+            ("scheduler trigger", "Manually trigger a scheduled sync"),
+            ("scheduler reload", "Reload scheduler configurations"),
+            ("scheduler schedule-info", "Show detailed schedule information"),
+            
+            # Connectivity Commands
+            ("connectivity check", "Test RAG system connectivity with comprehensive tests"),
+            
             # Legacy Single-Source Commands
             ("create-kb", "Create single-source knowledge base (legacy)"),
             ("list-kb", "List single-source knowledge bases"),
@@ -2021,6 +2430,8 @@ def main():
         
         console.print("\n[bold cyan]OPTIONS:[/bold cyan]")
         console.print("  [green]--verbose[/green]            Enable verbose logging (DEBUG level)")
+        console.print("  [green]--database, -d[/green]       Database name override (for multi-tenant deployments)")
+        console.print("  [green]--schema, -s[/green]         Schema name for isolated RAG use cases")
         console.print("  [green]--version[/green]            Show the version and exit")
         console.print("  [green]--help[/green]               Show this message and exit")
         
@@ -2035,6 +2446,8 @@ def main():
         console.print("  [yellow]document-loader multi-source --help[/yellow]")
         console.print("  [yellow]document-loader config --help[/yellow]")
         console.print("\n[dim]Examples:[/dim]")
+        console.print("  [yellow]document-loader create-schema --name finance-dept[/yellow]")
+        console.print("  [yellow]document-loader --schema finance-dept list-schemas[/yellow]")
         console.print("  [yellow]document-loader multi-source create-multi-kb --help[/yellow]")
         console.print("  [yellow]document-loader config upload --help[/yellow]\n")
         return

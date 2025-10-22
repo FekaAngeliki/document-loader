@@ -20,7 +20,15 @@ AZURE_STORAGE_ACCOUNT_NAME= os.getenv('DOCUMENT_LOADER_AZURE_STORAGE_ACCOUNT_NAM
 AZURE_STORAGE_CONTAINER_NAME= os.getenv('DOCUMENT_LOADER_AZURE_STORAGE_CONTAINER_NAME')
 
 from azure.storage.blob import BlobServiceClient, ContainerProperties, ContainerClient, BlobProperties
-from azwrap import Identity, Subscription, ResourceGroup, StorageAccount, Container, ResourceNotFoundError
+from azwrap import Identity, Subscription, ResourceGroup, StorageAccount, Container
+
+# Define ResourceNotFoundError if not available in azwrap
+try:
+    from azwrap import ResourceNotFoundError
+except ImportError:
+    class ResourceNotFoundError(Exception):
+        """Resource not found error when azwrap doesn't provide it"""
+        pass
 
 from ..cli.params import get_params, CommandLineParams
 cli_params:CommandLineParams = get_params()

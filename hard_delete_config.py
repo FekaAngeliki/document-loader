@@ -12,9 +12,9 @@ async def hard_delete():
         connection = await asyncpg.connect(
             host=os.getenv('DOCUMENT_LOADER_DB_HOST', 'localhost'),
             port=int(os.getenv('DOCUMENT_LOADER_DB_PORT', 5432)),
-            user=os.getenv('DOCUMENT_LOADER_DB_USER', 'biks'),
-            password=os.getenv('DOCUMENT_LOADER_DB_PASSWORD', 'biks2013'),
-            database=os.getenv('DOCUMENT_LOADER_DB_NAME', 'document_loader')
+            user=os.getenv('DOCUMENT_LOADER_DB_USER'),
+            password=os.getenv('DOCUMENT_LOADER_DB_PASSWORD'),
+            database=os.getenv('DOCUMENT_LOADER_DB_NAME')
         )
         
         result = await connection.execute("DELETE FROM config_assets WHERE name = $1", 'premium-rms-kb-config')

@@ -1,0 +1,739 @@
+{
+  "info": {
+    "name": "Document Loader Banking API",
+    "description": "Complete API collection for Document Loader web service with schema management, knowledge bases, and CLI operations",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "🔧 Schema Management",
+      "description": "Schema and database management endpoints",
+      "item": [
+        {
+          "name": "Check Database Connection",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/schemas/connection/check",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "schemas", "connection", "check"]
+            },
+            "description": "Test database connectivity and check if target database exists.\nEquivalent to CLI: document-loader check-connection"
+          }
+        },
+        {
+          "name": "Check Database Connection (Custom DB)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/schemas/connection/check?database_name=custom_db",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "schemas", "connection", "check"],
+              "query": [
+                {
+                  "key": "database_name",
+                  "value": "custom_db",
+                  "description": "Custom database name to check"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Database",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"database_name\": null,\n  \"create_schema\": true,\n  \"force\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/schemas/database/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "schemas", "database", "create"]
+            },
+            "description": "Create the database and optionally the schema if they don't exist.\nEquivalent to CLI: document-loader create-db"
+          }
+        },
+        {
+          "name": "Create Schema",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"hr_schema\",\n  \"description\": \"HR department schema for employee documents\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/schemas/schemas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "schemas", "schemas"]
+            },
+            "description": "Create a new isolated schema for RAG use case.\nEquivalent to CLI: document-loader create-schema --name hr_schema"
+          }
+        },
+        {
+          "name": "List All Schemas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/schemas/schemas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "schemas", "schemas"]
+            },
+            "description": "List all RAG schemas with metadata.\nEquivalent to CLI: document-loader list-schemas"
+          }
+        },
+        {
+          "name": "Get Schema Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/schemas/schemas/hr_schema",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "schemas", "schemas", "hr_schema"]
+            },
+            "description": "Get detailed information about a specific schema.\nEquivalent to CLI: document-loader --schema hr_schema schema-info"
+          }
+        },
+        {
+          "name": "Drop Schema",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/schemas/schemas/hr_schema?force=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "schemas", "schemas", "hr_schema"],
+              "query": [
+                {
+                  "key": "force",
+                  "value": "true",
+                  "description": "Force drop without confirmation"
+                }
+              ]
+            },
+            "description": "Drop a schema and all its contents.\nEquivalent to CLI: document-loader drop-schema --name hr_schema --force"
+          }
+        },
+        {
+          "name": "List Schema Knowledge Bases",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/schemas/schemas/hr_schema/knowledge-bases",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "schemas", "schemas", "hr_schema", "knowledge-bases"]
+            },
+            "description": "List all knowledge bases in a specific schema.\nEquivalent to CLI: document-loader --schema hr_schema list"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔐 Authentication",
+      "description": "Authentication endpoints",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.access_token) {",
+                  "        pm.collectionVariables.set('authToken', jsonData.access_token);",
+                  "        console.log('Auth token saved:', jsonData.access_token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\",\n  \"business_unit\": \"TECHNOLOGY\",\n  \"business_justification\": \"API testing and development\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Login endpoint for authentication. Token is automatically saved to collection variables."
+          }
+        }
+      ]
+    },
+    {
+      "name": "📚 Knowledge Bases",
+      "description": "Knowledge base management endpoints",
+      "item": [
+        {
+          "name": "List Multi-Source Knowledge Bases",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/knowledge-bases/multi-source/list?detailed=true&status_filter=all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "knowledge-bases", "multi-source", "list"],
+              "query": [
+                {
+                  "key": "detailed",
+                  "value": "true",
+                  "description": "Show detailed information"
+                },
+                {
+                  "key": "status_filter",
+                  "value": "all",
+                  "description": "Filter by status: all, active, sync-issues"
+                }
+              ]
+            },
+            "description": "List all multi-source knowledge bases with detailed information.\nEquivalent to CLI: document-loader multi-source list-multi-kb"
+          }
+        },
+        {
+          "name": "Get Business Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/knowledge-bases/metrics/business?period_days=30",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "knowledge-bases", "metrics", "business"],
+              "query": [
+                {
+                  "key": "period_days",
+                  "value": "30",
+                  "description": "Metrics period in days"
+                }
+              ]
+            },
+            "description": "Get business metrics and KPIs for knowledge base operations."
+          }
+        },
+        {
+          "name": "Sync Knowledge Base",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"business_justification\": \"Regular sync to update HR documents\",\n  \"priority\": \"NORMAL\",\n  \"notify_on_completion\": true,\n  \"max_documents\": 1000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/knowledge-bases/hr_documents/sync",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "knowledge-bases", "hr_documents", "sync"]
+            },
+            "description": "Initiate document synchronization for a knowledge base."
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚙️ CLI Operations",
+      "description": "CLI command equivalents via API",
+      "item": [
+        {
+          "name": "Test Database Connection (CLI)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cli/health/connection?schema=hr_schema",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cli", "health", "connection"],
+              "query": [
+                {
+                  "key": "schema",
+                  "value": "hr_schema",
+                  "description": "Schema to test connection for"
+                }
+              ]
+            },
+            "description": "Test database connection via CLI integration.\nEquivalent to CLI: document-loader --schema hr_schema check-connection"
+          }
+        },
+        {
+          "name": "Create Knowledge Base",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"finance_kb\",\n  \"config_data\": {\n    \"source_type\": \"filesystem\",\n    \"source_config\": {\n      \"base_path\": \"/data/finance\"\n    },\n    \"rag_type\": \"azure_blob\",\n    \"rag_config\": {\n      \"container_name\": \"finance-docs\"\n    }\n  },\n  \"auto_sync\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cli/knowledge-bases/create?schema=finance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cli", "knowledge-bases", "create"],
+              "query": [
+                {
+                  "key": "schema",
+                  "value": "finance",
+                  "description": "Schema to create knowledge base in"
+                }
+              ]
+            },
+            "description": "Create a new knowledge base via CLI integration.\nEquivalent to CLI: document-loader --schema finance multi-source create-multi-kb"
+          }
+        },
+        {
+          "name": "List Knowledge Bases (CLI)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cli/knowledge-bases/list?schema=hr_schema",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cli", "knowledge-bases", "list"],
+              "query": [
+                {
+                  "key": "schema",
+                  "value": "hr_schema",
+                  "description": "Schema to list knowledge bases from"
+                }
+              ]
+            },
+            "description": "List all knowledge bases via CLI integration.\nEquivalent to CLI: document-loader --schema hr_schema list"
+          }
+        },
+        {
+          "name": "Sync Knowledge Base (CLI)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cli/knowledge-bases/hr_documents/sync?force=false&schema=hr_schema",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cli", "knowledge-bases", "hr_documents", "sync"],
+              "query": [
+                {
+                  "key": "force",
+                  "value": "false",
+                  "description": "Force sync even if no changes detected"
+                },
+                {
+                  "key": "schema",
+                  "value": "hr_schema",
+                  "description": "Schema containing the knowledge base"
+                }
+              ]
+            },
+            "description": "Synchronize a knowledge base via CLI integration.\nEquivalent to CLI: document-loader --schema hr_schema sync hr_documents"
+          }
+        },
+        {
+          "name": "Get Knowledge Base Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cli/knowledge-bases/hr_documents/status?schema=hr_schema",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cli", "knowledge-bases", "hr_documents", "status"],
+              "query": [
+                {
+                  "key": "schema",
+                  "value": "hr_schema",
+                  "description": "Schema containing the knowledge base"
+                }
+              ]
+            },
+            "description": "Get knowledge base status and recent sync runs.\nEquivalent to CLI: document-loader --schema hr_schema status hr_documents"
+          }
+        },
+        {
+          "name": "Delete Knowledge Base",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cli/knowledge-bases/hr_documents?force=true&schema=hr_schema",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cli", "knowledge-bases", "hr_documents"],
+              "query": [
+                {
+                  "key": "force",
+                  "value": "true",
+                  "description": "Force delete without confirmation"
+                },
+                {
+                  "key": "schema",
+                  "value": "hr_schema",
+                  "description": "Schema containing the knowledge base"
+                }
+              ]
+            },
+            "description": "Delete a knowledge base and all its data.\nEquivalent to CLI: document-loader --schema hr_schema delete hr_documents --force"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📄 Configuration Management",
+      "description": "Configuration file management",
+      "item": [
+        {
+          "name": "Upload Config File",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "config_file",
+                  "type": "file",
+                  "src": [],
+                  "description": "JSON configuration file to upload"
+                },
+                {
+                  "key": "request_data",
+                  "value": "{\"config_name\": \"hr_config\", \"description\": \"HR department configuration\", \"business_justification\": \"Required for HR document management\", \"auto_create_kb\": true}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/configs/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "configs", "upload"]
+            },
+            "description": "Upload a configuration file for knowledge base creation."
+          }
+        },
+        {
+          "name": "List Configurations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/configs/list?config_type=multi_source&business_unit=HR",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "configs", "list"],
+              "query": [
+                {
+                  "key": "config_type",
+                  "value": "multi_source",
+                  "description": "Filter by configuration type"
+                },
+                {
+                  "key": "business_unit",
+                  "value": "HR",
+                  "description": "Filter by business unit"
+                }
+              ]
+            },
+            "description": "List stored configuration files with business context."
+          }
+        },
+        {
+          "name": "Get Config Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/configs/hr_config/analytics?days=30",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "configs", "hr_config", "analytics"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30",
+                  "description": "Analytics period in days"
+                }
+              ]
+            },
+            "description": "Get analytics for a specific configuration."
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔗 Connectivity",
+      "description": "System connectivity testing",
+      "item": [
+        {
+          "name": "List RAG Systems",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/connectivity/systems",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "connectivity", "systems"]
+            },
+            "description": "List available RAG systems for connectivity testing."
+          }
+        },
+        {
+          "name": "Test Connectivity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"system_type\": \"azure_blob\",\n  \"config\": {\n    \"connection_string\": \"DefaultEndpointsProtocol=https;AccountName=...\",\n    \"container_name\": \"test-container\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/connectivity/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "connectivity", "test"]
+            },
+            "description": "Test connectivity to a specified RAG system."
+          }
+        }
+      ]
+    },
+    {
+      "name": "📅 Scheduler",
+      "description": "Scheduler management endpoints",
+      "item": [
+        {
+          "name": "Get Scheduler Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/scheduler/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "scheduler", "status"]
+            },
+            "description": "Get scheduler status and active schedules."
+          }
+        },
+        {
+          "name": "Get Executions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/scheduler/executions?limit=20&status_filter=completed",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "scheduler", "executions"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Maximum number of executions to return"
+                },
+                {
+                  "key": "status_filter",
+                  "value": "completed",
+                  "description": "Filter by execution status"
+                }
+              ]
+            },
+            "description": "Get recent scheduled executions with optional filtering."
+          }
+        },
+        {
+          "name": "Trigger Sync",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"config_name\": \"hr_config\",\n  \"force\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/scheduler/trigger",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "scheduler", "trigger"]
+            },
+            "description": "Manually trigger a scheduled sync for a configuration."
+          }
+        },
+        {
+          "name": "Reload Configurations",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/scheduler/reload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "scheduler", "reload"]
+            },
+            "description": "Reload scheduler configurations from the database."
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏥 Health & Status",
+      "description": "Health check and system status endpoints",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "health"]
+            },
+            "description": "Basic health check endpoint"
+          }
+        },
+        {
+          "name": "Readiness Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ready",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ready"]
+            },
+            "description": "Readiness check with dependency validation"
+          }
+        },
+        {
+          "name": "Admin Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "status"]
+            },
+            "description": "Administrative status endpoint"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📖 Documentation",
+      "description": "API documentation endpoints",
+      "item": [
+        {
+          "name": "OpenAPI JSON",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/openapi.json",
+              "host": ["{{baseUrl}}"],
+              "path": ["openapi.json"]
+            },
+            "description": "Get the OpenAPI specification in JSON format"
+          }
+        },
+        {
+          "name": "Swagger UI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/docs",
+              "host": ["{{baseUrl}}"],
+              "path": ["docs"]
+            },
+            "description": "Access interactive Swagger UI documentation"
+          }
+        },
+        {
+          "name": "ReDoc",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/redoc",
+              "host": ["{{baseUrl}}"],
+              "path": ["redoc"]
+            },
+            "description": "Access ReDoc API documentation"
+          }
+        },
+        {
+          "name": "Business Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Access the business dashboard interface"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -5,10 +5,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 This is a RAG (Retrieval-Augmented Generation) document management system that:
-- Collects files from various sources (local filesystem, SharePoint)
+- Collects files from various sources (local filesystem, SharePoint, OneDrive)
 - Processes them with hash calculation and UUID generation
 - Uploads them to RAG systems
 - Maintains records in a PostgreSQL database
+- Includes a banking-grade web API for business operations
 
 ## Core Architecture
 
@@ -69,14 +70,48 @@ Main tables:
 ## Environment Configuration
 
 ### Database Connection Parameters
-All parameters required by the app to communicate and update the database are stored in the shell environment file:
+All parameters required by the app to communicate and update the database are stored in the shell environment file (.env):
 
-- `DOCUMENT_LOADER_DB_HOST`: localhost
-- `DOCUMENT_LOADER_DB_PORT`: 5432
-- `DOCUMENT_LOADER_DB_NAME`: document_loader
-- `DOCUMENT_LOADER_DB_USER`: biks
-- `DOCUMENT_LOADER_DB_PASSWORD`: biks2013
-- `DOCUMENT_LOADER_DB_MIN_POOL_SIZE`: 10
-- `DOCUMENT_LOADER_DB_MAX_POOL_SIZE`: 20
+- `DOCUMENT_LOADER_DB_HOST`: Database host
+- `DOCUMENT_LOADER_DB_PORT`: Database port  
+- `DOCUMENT_LOADER_DB_NAME`: Database name
+- `DOCUMENT_LOADER_DB_USER`: Database username
+- `DOCUMENT_LOADER_DB_PASSWORD`: Database password
+- `DOCUMENT_LOADER_DB_MIN_POOL_SIZE`: Minimum connection pool size
+- `DOCUMENT_LOADER_DB_MAX_POOL_SIZE`: Maximum connection pool size
+
+See `.env` file for actual values.
+
+## Web Service API
+
+### Starting the Web Service
+The project includes a banking-grade FastAPI web service in the `web_service/` directory:
+
+```bash
+# Start web service (from document-loader root)
+cd web_service
+source ../.venv/bin/activate
+python -m app.main
+```
+
+The service runs on http://localhost:8080 with:
+- Banking-grade security (JWT, RBAC, audit logging)
+- Business-oriented API endpoints
+- Development mode with authentication bypass
+- Interactive docs at /docs (development only)
+
+### API Configuration
+Web service configuration is stored in `web_service/.env`:
+- SECRET_KEY for JWT token security (minimum 32 characters)
+- ENVIRONMENT for deployment mode (development/production)
+- CORS and security settings
+
+See `web_service/.env` file for actual configuration values.
+
+### Key API Endpoints
+- `GET /health` - Service health check
+- `GET /api/v1/knowledge-bases/multi-source/list` - List knowledge bases
+- `POST /api/v1/knowledge-bases/{name}/sync` - Sync operations
+- `GET /docs` - Interactive API documentation
 
 Remember: No version control operations unless explicitly requested.
