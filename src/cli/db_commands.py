@@ -1074,3 +1074,194 @@ def cleanup(force: bool):
             await database.disconnect()
     
     asyncio.run(run_cleanup())
+
+@db.command()
+@click.option('--verbose', '-v', is_flag=True, help='Show detailed database information')
+def list_postgres_databases(verbose: bool):
+    """List all PostgreSQL databases on the server."""
+    
+    async def run_list():
+        try:
+            config = DatabaseConfig()
+            import psycopg
+            
+            connection = await psycopg.AsyncConnection.connect(
+                f"postgresql://{config.user}:{config.password}@{config.host}:{config.port}/postgres"
+            )
+            
+            try:
+                async with connection.cursor() as cursor:
+                    if verbose:
+                        query = """
+                        SELECT 
+                            d.datname as database_name,
+                            pg_catalog.pg_get_userbyid(d.datdba) as owner,
+                            pg_size_pretty(pg_database_size(d.datname)) as size,
+                            pg_encoding_to_char(d.encoding) as encoding,
+                            d.datcollate as collation,
+                            d.datistemplate as is_template,
+                            d.datconnlimit as connection_limit,
+                            (SELECT count(*) FROM pg_stat_activity WHERE datname = d.datname) as active_connections
+                        FROM pg_catalog.pg_database d
+                        WHERE d.datallowconn = true
+                        ORDER BY d.datname
+                        """
+                    else:
+                        query = """
+                        SELECT 
+                            d.datname as database_name,
+                            pg_catalog.pg_get_userbyid(d.datdba) as owner,
+                            pg_size_pretty(pg_database_size(d.datname)) as size
+                        FROM pg_catalog.pg_database d
+                        WHERE d.datallowconn = true
+                        ORDER BY d.datname
+                        """
+                    
+                    await cursor.execute(query)
+                    results = await cursor.fetchall()
+                    
+                    if not results:
+                        console.print("[yellow]No databases found.[/yellow]")
+                        return
+                    
+                    table = Table(
+                        title="PostgreSQL Databases",
+                        header_style="bold blue",
+                        box=box.ROUNDED
+                    )
+                    
+                    table.add_column("Database", style="green")
+                    table.add_column("Owner", style="cyan")
+                    table.add_column("Size", style="yellow", justify="right")
+                    
+                    if verbose:
+                        table.add_column("Encoding", style="white")
+                        table.add_column("Template", style="magenta", justify="center")
+                        table.add_column("Connections", style="blue", justify="center")
+                    
+                    for row in results:
+                        if verbose:
+                            table.add_row(
+                                row[0],  # database_name
+                                row[1],  # owner
+                                row[2],  # size
+                                row[3],  # encoding
+                                "Yes" if row[5] else "No",  # is_template
+                                str(row[7]) if row[7] > 0 else "0"  # active_connections
+                            )
+                        else:
+                            table.add_row(row[0], row[1], row[2])
+                    
+                    console.print(table)
+                    console.print(f"\n[bold]Total databases:[/bold] {len(results)}")
+                    
+            finally:
+                await connection.close()
+                
+        except Exception as e:
+            console.print(f"[red]Error listing databases: {e}[/red]")
+    
+    asyncio.run(run_list())
+
+@db.command()
+@click.argument('database_name')
+@click.option('--force', is_flag=True, help='Force deletion without confirmation')
+@click.option('--terminate-connections', is_flag=True, help='Terminate active connections before deletion')
+def delete_postgres_database(database_name: str, force: bool, terminate_connections: bool):
+    """Delete a PostgreSQL database.
+    
+    WARNING: This operation is irreversible and will destroy all data.
+    
+    DATABASE_NAME: Name of the database to delete
+    """
+    
+    # Safety check for system databases
+    system_databases = {'postgres', 'template0', 'template1'}
+    if database_name.lower() in system_databases:
+        console.print(f"[red]Error: Cannot delete system database '{database_name}'[/red]")
+        return
+    
+    async def run_delete():
+        try:
+            config = DatabaseConfig()
+            import psycopg
+            
+            # First check if database exists and get info
+            connection = await psycopg.AsyncConnection.connect(
+                f"postgresql://{config.user}:{config.password}@{config.host}:{config.port}/postgres"
+            )
+            
+            try:
+                # Check if database exists
+                async with connection.cursor() as cursor:
+                    await cursor.execute(
+                        "SELECT 1 FROM pg_database WHERE datname = %s",
+                        (database_name,)
+                    )
+                    result = await cursor.fetchone()
+                    if not result:
+                        console.print(f"[yellow]Database '{database_name}' does not exist.[/yellow]")
+                        return
+                
+                # Check for active connections
+                async with connection.cursor() as cursor:
+                    await cursor.execute(
+                        "SELECT count(*) FROM pg_stat_activity WHERE datname = %s",
+                        (database_name,)
+                    )
+                    result = await cursor.fetchone()
+                    active_connections = result[0] if result else 0
+                
+                if active_connections > 0 and not terminate_connections:
+                    console.print(f"[yellow]Warning: Database '{database_name}' has {active_connections} active connections.[/yellow]")
+                    console.print("[yellow]Use --terminate-connections to force disconnection.[/yellow]")
+                    if not force:
+                        console.print("[yellow]Use --force to proceed anyway.[/yellow]")
+                        return
+                
+                # Show deletion summary
+                console.print(Panel(
+                    f"[red]About to delete database: {database_name}[/red]\n"
+                    f"Active connections: {active_connections}\n"
+                    f"Terminate connections: {'Yes' if terminate_connections else 'No'}\n\n"
+                    "[bold red]This action is IRREVERSIBLE![/bold red]",
+                    title="⚠️  Database Deletion",
+                    border_style="red"
+                ))
+                
+                if not force:
+                    console.print("[dim]Use --force to confirm deletion.[/dim]")
+                    return
+                
+                await connection.close()
+                
+                # Create new connection with autocommit for database operations
+                connection = await psycopg.AsyncConnection.connect(
+                    f"postgresql://{config.user}:{config.password}@{config.host}:{config.port}/postgres",
+                    autocommit=True
+                )
+                
+                # Terminate connections if requested
+                if terminate_connections and active_connections > 0:
+                    console.print(f"[yellow]Terminating {active_connections} active connections...[/yellow]")
+                    async with connection.cursor() as cursor:
+                        await cursor.execute("""
+                            SELECT pg_terminate_backend(pid)
+                            FROM pg_stat_activity 
+                            WHERE datname = %s AND pid <> pg_backend_pid()
+                        """, (database_name,))
+                
+                # Delete the database
+                console.print(f"[yellow]Deleting database '{database_name}'...[/yellow]")
+                async with connection.cursor() as cursor:
+                    await cursor.execute(f'DROP DATABASE "{database_name}"')
+                
+                console.print(f"[green]✓ Database '{database_name}' deleted successfully![/green]")
+                
+            finally:
+                await connection.close()
+                
+        except Exception as e:
+            console.print(f"[red]Error deleting database: {e}[/red]")
+    
+    asyncio.run(run_delete())

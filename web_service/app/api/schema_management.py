@@ -55,6 +55,26 @@ class DatabaseCreateRequest(BaseModel):
     create_schema: bool = True
     force: bool = False
 
+class DatabaseDeleteRequest(BaseModel):
+    database_name: str
+    force: bool = False
+
+class DatabaseInfo(BaseModel):
+    database_name: str
+    owner: str
+    size: Optional[str] = None
+    encoding: str
+    collation: str
+    is_template: bool
+    connection_limit: int
+
+class DatabaseListResponse(BaseModel):
+    databases: List[DatabaseInfo]
+    total_count: int
+
+class ConnectionCheckRequest(BaseModel):
+    database_name: Optional[str] = None
+
 @router.post("/schemas", response_model=OperationResponse)
 async def create_schema(
     request: SchemaCreateRequest,
@@ -365,18 +385,19 @@ async def list_schema_knowledge_bases(
             detail=f"Failed to list knowledge bases for schema '{schema_name}': {str(e)}"
         )
 
-@router.get("/connection/check", response_model=ConnectionStatus)
+@router.post("/connection/check", response_model=ConnectionStatus)
 async def check_connection(
-    database_name: Optional[str] = Query(None, description="Custom database name to check"),
+    request: ConnectionCheckRequest,
     current_user: User = Depends(get_current_user)
 ):
     """
     Test database connectivity and check if target database exists.
+    Uses secure request body instead of URL parameters.
     Equivalent to CLI: document-loader check-connection [--database-name {database_name}]
     """
     try:
         # Use custom database name if provided, otherwise use default from config
-        config = DatabaseConfig(database_name) if database_name else DatabaseConfig()
+        config = DatabaseConfig(request.database_name) if request.database_name else DatabaseConfig()
         
         postgres_reachable = False
         target_database_exists = False
@@ -443,7 +464,8 @@ async def create_database(
         
         # Connect to postgres database to create the target database
         connection = await psycopg.AsyncConnection.connect(
-            f"postgresql://{config.user}:{config.password}@{config.host}:{config.port}/postgres"
+            f"postgresql://{config.user}:{config.password}@{config.host}:{config.port}/postgres",
+            autocommit=True
         )
         
         try:
@@ -463,7 +485,7 @@ async def create_database(
                     message=f"Database '{config.database}' already exists"
                 )
             
-            # Create the database
+            # Create the database (autocommit enabled at connection level)
             async with connection.cursor() as cursor:
                 await cursor.execute(f'CREATE DATABASE "{config.database}"')
             await connection.close()
@@ -506,3 +528,150 @@ async def create_database(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create database: {str(e)}")
+
+@router.get("/database/list", response_model=DatabaseListResponse)
+async def list_databases(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    List all PostgreSQL databases accessible by the current user.
+    Shows database name, owner, size, encoding, and other metadata.
+    """
+    try:
+        config = DatabaseConfig()
+        
+        # Connect to postgres database to list all databases
+        connection = await psycopg.AsyncConnection.connect(
+            f"postgresql://{config.user}:{config.password}@{config.host}:{config.port}/postgres"
+        )
+        
+        try:
+            async with connection.cursor() as cursor:
+                # Get comprehensive database information
+                query = """
+                SELECT 
+                    d.datname as database_name,
+                    pg_catalog.pg_get_userbyid(d.datdba) as owner,
+                    pg_size_pretty(pg_database_size(d.datname)) as size,
+                    pg_encoding_to_char(d.encoding) as encoding,
+                    d.datcollate as collation,
+                    d.datistemplate as is_template,
+                    d.datconnlimit as connection_limit
+                FROM pg_catalog.pg_database d
+                WHERE d.datallowconn = true
+                ORDER BY d.datname
+                """
+                
+                await cursor.execute(query)
+                results = await cursor.fetchall()
+                
+                databases = []
+                for row in results:
+                    databases.append(DatabaseInfo(
+                        database_name=row[0],
+                        owner=row[1],
+                        size=row[2],
+                        encoding=row[3],
+                        collation=row[4],
+                        is_template=row[5],
+                        connection_limit=row[6]
+                    ))
+                
+                return DatabaseListResponse(
+                    databases=databases,
+                    total_count=len(databases)
+                )
+                
+        finally:
+            await connection.close()
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list databases: {str(e)}")
+
+@router.post("/database/delete", response_model=OperationResponse)
+async def delete_database(
+    request: DatabaseDeleteRequest,
+    current_user: User = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.ADMIN]))
+):
+    """
+    Delete a PostgreSQL database using request body.
+    WARNING: This operation is irreversible and will destroy all data in the database.
+    
+    Request Body:
+        database_name: Name of the database to delete
+        force: Skip safety checks (use with extreme caution)
+    """
+    try:
+        # Prevent deletion of system databases
+        system_databases = {'postgres', 'template0', 'template1'}
+        if request.database_name.lower() in system_databases:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Cannot delete system database '{request.database_name}'"
+            )
+        
+        config = DatabaseConfig()
+        
+        # Connect to postgres database to drop the target database
+        connection = await psycopg.AsyncConnection.connect(
+            f"postgresql://{config.user}:{config.password}@{config.host}:{config.port}/postgres",
+            autocommit=True
+        )
+        
+        try:
+            # Check if database exists
+            async with connection.cursor() as cursor:
+                await cursor.execute(
+                    "SELECT 1 FROM pg_database WHERE datname = %s",
+                    (request.database_name,)
+                )
+                result = await cursor.fetchone()
+                exists = bool(result)
+            
+            if not exists:
+                raise HTTPException(
+                    status_code=404, 
+                    detail=f"Database '{request.database_name}' does not exist"
+                )
+            
+            # Additional safety check: count active connections
+            if not request.force:
+                async with connection.cursor() as cursor:
+                    await cursor.execute(
+                        "SELECT count(*) FROM pg_stat_activity WHERE datname = %s",
+                        (request.database_name,)
+                    )
+                    result = await cursor.fetchone()
+                    active_connections = result[0] if result else 0
+                
+                if active_connections > 0:
+                    raise HTTPException(
+                        status_code=409,
+                        detail=f"Database '{request.database_name}' has {active_connections} active connections. Use force=true to override."
+                    )
+            
+            # Terminate active connections if force is enabled
+            if request.force:
+                async with connection.cursor() as cursor:
+                    await cursor.execute(f"""
+                        SELECT pg_terminate_backend(pid)
+                        FROM pg_stat_activity 
+                        WHERE datname = %s AND pid <> pg_backend_pid()
+                    """, (request.database_name,))
+            
+            # Drop the database
+            async with connection.cursor() as cursor:
+                await cursor.execute(f'DROP DATABASE "{request.database_name}"')
+            
+            return OperationResponse(
+                success=True,
+                message=f"Database '{request.database_name}' deleted successfully"
+            )
+            
+        finally:
+            await connection.close()
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete database: {str(e)}")

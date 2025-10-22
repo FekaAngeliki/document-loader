@@ -33,35 +33,47 @@
       "description": "Schema and database management endpoints",
       "item": [
         {
-          "name": "Check Database Connection",
+          "name": "Check Database Connection (Default)",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
             "url": {
               "raw": "{{baseUrl}}/api/v1/schemas/connection/check",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "schemas", "connection", "check"]
             },
-            "description": "Test database connectivity and check if target database exists.\nEquivalent to CLI: document-loader check-connection"
+            "description": "Test database connectivity to default database.\nUses secure request body instead of URL parameters.\nEquivalent to CLI: document-loader check-connection"
           }
         },
         {
           "name": "Check Database Connection (Custom DB)",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"database_name\": \"custom_db\"\n}"
+            },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/schemas/connection/check?database_name=custom_db",
+              "raw": "{{baseUrl}}/api/v1/schemas/connection/check",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "schemas", "connection", "check"],
-              "query": [
-                {
-                  "key": "database_name",
-                  "value": "custom_db",
-                  "description": "Custom database name to check"
-                }
-              ]
-            }
+              "path": ["api", "v1", "schemas", "connection", "check"]
+            },
+            "description": "Test database connectivity with custom database name.\nUses secure request body instead of URL parameters.\nEquivalent to CLI: document-loader check-connection --database-name custom_db"
           }
         },
         {
@@ -84,6 +96,41 @@
               "path": ["api", "v1", "schemas", "database", "create"]
             },
             "description": "Create the database and optionally the schema if they don't exist.\nEquivalent to CLI: document-loader create-db"
+          }
+        },
+        {
+          "name": "List PostgreSQL Databases",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/schemas/database/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "schemas", "database", "list"]
+            },
+            "description": "List all PostgreSQL databases accessible by the current user.\nShows database name, owner, size, encoding, and other metadata.\nEquivalent to CLI: document-loader db list-postgres-databases"
+          }
+        },
+        {
+          "name": "Delete Database",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"database_name\": \"test_database\",\n  \"force\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/schemas/database/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "schemas", "database", "delete"]
+            },
+            "description": "Delete a PostgreSQL database using secure request body.\nWARNING: This operation is irreversible and will destroy all data.\nEquivalent to CLI: document-loader db delete-postgres-database test_database --force"
           }
         },
         {

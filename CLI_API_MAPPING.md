@@ -79,17 +79,86 @@ document-loader --schema finance-dept list
 GET /api/v1/schemas/finance-dept/knowledge-bases
 ```
 
+## Database Management
+
+### Create Database
+```bash
+# CLI
+document-loader create-db --database-name "rag_production"
+
+# API
+POST /api/v1/schemas/database/create
+{
+  "database_name": "rag_production",
+  "create_schema": true,
+  "force": false
+}
+```
+
+### List PostgreSQL Databases
+```bash
+# CLI
+document-loader db list-postgres-databases --verbose
+
+# API
+GET /api/v1/schemas/database/list
+```
+
+**Response Example:**
+```json
+{
+  "databases": [
+    {
+      "database_name": "postgres",
+      "owner": "postgres", 
+      "size": "8539 kB",
+      "encoding": "UTF8",
+      "collation": "en_US.utf8",
+      "is_template": false,
+      "connection_limit": -1
+    }
+  ],
+  "total_count": 1
+}
+```
+
+### Delete Database
+```bash
+# CLI  
+document-loader db delete-postgres-database test_database --force --terminate-connections
+
+# API (Secure Request Body Only)
+POST /api/v1/schemas/database/delete
+{
+  "database_name": "test_database",
+  "force": true
+}
+```
+
+**⚠️ Safety Features:**
+- System database protection (cannot delete postgres, template0, template1)
+- Active connection checks
+- Force mode to override safety checks
+- Admin-only access (SUPER_ADMIN or ADMIN role required)
+- Connection termination when force=true
+
 ## CLI Operations
 
 ### Database Connection Test
 ```bash
 # CLI
 document-loader check-connection
-document-loader --schema finance-dept check-connection
+document-loader check-connection --database-name custom_db
 
-# API
-GET /api/v1/cli/health/connection
-GET /api/v1/cli/health/connection?schema=finance-dept
+# API (Secure Request Body)
+POST /api/v1/schemas/connection/check
+{}
+
+# Custom Database Check
+POST /api/v1/schemas/connection/check
+{
+  "database_name": "custom_db"
+}
 ```
 
 ### Configuration Management
