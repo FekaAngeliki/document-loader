@@ -479,6 +479,94 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Database Connection Testing Section -->
+            <div style="margin-top: 3rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <div>
+                        <h3>Database Connection Testing</h3>
+                        <p>Test connectivity to PostgreSQL databases</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openConnectionTestModal()">
+                        🔗 Test Connection
+                    </button>
+                </div>
+
+                <!-- Connection Status Cards -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                    <div id="default-connection-card" style="background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h4 style="margin-bottom: 1rem; color: var(--nbg-primary);">Default Database</h4>
+                        <div id="default-connection-status">
+                            <span class="status-indicator status-offline">
+                                <span class="status-dot"></span>
+                                Not tested
+                            </span>
+                        </div>
+                        <button class="btn btn-secondary" style="margin-top: 1rem; padding: 0.5rem 1rem;" onclick="testDefaultConnection()">
+                            Test Default Connection
+                        </button>
+                    </div>
+                    
+                    <div id="custom-connection-results" style="background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: none;">
+                        <h4 style="margin-bottom: 1rem; color: var(--nbg-primary);">Custom Database</h4>
+                        <div id="custom-connection-status">
+                            <span class="status-indicator status-offline">
+                                <span class="status-dot"></span>
+                                Not tested
+                            </span>
+                        </div>
+                        <div id="custom-connection-details" style="margin-top: 1rem; font-size: 0.9rem; color: var(--nbg-gray);"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PostgreSQL Database Management Section -->
+            <div style="margin-top: 3rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <div>
+                        <h3>PostgreSQL Database Management</h3>
+                        <p>Manage PostgreSQL databases and schemas</p>
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn btn-secondary" onclick="refreshDatabases()">
+                            🔄 Refresh
+                        </button>
+                        <button class="btn btn-success" onclick="openCreateDatabaseModal()">
+                            ➕ Create Database
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Database Loading -->
+                <div id="db-loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading databases...</p>
+                </div>
+
+                <!-- Database Alerts -->
+                <div id="db-alerts"></div>
+
+                <!-- Database Table -->
+                <div class="table-container">
+                    <table class="data-table" id="database-table">
+                        <thead>
+                            <tr>
+                                <th>Database Name</th>
+                                <th>Owner</th>
+                                <th>Size</th>
+                                <th>Encoding</th>
+                                <th>Collation</th>
+                                <th>Connection Limit</th>
+                                <th>Template</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="database-table-body">
+                            <!-- Database data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- Other tabs will be added later -->
@@ -571,6 +659,103 @@
             <div id="schema-details-content">
                 <!-- Schema details will be loaded here -->
             </div>
+        </div>
+    </div>
+
+    <!-- Connection Test Modal -->
+    <div id="connection-test-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Test Database Connection</h3>
+                <button class="close-btn" onclick="closeModal('connection-test-modal')">&times;</button>
+            </div>
+            <form id="connection-test-form">
+                <div class="form-group">
+                    <label class="form-label">Database Name (optional)</label>
+                    <input type="text" class="form-input" id="connection-db-name" 
+                           placeholder="Leave empty to use default database">
+                    <small>If specified, will test connection to this specific database</small>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('connection-test-modal')">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Test Connection
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Database Modal -->
+    <div id="create-database-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create PostgreSQL Database</h3>
+                <button class="close-btn" onclick="closeModal('create-database-modal')">&times;</button>
+            </div>
+            <form id="create-database-form">
+                <div class="form-group">
+                    <label class="form-label">Database Name</label>
+                    <input type="text" class="form-input" id="database-name" 
+                           placeholder="Enter database name (leave empty for default)">
+                    <small>Leave empty to use the default database name from configuration</small>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="create-schema-checkbox" checked>
+                        <span>Create database schema tables</span>
+                    </label>
+                    <small>Creates the complete schema structure for document loader operations</small>
+                </div>
+                <div class="alert alert-warning">
+                    <strong>Note:</strong> This will create a new PostgreSQL database. Make sure you have the necessary permissions.
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('create-database-modal')">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        Create Database
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Database Delete Confirmation Modal -->
+    <div id="delete-database-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Database Deletion</h3>
+                <button class="close-btn" onclick="closeModal('delete-database-modal')">&times;</button>
+            </div>
+            <div class="alert alert-error">
+                <strong>DANGER:</strong> This will permanently delete the entire database and all its data. This action cannot be undone.
+            </div>
+            <form id="delete-database-form">
+                <div class="form-group">
+                    <label class="form-label">Type the database name to confirm deletion:</label>
+                    <input type="text" class="form-input" id="delete-db-confirmation-input" required>
+                    <small id="db-to-delete"></small>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="force-delete-checkbox">
+                        <span>Force delete (terminate active connections)</span>
+                    </label>
+                    <small>Check this to forcefully close any active connections to the database</small>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('delete-database-modal')">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-danger" id="confirm-delete-db-btn" disabled>
+                        Delete Database
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -1025,6 +1210,306 @@
         function clearAlerts() {
             document.getElementById('alerts').innerHTML = '';
         }
+
+        // Database Management Variables
+        let databases = [];
+
+        // Database Management Functions
+        async function loadDatabases() {
+            showDbLoading(true);
+            clearDbAlerts();
+            
+            try {
+                const response = await fetch(`${API_BASE}/database/list`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                databases = data.databases || [];
+                renderDatabases();
+                showDbAlert('Databases loaded successfully', 'success');
+                
+            } catch (error) {
+                console.error('Error loading databases:', error);
+                showDbAlert(`Failed to load databases: ${error.message}`, 'error');
+                databases = [];
+                renderDatabases();
+            } finally {
+                showDbLoading(false);
+            }
+        }
+
+        function renderDatabases() {
+            const tbody = document.getElementById('database-table-body');
+            tbody.innerHTML = '';
+            
+            if (databases.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: #64748b;">
+                            No databases found or unable to connect to PostgreSQL server.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            databases.forEach(db => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${db.database_name}</strong></td>
+                    <td>${db.owner}</td>
+                    <td>${db.size}</td>
+                    <td>${db.encoding}</td>
+                    <td>${db.collation}</td>
+                    <td>${db.connection_limit === -1 ? 'Unlimited' : db.connection_limit}</td>
+                    <td>${db.is_template ? 'Yes' : 'No'}</td>
+                    <td>
+                        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-right: 0.5rem;" 
+                                onclick="testConnectionToDatabase('${db.database_name}')">
+                            🔗 Test
+                        </button>
+                        ${!['postgres', 'template0', 'template1'].includes(db.database_name.toLowerCase()) ? `
+                            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
+                                    onclick="deleteDatabase('${db.database_name}')">
+                                🗑️ Delete
+                            </button>
+                        ` : ''}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function refreshDatabases() {
+            loadDatabases();
+        }
+
+        // Connection Testing Functions
+        function openConnectionTestModal() {
+            document.getElementById('connection-test-modal').classList.add('active');
+            document.getElementById('connection-db-name').focus();
+        }
+
+        async function testDefaultConnection() {
+            await testConnection();
+        }
+
+        async function testConnection(databaseName = null) {
+            try {
+                const requestBody = databaseName ? { database_name: databaseName } : {};
+                
+                const response = await fetch(`${API_BASE}/connection/check`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    updateConnectionStatus(result, databaseName);
+                    showAlert(`Connection test ${result.success ? 'successful' : 'failed'}`, result.success ? 'success' : 'warning');
+                } else {
+                    throw new Error(result.detail || `HTTP ${response.status}`);
+                }
+                
+            } catch (error) {
+                console.error('Error testing connection:', error);
+                showAlert(`Connection test failed: ${error.message}`, 'error');
+                updateConnectionStatus({ success: false, message: error.message }, databaseName);
+            }
+        }
+
+        function updateConnectionStatus(result, databaseName) {
+            const isCustom = databaseName && databaseName !== '';
+            const statusElement = document.getElementById(isCustom ? 'custom-connection-status' : 'default-connection-status');
+            const detailsElement = document.getElementById('custom-connection-details');
+            
+            statusElement.innerHTML = `
+                <span class="status-indicator ${result.success ? 'status-online' : 'status-offline'}">
+                    <span class="status-dot"></span>
+                    ${result.success ? 'Connected' : 'Failed'}
+                </span>
+                <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                    ${result.message}
+                </div>
+            `;
+            
+            if (isCustom) {
+                document.getElementById('custom-connection-results').style.display = 'block';
+                if (detailsElement) {
+                    detailsElement.innerHTML = `
+                        Host: ${result.host}<br>
+                        Port: ${result.port}<br>
+                        Database: ${result.database}<br>
+                        User: ${result.user}
+                    `;
+                }
+            }
+        }
+
+        async function testConnectionToDatabase(databaseName) {
+            await testConnection(databaseName);
+        }
+
+        // Database CRUD Operations
+        function openCreateDatabaseModal() {
+            document.getElementById('create-database-modal').classList.add('active');
+            document.getElementById('database-name').focus();
+        }
+
+        async function createDatabase(event) {
+            event.preventDefault();
+            
+            const databaseName = document.getElementById('database-name').value.trim() || null;
+            const createSchema = document.getElementById('create-schema-checkbox').checked;
+            
+            try {
+                const response = await fetch(`${API_BASE}/database/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        database_name: databaseName,
+                        create_schema: createSchema,
+                        force: false
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.detail || `HTTP ${response.status}`);
+                }
+                
+                showDbAlert(result.message, 'success');
+                closeModal('create-database-modal');
+                loadDatabases();
+                
+            } catch (error) {
+                console.error('Error creating database:', error);
+                showDbAlert(`Failed to create database: ${error.message}`, 'error');
+            }
+        }
+
+        function deleteDatabase(databaseName) {
+            document.getElementById('db-to-delete').textContent = `Database to delete: ${databaseName}`;
+            document.getElementById('delete-database-modal').classList.add('active');
+            document.getElementById('delete-db-confirmation-input').dataset.databaseName = databaseName;
+            document.getElementById('delete-db-confirmation-input').focus();
+        }
+
+        function validateDbDeleteInput() {
+            const input = document.getElementById('delete-db-confirmation-input');
+            const confirmBtn = document.getElementById('confirm-delete-db-btn');
+            const databaseName = input.dataset.databaseName;
+            
+            confirmBtn.disabled = input.value !== databaseName;
+        }
+
+        async function confirmDbDelete(event) {
+            event.preventDefault();
+            
+            const input = document.getElementById('delete-db-confirmation-input');
+            const databaseName = input.dataset.databaseName;
+            const force = document.getElementById('force-delete-checkbox').checked;
+            
+            try {
+                const response = await fetch(`${API_BASE}/database/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        database_name: databaseName,
+                        force: force
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.detail || `HTTP ${response.status}`);
+                }
+                
+                showDbAlert(`Database "${databaseName}" deleted successfully`, 'success');
+                closeModal('delete-database-modal');
+                loadDatabases();
+                
+            } catch (error) {
+                console.error('Error deleting database:', error);
+                showDbAlert(`Failed to delete database: ${error.message}`, 'error');
+            }
+        }
+
+        // Database Utility Functions
+        function showDbLoading(show) {
+            const loading = document.getElementById('db-loading');
+            if (show) {
+                loading.classList.add('active');
+            } else {
+                loading.classList.remove('active');
+            }
+        }
+
+        function showDbAlert(message, type) {
+            const alertsContainer = document.getElementById('db-alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            alertsContainer.appendChild(alert);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        function clearDbAlerts() {
+            document.getElementById('db-alerts').innerHTML = '';
+        }
+
+        // Enhanced Event Listeners Setup
+        function setupEventListeners() {
+            // Search functionality
+            document.getElementById('schema-search').addEventListener('input', filterSchemas);
+            
+            // Create schema form
+            document.getElementById('create-schema-form').addEventListener('submit', createSchema);
+            
+            // Delete confirmation form
+            document.getElementById('delete-confirmation-form').addEventListener('submit', confirmDelete);
+            document.getElementById('delete-confirmation-input').addEventListener('input', validateDeleteInput);
+            
+            // Connection test form
+            document.getElementById('connection-test-form').addEventListener('submit', async function(event) {
+                event.preventDefault();
+                const databaseName = document.getElementById('connection-db-name').value.trim() || null;
+                await testConnection(databaseName);
+                closeModal('connection-test-modal');
+            });
+            
+            // Create database form
+            document.getElementById('create-database-form').addEventListener('submit', createDatabase);
+            
+            // Delete database form
+            document.getElementById('delete-database-form').addEventListener('submit', confirmDbDelete);
+            document.getElementById('delete-db-confirmation-input').addEventListener('input', validateDbDeleteInput);
+        }
+
+        // Enhanced Initialize function
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSchemas();
+            loadDatabases();
+            setupEventListeners();
+        });
 
         // Close modals when clicking outside
         document.addEventListener('click', function(event) {
