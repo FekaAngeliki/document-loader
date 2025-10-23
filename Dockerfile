@@ -18,19 +18,7 @@ ENV CURL_CA_BUNDLE=""
 ENV REQUESTS_CA_BUNDLE=""
 #RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
 
-RUN echo "===== Installing main requirements =====" && \
-    pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt && \
-    echo "===== Main requirements installed successfully ====="
-
-# Explicitly install pydapper with detailed logging for troubleshooting
-RUN echo "===== Starting pydapper installation =====" && \
-    echo "Current pip version:" && pip --version && \
-    echo "Available packages before pydapper install:" && pip list | grep -i dapper || echo "No dapper packages found" && \
-    echo "Installing pydapper>=0.12.0..." && \
-    pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --verbose "pydapper>=0.12.0" && \
-    echo "===== Verifying pydapper installation =====" && \
-    pip show pydapper && \
-    echo "===== pydapper installation completed successfully ====="
+RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 # Copy application code
 COPY src/ ./src/
