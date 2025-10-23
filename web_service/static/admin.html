@@ -1239,7 +1239,7 @@
                                                         <button class="btn-small btn-secondary" 
                                                                 data-schema-name="${schema.schema_name}" 
                                                                 data-table-name="${table.name}"
-                                                                data-table-schema='${JSON.stringify(table.schema)}'
+                                                                data-table-schema="${JSON.stringify(table.schema).replace(/"/g, '&quot;').replace(/'/g, '&#39;')}"
                                                                 onclick="viewTableSchemaFromButton(this)">
                                                             📋 View Schema
                                                         </button>
@@ -1367,14 +1367,25 @@
         function viewTableSchemaFromButton(button) {
             const schemaName = button.getAttribute('data-schema-name');
             const tableName = button.getAttribute('data-table-name');
-            const tableSchemaJson = button.getAttribute('data-table-schema');
+            let tableSchemaJson = button.getAttribute('data-table-schema');
+            
+            // Decode HTML entities
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = tableSchemaJson;
+            tableSchemaJson = tempDiv.textContent || tempDiv.innerText || '';
+            
+            console.log('Schema Name:', schemaName);
+            console.log('Table Name:', tableName);
+            console.log('Table Schema JSON (decoded):', tableSchemaJson);
             
             try {
                 const tableSchema = JSON.parse(tableSchemaJson);
+                console.log('Parsed Table Schema:', tableSchema);
                 viewTableSchema(schemaName, tableName, tableSchema);
             } catch (error) {
                 console.error('Failed to parse table schema:', error);
-                showAlert('Failed to load table schema: Invalid data format', 'error');
+                console.error('Raw JSON string:', tableSchemaJson);
+                showAlert(`Failed to load table schema: ${error.message}`, 'error');
             }
         }
 
