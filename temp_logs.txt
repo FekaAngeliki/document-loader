@@ -1,0 +1,1060 @@
+2025-10-23T08:55:14.0858085Z ##[debug]Evaluating condition for step: 'BUILD DOCKER IMAGE WITH TAGS'
+2025-10-23T08:55:14.0858885Z ##[debug]Evaluating: SucceededNode()
+2025-10-23T08:55:14.0859091Z ##[debug]Evaluating SucceededNode:
+2025-10-23T08:55:14.0859481Z ##[debug]=> True
+2025-10-23T08:55:14.0859685Z ##[debug]Result: True
+2025-10-23T08:55:14.0860143Z ##[section]Starting: BUILD DOCKER IMAGE WITH TAGS
+2025-10-23T08:55:14.0866347Z ==============================================================================
+2025-10-23T08:55:14.0866458Z Task         : Docker
+2025-10-23T08:55:14.0866517Z Description  : Build or push Docker images, login or logout, start or stop containers, or run a Docker command
+2025-10-23T08:55:14.0866612Z Version      : 2.263.1
+2025-10-23T08:55:14.0866673Z Author       : Microsoft Corporation
+2025-10-23T08:55:14.0866737Z Help         : https://aka.ms/azpipes-docker-tsg
+2025-10-23T08:55:14.0866806Z ==============================================================================
+2025-10-23T08:55:14.1488011Z ##[debug]Using node path: /home/vsts/actions-runner/cached/externals/node20_1/bin/node
+2025-10-23T08:55:14.2173737Z ##[debug]agent.TempDirectory=/home/vsts/work/_temp
+2025-10-23T08:55:14.2181084Z ##[debug]loading inputs and endpoints
+2025-10-23T08:55:14.2187274Z ##[debug]loading INPUT_REPOSITORY
+2025-10-23T08:55:14.2202711Z ##[debug]loading INPUT_COMMAND
+2025-10-23T08:55:14.2217241Z ##[debug]loading INPUT_DOCKERFILE
+2025-10-23T08:55:14.2217915Z ##[debug]loading INPUT_BUILDCONTEXT
+2025-10-23T08:55:14.2218534Z ##[debug]loading INPUT_TAGS
+2025-10-23T08:55:14.2219133Z ##[debug]loading INPUT_ARGUMENTS
+2025-10-23T08:55:14.2219747Z ##[debug]loading INPUT_ADDPIPELINEDATA
+2025-10-23T08:55:14.2222269Z ##[debug]loading INPUT_ADDBASEIMAGEDATA
+2025-10-23T08:55:14.2223014Z ##[debug]loading ENDPOINT_AUTH_SYSTEMVSSCONNECTION
+2025-10-23T08:55:14.2223546Z ##[debug]loading ENDPOINT_AUTH_SCHEME_SYSTEMVSSCONNECTION
+2025-10-23T08:55:14.2224097Z ##[debug]loading ENDPOINT_AUTH_PARAMETER_SYSTEMVSSCONNECTION_ACCESSTOKEN
+2025-10-23T08:55:14.2229722Z ##[debug]loading SECRET_SYSTEM_ACCESSTOKEN
+2025-10-23T08:55:14.2231308Z ##[debug]loaded 12
+2025-10-23T08:55:14.2237279Z ##[debug]Agent.ProxyUrl=undefined
+2025-10-23T08:55:14.2239490Z ##[debug]Agent.CAInfo=undefined
+2025-10-23T08:55:14.2242471Z ##[debug]Agent.ClientCert=undefined
+2025-10-23T08:55:14.2243345Z ##[debug]Agent.SkipCertValidation=undefined
+2025-10-23T08:55:14.2344259Z ##[debug]Feature 'EnableDockerReservedNameCheck' not found. Returning false as default.
+2025-10-23T08:55:14.2349485Z ##[debug]check path : /home/vsts/work/_tasks/Docker_e28912f1-0114-4464-802a-a3a35437fd16/2.263.1/node_modules/azure-pipelines-tasks-docker-common/module.json
+2025-10-23T08:55:14.2351280Z ##[debug]adding resource file: /home/vsts/work/_tasks/Docker_e28912f1-0114-4464-802a-a3a35437fd16/2.263.1/node_modules/azure-pipelines-tasks-docker-common/module.json
+2025-10-23T08:55:14.2352868Z ##[debug]system.culture=en-US
+2025-10-23T08:55:14.2368097Z ##[debug]Resource file has already set to: /home/vsts/work/_tasks/Docker_e28912f1-0114-4464-802a-a3a35437fd16/2.263.1/node_modules/azure-pipelines-tasks-docker-common/module.json
+2025-10-23T08:55:14.3594871Z ##[debug]agent.proxyurl=undefined
+2025-10-23T08:55:14.3596496Z ##[debug]VSTS_ARM_REST_IGNORE_SSL_ERRORS=undefined
+2025-10-23T08:55:14.3599469Z ##[debug]AZURE_HTTP_USER_AGENT=VSTS_b7599603-42c2-4f1f-b518-09ce3c65ad00_build_2015_0
+2025-10-23T08:55:14.3600166Z ##[debug]check path : /home/vsts/work/_tasks/Docker_e28912f1-0114-4464-802a-a3a35437fd16/2.263.1/node_modules/azure-pipelines-tasks-azure-arm-rest/module.json
+2025-10-23T08:55:14.3600870Z ##[debug]adding resource file: /home/vsts/work/_tasks/Docker_e28912f1-0114-4464-802a-a3a35437fd16/2.263.1/node_modules/azure-pipelines-tasks-azure-arm-rest/module.json
+2025-10-23T08:55:14.3601457Z ##[debug]system.culture=en-US
+2025-10-23T08:55:14.4734410Z ##[debug]Feature 'EnableMsalV3' = 'True'. Processed as 'true'.
+2025-10-23T08:55:14.4735975Z ##[debug]Using msalv3
+2025-10-23T08:55:14.5000995Z ##[debug]Resource file has already set to: /home/vsts/work/_tasks/Docker_e28912f1-0114-4464-802a-a3a35437fd16/2.263.1/node_modules/azure-pipelines-tasks-azure-arm-rest/module.json
+2025-10-23T08:55:14.5012085Z ##[debug]Agent.TempDirectory=/home/vsts/work/_temp
+2025-10-23T08:55:14.5017806Z ##[debug]Resource file has already set to: /home/vsts/work/_tasks/Docker_e28912f1-0114-4464-802a-a3a35437fd16/2.263.1/node_modules/azure-pipelines-tasks-azure-arm-rest/module.json
+2025-10-23T08:55:14.5063372Z ##[debug]check path : /home/vsts/work/_tasks/Docker_e28912f1-0114-4464-802a-a3a35437fd16/2.263.1/task.json
+2025-10-23T08:55:14.5067199Z ##[debug]adding resource file: /home/vsts/work/_tasks/Docker_e28912f1-0114-4464-802a-a3a35437fd16/2.263.1/task.json
+2025-10-23T08:55:14.5073759Z ##[debug]system.culture=en-US
+2025-10-23T08:55:14.5078508Z ##[debug]containerRegistry=undefined
+2025-10-23T08:55:14.5093444Z ##[debug]undefined data registrytype = undefined
+2025-10-23T08:55:14.5094862Z ##[debug]command=build
+2025-10-23T08:55:14.5096044Z ##[debug]which 'docker'
+2025-10-23T08:55:14.5098773Z ##[debug]found: '/usr/bin/docker'
+2025-10-23T08:55:14.5101054Z ##[debug]Attempting to get endpoint authorization scheme...
+2025-10-23T08:55:14.5102928Z ##[debug]Failed to get endpoint authorization scheme.
+2025-10-23T08:55:14.5104432Z ##[debug]Attempting to get endpoint authorization scheme as an authorization parameter...
+2025-10-23T08:55:14.5105755Z ##[debug]Failed to get endpoint authorization scheme as an authorization parameter. Will default authorization scheme to ServicePrincipal.
+2025-10-23T08:55:14.5107109Z ##[debug]SYSTEM_JOBID=c90db35f-1d10-50e4-4dd2-1fb68f7f061d
+2025-10-23T08:55:14.5565097Z ##[debug]Processed: ##vso[telemetry.publish area=TaskEndpointId;feature=DockerV2]{"command":"build","jobId":"c90db35f-1d10-50e4-4dd2-1fb68f7f061d","scheme":"ServicePrincipal"}
+2025-10-23T08:55:14.5566556Z ##[debug]System.TeamFoundationCollectionUri=https://dev.azure.com/NBGIDP/
+2025-10-23T08:55:14.5567152Z ##[debug]System.HostType=build
+2025-10-23T08:55:14.5567778Z ##[debug]Dockerfile=/home/vsts/work/1/s/azure-search-rag-content-integrator/Dockerfile
+2025-10-23T08:55:14.5568472Z ##[debug]No pattern found in Docker filepath parameter
+2025-10-23T08:55:14.5571213Z ##[debug]arguments=--build-arg PAT=***
+2025-10-23T08:55:14.5571911Z ##[debug]repository=ai/knowledge-base-sectest
+2025-10-23T08:55:14.5572731Z ##[debug]containerRegistry=undefined
+2025-10-23T08:55:14.5573296Z ##[debug]DOCKER_CONFIG=undefined
+2025-10-23T08:55:14.5573968Z ##[debug]Could not find Docker Config. Either DOCKER_CONFIG variable is not set, or the config file is outside the temp directory, or the file does not exist. DOCKER_CONFIG: undefined
+2025-10-23T08:55:14.5574626Z ##[debug]addPipelineData=true
+2025-10-23T08:55:14.5575136Z ##[debug]addBaseImageData=true
+2025-10-23T08:55:14.5575685Z ##[debug]SYSTEM_TEAMFOUNDATIONCOLLECTIONURI=https://dev.azure.com/NBGIDP/
+2025-10-23T08:55:14.5576244Z ##[debug]Reverse DNS name com.azure.dev
+2025-10-23T08:55:14.5576802Z ##[debug]SYSTEM_TEAMFOUNDATIONCOLLECTIONURI=https://dev.azure.com/NBGIDP/
+2025-10-23T08:55:14.5577395Z ##[debug]SYSTEM_TEAMPROJECT=ArtificialIntelligence
+2025-10-23T08:55:14.5578420Z ##[debug]BUILD_REPOSITORY_NAME=azure-search-rag-content-integrator
+2025-10-23T08:55:14.5579005Z ##[debug]SYSTEM_HOSTTYPE=build
+2025-10-23T08:55:14.5579577Z ##[debug]BUILD_SOURCEVERSION=b49f11a9bd49ea6f6f5a0ca27c5e0326c7ffc9b8
+2025-10-23T08:55:14.5580226Z ##[debug]BUILD_REPOSITORY_URI=https://NBGIDP@dev.azure.com/NBGIDP/ArtificialIntelligence/_git/azure-search-rag-content-integrator
+2025-10-23T08:55:14.5580844Z ##[debug]BUILD_SOURCEBRANCHNAME=dev_secutybuild
+2025-10-23T08:55:14.5581426Z ##[debug]BUILD_DEFINITIONNAME=master-azure-search-rag-content-integrator-dev
+2025-10-23T08:55:14.5582000Z ##[debug]BUILD_BUILDNUMBER=20251023.11
+2025-10-23T08:55:14.5582721Z ##[debug]BUILD_BUILDURI=vstfs:///Build/Build/82216
+2025-10-23T08:55:14.5583335Z ##[debug]Feature 'UseDigestImageFromFile' = 'True'. Processed as 'true'.
+2025-10-23T08:55:14.5583882Z ##[debug]which '/usr/bin/docker'
+2025-10-23T08:55:14.5584386Z ##[debug]found: '/usr/bin/docker'
+2025-10-23T08:55:14.5585100Z ##[debug]/usr/bin/docker arg: pull
+2025-10-23T08:55:14.5585638Z ##[debug]/usr/bin/docker arg: python:3.11-slim
+2025-10-23T08:55:14.5586167Z ##[debug]exec tool: /usr/bin/docker
+2025-10-23T08:55:14.5586664Z ##[debug]arguments:
+2025-10-23T08:55:14.5587156Z ##[debug]   pull
+2025-10-23T08:55:14.5587698Z ##[debug]   python:3.11-slim
+2025-10-23T08:55:14.5588077Z [command]/usr/bin/docker pull python:3.11-slim
+2025-10-23T08:55:18.8594485Z ##[debug]Agent environment resources - Disk: / Available 19472.82 MB out of 73325.30 MB, Memory: Used 846.00 MB out of 7944.00 MB, CPU: Usage 33.28%
+2025-10-23T08:55:20.2854217Z 3.11-slim: Pulling from library/python
+2025-10-23T08:55:20.2858260Z 38513bd72563: Pulling fs layer
+2025-10-23T08:55:20.2858555Z a9ffe18d7fdb: Pulling fs layer
+2025-10-23T08:55:20.2858804Z e73850a50582: Pulling fs layer
+2025-10-23T08:55:20.2859055Z 19fb8589da02: Pulling fs layer
+2025-10-23T08:55:20.2859290Z 19fb8589da02: Waiting
+2025-10-23T08:55:20.2859548Z a9ffe18d7fdb: Verifying Checksum
+2025-10-23T08:55:20.2859839Z a9ffe18d7fdb: Download complete
+2025-10-23T08:55:20.2860086Z e73850a50582: Verifying Checksum
+2025-10-23T08:55:20.2860352Z e73850a50582: Download complete
+2025-10-23T08:55:20.2860596Z 38513bd72563: Verifying Checksum
+2025-10-23T08:55:20.2860921Z 38513bd72563: Download complete
+2025-10-23T08:55:20.2861167Z 19fb8589da02: Verifying Checksum
+2025-10-23T08:55:20.2861407Z 19fb8589da02: Download complete
+2025-10-23T08:55:20.2861694Z 38513bd72563: Pull complete
+2025-10-23T08:55:20.2861927Z a9ffe18d7fdb: Pull complete
+2025-10-23T08:55:20.2862156Z e73850a50582: Pull complete
+2025-10-23T08:55:20.2862390Z 19fb8589da02: Pull complete
+2025-10-23T08:55:20.2863028Z Digest: sha256:1738c75ae61595d2a9a5301d60a9a2f61abe7017005b3ccb660103d2476c6946
+2025-10-23T08:55:20.2863399Z Status: Downloaded newer image for python:3.11-slim
+2025-10-23T08:55:20.2863687Z docker.io/library/python:3.11-slim
+2025-10-23T08:55:20.2865222Z ##[debug]which '/usr/bin/docker'
+2025-10-23T08:55:20.2865819Z ##[debug]found: '/usr/bin/docker'
+2025-10-23T08:55:20.2866342Z ##[debug]/usr/bin/docker arg: inspect
+2025-10-23T08:55:20.2866863Z ##[debug]/usr/bin/docker arg: python:3.11-slim
+2025-10-23T08:55:20.2867380Z ##[debug]exec tool: /usr/bin/docker
+2025-10-23T08:55:20.2867856Z ##[debug]arguments:
+2025-10-23T08:55:20.2868326Z ##[debug]   inspect
+2025-10-23T08:55:20.2868813Z ##[debug]   python:3.11-slim
+2025-10-23T08:55:20.2869278Z [command]/usr/bin/docker inspect python:3.11-slim
+2025-10-23T08:55:20.3125475Z [
+2025-10-23T08:55:20.3125732Z     {
+2025-10-23T08:55:20.3126044Z         "Id": "sha256:ff15e80be861655d8eaf4fe97b2b83d7003c34119848f2febd31bd84406c92bb",
+2025-10-23T08:55:20.3126333Z         "RepoTags": [
+2025-10-23T08:55:20.3126619Z             "python:3.11-slim"
+2025-10-23T08:55:20.3126836Z         ],
+2025-10-23T08:55:20.3127032Z         "RepoDigests": [
+2025-10-23T08:55:20.3127326Z             "python@sha256:1738c75ae61595d2a9a5301d60a9a2f61abe7017005b3ccb660103d2476c6946"
+2025-10-23T08:55:20.3127596Z         ],
+2025-10-23T08:55:20.3127808Z         "Parent": "",
+2025-10-23T08:55:20.3128340Z         "Comment": "buildkit.dockerfile.v0",
+2025-10-23T08:55:20.3128603Z         "Created": "2025-10-09T21:44:07Z",
+2025-10-23T08:55:20.3128829Z         "DockerVersion": "",
+2025-10-23T08:55:20.3129038Z         "Author": "",
+2025-10-23T08:55:20.3129240Z         "Config": {
+2025-10-23T08:55:20.3129438Z             "Hostname": "",
+2025-10-23T08:55:20.3129637Z             "Domainname": "",
+2025-10-23T08:55:20.3129841Z             "User": "",
+2025-10-23T08:55:20.3130042Z             "AttachStdin": false,
+2025-10-23T08:55:20.3130247Z             "AttachStdout": false,
+2025-10-23T08:55:20.3130445Z             "AttachStderr": false,
+2025-10-23T08:55:20.3130634Z             "Tty": false,
+2025-10-23T08:55:20.3130842Z             "OpenStdin": false,
+2025-10-23T08:55:20.3131044Z             "StdinOnce": false,
+2025-10-23T08:55:20.3131256Z             "Env": [
+2025-10-23T08:55:20.3131535Z                 "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+2025-10-23T08:55:20.3131977Z                 "LANG=C.UTF-8",
+2025-10-23T08:55:20.3132227Z                 "GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D",
+2025-10-23T08:55:20.3132811Z                 "PYTHON_VERSION=3.11.14",
+2025-10-23T08:55:20.3133129Z                 "PYTHON_SHA256=8d3ed8ec5c88c1c95f5e558612a725450d2452813ddad5e58fdb1a53b1209b78"
+2025-10-23T08:55:20.3133401Z             ],
+2025-10-23T08:55:20.3133592Z             "Cmd": [
+2025-10-23T08:55:20.3133774Z                 "python3"
+2025-10-23T08:55:20.3133955Z             ],
+2025-10-23T08:55:20.3134145Z             "Image": "",
+2025-10-23T08:55:20.3134341Z             "Volumes": null,
+2025-10-23T08:55:20.3134545Z             "WorkingDir": "",
+2025-10-23T08:55:20.3134758Z             "Entrypoint": null,
+2025-10-23T08:55:20.3134952Z             "OnBuild": null,
+2025-10-23T08:55:20.3135146Z             "Labels": null
+2025-10-23T08:55:20.3135325Z         },
+2025-10-23T08:55:20.3135516Z         "Architecture": "amd64",
+2025-10-23T08:55:20.3135744Z         "Os": "linux",
+2025-10-23T08:55:20.3135970Z         "Size": 124430186,
+2025-10-23T08:55:20.3136190Z         "GraphDriver": {
+2025-10-23T08:55:20.3136383Z             "Data": {
+2025-10-23T08:55:20.3137001Z                 "LowerDir": "/var/lib/docker/overlay2/0976e38e6a676fe11ca452d7f573e12d0d6b4e56ca3e41786e7cf0c8df667267/diff:/var/lib/docker/overlay2/67ff9b38c576f562d902a9fd38b0e4dcc3f6742b947d932637cc6df0fbbdebf9/diff:/var/lib/docker/overlay2/279e7854f8a6e5284c4f7f7b65b794336bbdc36049d305825c016b9ce08b71e0/diff",
+2025-10-23T08:55:20.3137632Z                 "MergedDir": "/var/lib/docker/overlay2/f403456f2ceca4c805c99276daab8330b100b646f241a9ae5d0108b03926eb52/merged",
+2025-10-23T08:55:20.3138049Z                 "UpperDir": "/var/lib/docker/overlay2/f403456f2ceca4c805c99276daab8330b100b646f241a9ae5d0108b03926eb52/diff",
+2025-10-23T08:55:20.3138474Z                 "WorkDir": "/var/lib/docker/overlay2/f403456f2ceca4c805c99276daab8330b100b646f241a9ae5d0108b03926eb52/work"
+2025-10-23T08:55:20.3138793Z             },
+2025-10-23T08:55:20.3139018Z             "Name": "overlay2"
+2025-10-23T08:55:20.3139226Z         },
+2025-10-23T08:55:20.3139433Z         "RootFS": {
+2025-10-23T08:55:20.3139659Z             "Type": "layers",
+2025-10-23T08:55:20.3139879Z             "Layers": [
+2025-10-23T08:55:20.3140187Z                 "sha256:d7c97cb6f1fe7cae982649e9f55efe201212e8acaa64bd668c083b204e4efd4c",
+2025-10-23T08:55:20.3140556Z                 "sha256:15eb6aec49b38357916ea069cb57c890841f4e40588c54ebba117f6314911d37",
+2025-10-23T08:55:20.3140939Z                 "sha256:9ba402f61141e835fb247b8592f61ea2a885de652bbb368fe9cea93cbc8c324a",
+2025-10-23T08:55:20.3141311Z                 "sha256:235e8192987624c55713750efe67254a8dbfe540c7a59c1d33353f928e42d80d"
+2025-10-23T08:55:20.3141567Z             ]
+2025-10-23T08:55:20.3141758Z         },
+2025-10-23T08:55:20.3141956Z         "Metadata": {
+2025-10-23T08:55:20.3142209Z             "LastTagTime": "0001-01-01T00:00:00Z"
+2025-10-23T08:55:20.3142444Z         }
+2025-10-23T08:55:20.3144343Z     }
+2025-10-23T08:55:20.3144528Z ]
+2025-10-23T08:55:20.3146687Z ##[debug]tags=latest
+latest
+2025-10-23T08:55:20.3148496Z ##[debug]which '/usr/bin/docker'
+2025-10-23T08:55:20.3148993Z ##[debug]found: '/usr/bin/docker'
+2025-10-23T08:55:20.3149501Z ##[debug]/usr/bin/docker arg: build
+2025-10-23T08:55:20.3150034Z ##[debug]/usr/bin/docker arg: ["-f","/home/vsts/work/1/s/azure-search-rag-content-integrator/Dockerfile"]
+2025-10-23T08:55:20.3150650Z ##[debug]/usr/bin/docker arg: ["--label","com.azure.dev.image.system.teamfoundationcollectionuri=https://dev.azure.com/NBGIDP/"]
+2025-10-23T08:55:20.3151277Z ##[debug]/usr/bin/docker arg: ["--label","com.azure.dev.image.system.teamproject=ArtificialIntelligence"]
+2025-10-23T08:55:20.3151973Z ##[debug]/usr/bin/docker arg: ["--label","com.azure.dev.image.build.repository.name=azure-search-rag-content-integrator"]
+2025-10-23T08:55:20.3173665Z ##[debug]/usr/bin/docker arg: ["--label","com.azure.dev.image.build.sourceversion=b49f11a9bd49ea6f6f5a0ca27c5e0326c7ffc9b8"]
+2025-10-23T08:55:20.3174652Z ##[debug]/usr/bin/docker arg: ["--label","com.azure.dev.image.build.repository.uri=https://NBGIDP@dev.azure.com/NBGIDP/ArtificialIntelligence/_git/azure-search-rag-content-integrator"]
+2025-10-23T08:55:20.3175407Z ##[debug]/usr/bin/docker arg: ["--label","com.azure.dev.image.build.sourcebranchname=dev_secutybuild"]
+2025-10-23T08:55:20.3176062Z ##[debug]/usr/bin/docker arg: ["--label","com.azure.dev.image.build.definitionname=master-azure-search-rag-content-integrator-dev"]
+2025-10-23T08:55:20.3176700Z ##[debug]/usr/bin/docker arg: ["--label","com.azure.dev.image.build.buildnumber=20251023.11"]
+2025-10-23T08:55:20.3177320Z ##[debug]/usr/bin/docker arg: ["--label","com.azure.dev.image.build.builduri=vstfs:///Build/Build/82216"]
+2025-10-23T08:55:20.3177961Z ##[debug]/usr/bin/docker arg: ["--label","image.base.ref.name=python:3.11-slim"]
+2025-10-23T08:55:20.3178696Z ##[debug]/usr/bin/docker arg: ["--label","image.base.digest=sha256:1738c75ae61595d2a9a5301d60a9a2f61abe7017005b3ccb660103d2476c6946"]
+2025-10-23T08:55:20.3181259Z ##[debug]/usr/bin/docker arg: --build-arg PAT=***
+2025-10-23T08:55:20.3181945Z ##[debug]/usr/bin/docker arg: ["-t","ai/knowledge-base-sectest:latest"]
+2025-10-23T08:55:20.3183026Z ##[debug]/usr/bin/docker arg: ["-t","ai/knowledge-base-sectest:latest"]
+2025-10-23T08:55:20.3183743Z ##[debug]buildContext=/home/vsts/work/1/s/azure-search-rag-content-integrator
+2025-10-23T08:55:20.3184334Z ##[debug]SYSTEM_DEFAULTWORKINGDIRECTORY=/home/vsts/work/1/s
+2025-10-23T08:55:20.3185005Z ##[debug]/usr/bin/docker arg: /home/vsts/work/1/s/azure-search-rag-content-integrator
+2025-10-23T08:55:20.3185489Z ##[debug]DOCKER_BUILDKIT=undefined
+2025-10-23T08:55:20.3185964Z ##[debug]DOCKER_HOST=undefined
+2025-10-23T08:55:20.3186479Z ##[debug]Feature 'hideDockerExecTaskLogIssueErrorOutput' = 'True'. Processed as 'true'.
+2025-10-23T08:55:20.3186992Z ##[debug]exec tool: /usr/bin/docker
+2025-10-23T08:55:20.3187446Z ##[debug]arguments:
+2025-10-23T08:55:20.3187887Z ##[debug]   build
+2025-10-23T08:55:20.3188275Z ##[debug]   -f
+2025-10-23T08:55:20.3188732Z ##[debug]   /home/vsts/work/1/s/azure-search-rag-content-integrator/Dockerfile
+2025-10-23T08:55:20.3189215Z ##[debug]   --label
+2025-10-23T08:55:20.3189719Z ##[debug]   com.azure.dev.image.system.teamfoundationcollectionuri=https://dev.azure.com/NBGIDP/
+2025-10-23T08:55:20.3190366Z ##[debug]   --label
+2025-10-23T08:55:20.3190986Z ##[debug]   com.azure.dev.image.system.teamproject=ArtificialIntelligence
+2025-10-23T08:55:20.3191501Z ##[debug]   --label
+2025-10-23T08:55:20.3192026Z ##[debug]   com.azure.dev.image.build.repository.name=azure-search-rag-content-integrator
+2025-10-23T08:55:20.3192739Z ##[debug]   --label
+2025-10-23T08:55:20.3193272Z ##[debug]   com.azure.dev.image.build.sourceversion=b49f11a9bd49ea6f6f5a0ca27c5e0326c7ffc9b8
+2025-10-23T08:55:20.3193784Z ##[debug]   --label
+2025-10-23T08:55:20.3194245Z ##[debug]   com.azure.dev.image.build.repository.uri=https://NBGIDP@dev.azure.com/NBGIDP/ArtificialIntelligence/_git/azure-search-rag-content-integrator
+2025-10-23T08:55:20.3194925Z ##[debug]   --label
+2025-10-23T08:55:20.3195425Z ##[debug]   com.azure.dev.image.build.sourcebranchname=dev_secutybuild
+2025-10-23T08:55:20.3195924Z ##[debug]   --label
+2025-10-23T08:55:20.3196448Z ##[debug]   com.azure.dev.image.build.definitionname=master-azure-search-rag-content-integrator-dev
+2025-10-23T08:55:20.3196970Z ##[debug]   --label
+2025-10-23T08:55:20.3197451Z ##[debug]   com.azure.dev.image.build.buildnumber=20251023.11
+2025-10-23T08:55:20.3197938Z ##[debug]   --label
+2025-10-23T08:55:20.3198421Z ##[debug]   com.azure.dev.image.build.builduri=vstfs:///Build/Build/82216
+2025-10-23T08:55:20.3198963Z ##[debug]   --label
+2025-10-23T08:55:20.3199458Z ##[debug]   image.base.ref.name=python:3.11-slim
+2025-10-23T08:55:20.3199978Z ##[debug]   --label
+2025-10-23T08:55:20.3200604Z ##[debug]   image.base.digest=sha256:1738c75ae61595d2a9a5301d60a9a2f61abe7017005b3ccb660103d2476c6946
+2025-10-23T08:55:20.3201331Z ##[debug]   --build-arg
+2025-10-23T08:55:20.3228137Z ##[debug]   PAT=***
+2025-10-23T08:55:20.3228754Z ##[debug]   -t
+2025-10-23T08:55:20.3229259Z ##[debug]   ai/knowledge-base-sectest:latest
+2025-10-23T08:55:20.3229742Z ##[debug]   -t
+2025-10-23T08:55:20.3230228Z ##[debug]   ai/knowledge-base-sectest:latest
+2025-10-23T08:55:20.3230766Z ##[debug]   /home/vsts/work/1/s/azure-search-rag-content-integrator
+2025-10-23T08:55:20.3234218Z [command]/usr/bin/docker build -f /home/vsts/work/1/s/azure-search-rag-content-integrator/Dockerfile --label com.azure.dev.image.system.teamfoundationcollectionuri=https://dev.azure.com/NBGIDP/ --label com.azure.dev.image.system.teamproject=ArtificialIntelligence --label com.azure.dev.image.build.repository.name=azure-search-rag-content-integrator --label com.azure.dev.image.build.sourceversion=b49f11a9bd49ea6f6f5a0ca27c5e0326c7ffc9b8 --label com.azure.dev.image.build.repository.uri=https://NBGIDP@dev.azure.com/NBGIDP/ArtificialIntelligence/_git/azure-search-rag-content-integrator --label com.azure.dev.image.build.sourcebranchname=dev_secutybuild --label com.azure.dev.image.build.definitionname=master-azure-search-rag-content-integrator-dev --label com.azure.dev.image.build.buildnumber=20251023.11 --label com.azure.dev.image.build.builduri=vstfs:///Build/Build/82216 --label image.base.ref.name=python:3.11-slim --label image.base.digest=sha256:1738c75ae61595d2a9a5301d60a9a2f61abe7017005b3ccb660103d2476c6946 --build-arg PAT=*** -t ai/knowledge-base-sectest:latest -t ai/knowledge-base-sectest:latest /home/vsts/work/1/s/azure-search-rag-content-integrator
+2025-10-23T08:55:20.7999179Z #0 building with "default" instance using docker driver
+2025-10-23T08:55:20.8000013Z 
+2025-10-23T08:55:20.8000731Z #1 [internal] load build definition from Dockerfile
+2025-10-23T08:55:20.8003239Z #1 transferring dockerfile: 1.33kB done
+2025-10-23T08:55:20.8004139Z #1 DONE 0.0s
+2025-10-23T08:55:20.8004979Z 
+2025-10-23T08:55:20.8005713Z #2 [internal] load metadata for docker.io/library/python:3.11-slim
+2025-10-23T08:55:20.8007086Z #2 DONE 0.0s
+2025-10-23T08:55:20.8007230Z 
+2025-10-23T08:55:20.8007960Z #3 [internal] load .dockerignore
+2025-10-23T08:55:20.8008836Z #3 transferring context: 2B done
+2025-10-23T08:55:20.8009734Z #3 DONE 0.0s
+2025-10-23T08:55:20.8010240Z 
+2025-10-23T08:55:20.8010654Z #4 [1/9] FROM docker.io/library/python:3.11-slim
+2025-10-23T08:55:20.8011448Z #4 DONE 0.0s
+2025-10-23T08:55:20.8011993Z 
+2025-10-23T08:55:20.8012413Z #5 [internal] load build context
+2025-10-23T08:55:20.8013862Z #5 transferring context: 1.10MB 0.1s done
+2025-10-23T08:55:20.9613346Z #5 DONE 0.1s
+2025-10-23T08:55:20.9613486Z 
+2025-10-23T08:55:20.9613737Z #6 [2/9] RUN groupadd -r appuser && useradd -r -g appuser appuser
+2025-10-23T08:55:21.0273026Z #6 DONE 0.2s
+2025-10-23T08:55:21.2051090Z 
+2025-10-23T08:55:21.2053238Z #7 [3/9] WORKDIR /app
+2025-10-23T08:55:21.2053497Z #7 DONE 0.0s
+2025-10-23T08:55:21.2053600Z 
+2025-10-23T08:55:21.2053841Z #8 [4/9] COPY requirements.txt ./requirements.txt
+2025-10-23T08:55:21.2054080Z #8 DONE 0.0s
+2025-10-23T08:55:21.2054198Z 
+2025-10-23T08:55:21.2054757Z #9 [5/9] RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
+2025-10-23T08:55:22.7157999Z #9 1.661 Collecting fastapi==0.104.1 (from -r requirements.txt (line 5))
+2025-10-23T08:55:22.8212382Z #9 1.716   Downloading fastapi-0.104.1-py3-none-any.whl.metadata (24 kB)
+2025-10-23T08:55:22.8214805Z #9 1.767 Collecting uvicorn==0.24.0 (from uvicorn[standard]==0.24.0->-r requirements.txt (line 6))
+2025-10-23T08:55:22.9287944Z #9 1.781   Downloading uvicorn-0.24.0-py3-none-any.whl.metadata (6.4 kB)
+2025-10-23T08:55:22.9291794Z #9 1.818 Collecting gunicorn==21.2.0 (from -r requirements.txt (line 7))
+2025-10-23T08:55:22.9292271Z #9 1.831   Downloading gunicorn-21.2.0-py3-none-any.whl.metadata (4.1 kB)
+2025-10-23T08:55:22.9292914Z #9 1.861 Collecting python-jose==3.3.0 (from python-jose[cryptography]==3.3.0->-r requirements.txt (line 10))
+2025-10-23T08:55:22.9293243Z #9 1.874   Downloading python_jose-3.3.0-py2.py3-none-any.whl.metadata (5.4 kB)
+2025-10-23T08:55:23.1648912Z #9 1.904 Collecting passlib==1.7.4 (from passlib[bcrypt]==1.7.4->-r requirements.txt (line 11))
+2025-10-23T08:55:23.1654952Z #9 1.917   Downloading passlib-1.7.4-py2.py3-none-any.whl.metadata (1.7 kB)
+2025-10-23T08:55:23.1655329Z #9 1.948 Collecting python-multipart==0.0.6 (from -r requirements.txt (line 12))
+2025-10-23T08:55:23.1655688Z #9 1.960   Downloading python_multipart-0.0.6-py3-none-any.whl.metadata (2.5 kB)
+2025-10-23T08:55:23.2630323Z #9 2.209 Collecting cryptography==41.0.7 (from -r requirements.txt (line 13))
+2025-10-23T08:55:23.3723321Z #9 2.221   Downloading cryptography-41.0.7-cp37-abi3-manylinux_2_28_x86_64.whl.metadata (5.2 kB)
+2025-10-23T08:55:23.3726141Z #9 2.261 Collecting psycopg>=3.2.0 (from psycopg[binary]>=3.2.0->-r requirements.txt (line 16))
+2025-10-23T08:55:23.3726820Z #9 2.274   Downloading psycopg-3.2.11-py3-none-any.whl.metadata (4.5 kB)
+2025-10-23T08:55:23.3727155Z #9 2.305 Collecting psycopg-pool>=3.2.0 (from -r requirements.txt (line 17))
+2025-10-23T08:55:23.3727516Z #9 2.318   Downloading psycopg_pool-3.2.6-py3-none-any.whl.metadata (2.6 kB)
+2025-10-23T08:55:23.7247640Z #9 2.670 Collecting sqlalchemy==2.0.23 (from sqlalchemy[asyncio]==2.0.23->-r requirements.txt (line 18))
+2025-10-23T08:55:23.9543517Z #9 2.683   Downloading SQLAlchemy-2.0.23-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (9.6 kB)
+2025-10-23T08:55:23.9547922Z #9 2.736 Collecting alembic==1.12.1 (from -r requirements.txt (line 19))
+2025-10-23T08:55:23.9548292Z #9 2.749   Downloading alembic-1.12.1-py3-none-any.whl.metadata (7.3 kB)
+2025-10-23T08:55:23.9559241Z #9 2.902 Collecting pydantic>=2.5.0 (from -r requirements.txt (line 22))
+2025-10-23T08:55:24.0777355Z #9 2.914   Downloading pydantic-2.12.3-py3-none-any.whl.metadata (87 kB)
+2025-10-23T08:55:24.0867362Z #9 2.929      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 87.7/87.7 kB 6.0 MB/s eta 0:00:00
+2025-10-23T08:55:24.0867899Z #9 2.967 Collecting pydantic-settings>=2.1.0 (from -r requirements.txt (line 23))
+2025-10-23T08:55:24.0868253Z #9 2.980   Downloading pydantic_settings-2.11.0-py3-none-any.whl.metadata (3.4 kB)
+2025-10-23T08:55:24.0868561Z #9 3.023 Collecting httpx>=0.25.2 (from -r requirements.txt (line 26))
+2025-10-23T08:55:24.2843416Z #9 3.037   Downloading httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
+2025-10-23T08:55:24.2847769Z #9 3.067 Collecting aiofiles>=23.2.1 (from -r requirements.txt (line 27))
+2025-10-23T08:55:24.2851863Z #9 3.079   Downloading aiofiles-25.1.0-py3-none-any.whl.metadata (6.3 kB)
+2025-10-23T08:55:24.7749581Z #9 3.720 Collecting aiohttp>=3.11.18 (from -r requirements.txt (line 28))
+2025-10-23T08:55:24.8822999Z #9 3.733   Downloading aiohttp-3.13.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (8.1 kB)
+2025-10-23T08:55:24.8823489Z #9 3.768 Collecting prometheus-client==0.19.0 (from -r requirements.txt (line 31))
+2025-10-23T08:55:24.8823854Z #9 3.781   Downloading prometheus_client-0.19.0-py3-none-any.whl.metadata (1.8 kB)
+2025-10-23T08:55:24.8824490Z #9 3.815 Collecting structlog>=23.2.0 (from -r requirements.txt (line 32))
+2025-10-23T08:55:24.8824839Z #9 3.828   Downloading structlog-25.4.0-py3-none-any.whl.metadata (7.6 kB)
+2025-10-23T08:55:24.9655777Z ##[debug]Agent environment resources - Disk: / Available 19336.38 MB out of 73325.30 MB, Memory: Used 909.00 MB out of 7944.00 MB, CPU: Usage 47.38%
+2025-10-23T08:55:25.0091284Z #9 3.909 Collecting rich>=13.7.0 (from -r requirements.txt (line 33))
+2025-10-23T08:55:25.0093391Z #9 3.922   Downloading rich-14.2.0-py3-none-any.whl.metadata (18 kB)
+2025-10-23T08:55:25.0095526Z #9 3.955 Collecting python-dateutil==2.8.2 (from -r requirements.txt (line 36))
+2025-10-23T08:55:25.1136189Z #9 3.967   Downloading python_dateutil-2.8.2-py2.py3-none-any.whl.metadata (8.2 kB)
+2025-10-23T08:55:25.1137384Z #9 4.002 Collecting python-dotenv>=1.0.1 (from -r requirements.txt (line 39))
+2025-10-23T08:55:25.1138183Z #9 4.015   Downloading python_dotenv-1.1.1-py3-none-any.whl.metadata (24 kB)
+2025-10-23T08:55:25.1139048Z #9 4.046 Collecting azure-keyvault-secrets==4.7.0 (from -r requirements.txt (line 40))
+2025-10-23T08:55:25.1140461Z #9 4.059   Downloading azure_keyvault_secrets-4.7.0-py3-none-any.whl.metadata (28 kB)
+2025-10-23T08:55:25.2183087Z #9 4.101 Collecting azure-identity>=1.21.0 (from -r requirements.txt (line 41))
+2025-10-23T08:55:25.2185292Z #9 4.113   Downloading azure_identity-1.25.1-py3-none-any.whl.metadata (88 kB)
+2025-10-23T08:55:25.2186540Z #9 4.120      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 88.5/88.5 kB 19.9 MB/s eta 0:00:00
+2025-10-23T08:55:25.2187063Z #9 4.164 Collecting azure-storage-blob>=12.19.0 (from -r requirements.txt (line 42))
+2025-10-23T08:55:25.3202164Z #9 4.177   Downloading azure_storage_blob-12.27.0-py3-none-any.whl.metadata (26 kB)
+2025-10-23T08:55:25.3206242Z #9 4.253 Collecting pytest==7.4.3 (from -r requirements.txt (line 45))
+2025-10-23T08:55:25.3207241Z #9 4.266   Downloading pytest-7.4.3-py3-none-any.whl.metadata (7.9 kB)
+2025-10-23T08:55:25.4339752Z #9 4.308 Collecting pytest-asyncio==0.21.1 (from -r requirements.txt (line 46))
+2025-10-23T08:55:25.4342121Z #9 4.321   Downloading pytest_asyncio-0.21.1-py3-none-any.whl.metadata (4.0 kB)
+2025-10-23T08:55:25.4342433Z #9 4.379 Collecting redis==5.0.1 (from -r requirements.txt (line 49))
+2025-10-23T08:55:25.5786081Z #9 4.393   Downloading redis-5.0.1-py3-none-any.whl.metadata (8.9 kB)
+2025-10-23T08:55:25.5787267Z #9 4.454 Collecting celery==5.3.4 (from -r requirements.txt (line 50))
+2025-10-23T08:55:25.5790424Z #9 4.467   Downloading celery-5.3.4-py3-none-any.whl.metadata (21 kB)
+2025-10-23T08:55:25.5790866Z #9 4.524 Collecting croniter>=1.4.1 (from -r requirements.txt (line 51))
+2025-10-23T08:55:25.6964868Z #9 4.537   Downloading croniter-6.0.0-py2.py3-none-any.whl.metadata (32 kB)
+2025-10-23T08:55:25.6967047Z #9 4.642 Collecting azwrap>=0.1.4 (from -r requirements.txt (line 54))
+2025-10-23T08:55:25.8016767Z #9 4.660   Downloading azwrap-0.1.7-py3-none-any.whl.metadata (9.6 kB)
+2025-10-23T08:55:25.8017288Z #9 4.694 Collecting Office365-REST-Python-Client>=2.5.7 (from -r requirements.txt (line 56))
+2025-10-23T08:55:25.8017697Z #9 4.706   Downloading Office365_REST_Python_Client-2.6.2-py3-none-any.whl.metadata (18 kB)
+2025-10-23T08:55:25.8018076Z #9 4.747 Collecting click>=8.2.0 (from -r requirements.txt (line 57))
+2025-10-23T08:55:25.9384133Z #9 4.760   Downloading click-8.3.0-py3-none-any.whl.metadata (2.6 kB)
+2025-10-23T08:55:25.9384706Z #9 4.816 Collecting pyyaml>=6.0.2 (from -r requirements.txt (line 58))
+2025-10-23T08:55:25.9385112Z #9 4.829   Downloading pyyaml-6.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+2025-10-23T08:55:25.9385530Z #9 4.884 Collecting anyio<4.0.0,>=3.7.1 (from fastapi==0.104.1->-r requirements.txt (line 5))
+2025-10-23T08:55:26.0488139Z #9 4.899   Downloading anyio-3.7.1-py3-none-any.whl.metadata (4.7 kB)
+2025-10-23T08:55:26.0488671Z #9 4.980 Collecting starlette<0.28.0,>=0.27.0 (from fastapi==0.104.1->-r requirements.txt (line 5))
+2025-10-23T08:55:26.0489292Z #9 4.995   Downloading starlette-0.27.0-py3-none-any.whl.metadata (5.8 kB)
+2025-10-23T08:55:26.2479615Z #9 5.031 Collecting typing-extensions>=4.8.0 (from fastapi==0.104.1->-r requirements.txt (line 5))
+2025-10-23T08:55:26.2480430Z #9 5.043   Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+2025-10-23T08:55:26.2481180Z #9 5.082 Collecting h11>=0.8 (from uvicorn==0.24.0->uvicorn[standard]==0.24.0->-r requirements.txt (line 6))
+2025-10-23T08:55:26.2481427Z #9 5.094   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+2025-10-23T08:55:26.2481860Z #9 5.193 Collecting packaging (from gunicorn==21.2.0->-r requirements.txt (line 7))
+2025-10-23T08:55:26.3589962Z #9 5.206   Downloading packaging-25.0-py3-none-any.whl.metadata (3.3 kB)
+2025-10-23T08:55:26.3591810Z #9 5.242 Collecting ecdsa!=0.15 (from python-jose==3.3.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 10))
+2025-10-23T08:55:26.3593402Z #9 5.256   Downloading ecdsa-0.19.1-py2.py3-none-any.whl.metadata (29 kB)
+2025-10-23T08:55:26.3595865Z #9 5.292 Collecting rsa (from python-jose==3.3.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 10))
+2025-10-23T08:55:26.3596996Z #9 5.305   Downloading rsa-4.9.1-py3-none-any.whl.metadata (5.6 kB)
+2025-10-23T08:55:26.5616262Z #9 5.347 Collecting pyasn1 (from python-jose==3.3.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 10))
+2025-10-23T08:55:26.5617881Z #9 5.359   Downloading pyasn1-0.6.1-py3-none-any.whl.metadata (8.4 kB)
+2025-10-23T08:55:26.5618240Z #9 5.507 Collecting cffi>=1.12 (from cryptography==41.0.7->-r requirements.txt (line 13))
+2025-10-23T08:55:26.7256935Z #9 5.521   Downloading cffi-2.0.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.6 kB)
+2025-10-23T08:55:26.7532835Z #9 5.699 Collecting greenlet!=0.4.17 (from sqlalchemy==2.0.23->sqlalchemy[asyncio]==2.0.23->-r requirements.txt (line 18))
+2025-10-23T08:55:26.8753709Z #9 5.712   Downloading greenlet-3.2.4-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (4.1 kB)
+2025-10-23T08:55:26.8754223Z #9 5.767 Collecting Mako (from alembic==1.12.1->-r requirements.txt (line 19))
+2025-10-23T08:55:26.8754562Z #9 5.780   Downloading mako-1.3.10-py3-none-any.whl.metadata (2.9 kB)
+2025-10-23T08:55:26.8754915Z #9 5.821 Collecting six>=1.5 (from python-dateutil==2.8.2->-r requirements.txt (line 36))
+2025-10-23T08:55:26.9803811Z #9 5.834   Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+2025-10-23T08:55:26.9804590Z #9 5.871 Collecting azure-common~=1.1 (from azure-keyvault-secrets==4.7.0->-r requirements.txt (line 40))
+2025-10-23T08:55:26.9806009Z #9 5.884   Downloading azure_common-1.1.28-py2.py3-none-any.whl.metadata (5.0 kB)
+2025-10-23T08:55:26.9806619Z #9 5.926 Collecting azure-core<2.0.0,>=1.24.0 (from azure-keyvault-secrets==4.7.0->-r requirements.txt (line 40))
+2025-10-23T08:55:27.0843925Z #9 5.939   Downloading azure_core-1.36.0-py3-none-any.whl.metadata (47 kB)
+2025-10-23T08:55:27.0845170Z #9 5.944      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 47.1/47.1 kB 11.7 MB/s eta 0:00:00
+2025-10-23T08:55:27.0845819Z #9 5.973 Collecting isodate>=0.6.1 (from azure-keyvault-secrets==4.7.0->-r requirements.txt (line 40))
+2025-10-23T08:55:27.0846353Z #9 5.986   Downloading isodate-0.7.2-py3-none-any.whl.metadata (11 kB)
+2025-10-23T08:55:27.0846869Z #9 6.030 Collecting iniconfig (from pytest==7.4.3->-r requirements.txt (line 45))
+2025-10-23T08:55:27.2406583Z #9 6.044   Downloading iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+2025-10-23T08:55:27.2407558Z #9 6.078 Collecting pluggy<2.0,>=0.12 (from pytest==7.4.3->-r requirements.txt (line 45))
+2025-10-23T08:55:27.2408408Z #9 6.091   Downloading pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+2025-10-23T08:55:27.2409313Z #9 6.186 Collecting billiard<5.0,>=4.1.0 (from celery==5.3.4->-r requirements.txt (line 50))
+2025-10-23T08:55:27.3563794Z #9 6.199   Downloading billiard-4.2.2-py3-none-any.whl.metadata (4.8 kB)
+2025-10-23T08:55:27.3564782Z #9 6.257 Collecting kombu<6.0,>=5.3.2 (from celery==5.3.4->-r requirements.txt (line 50))
+2025-10-23T08:55:27.3566865Z #9 6.271   Downloading kombu-5.5.4-py3-none-any.whl.metadata (3.5 kB)
+2025-10-23T08:55:27.3567217Z #9 6.302 Collecting vine<6.0,>=5.0.0 (from celery==5.3.4->-r requirements.txt (line 50))
+2025-10-23T08:55:27.4600251Z #9 6.315   Downloading vine-5.1.0-py3-none-any.whl.metadata (2.7 kB)
+2025-10-23T08:55:27.4601065Z #9 6.348 Collecting click-didyoumean>=0.3.0 (from celery==5.3.4->-r requirements.txt (line 50))
+2025-10-23T08:55:27.4601432Z #9 6.362   Downloading click_didyoumean-0.3.1-py3-none-any.whl.metadata (3.9 kB)
+2025-10-23T08:55:27.4601784Z #9 6.392 Collecting click-repl>=0.2.0 (from celery==5.3.4->-r requirements.txt (line 50))
+2025-10-23T08:55:27.4602118Z #9 6.406   Downloading click_repl-0.3.0-py3-none-any.whl.metadata (3.6 kB)
+2025-10-23T08:55:27.6210657Z #9 6.434 Collecting click-plugins>=1.1.1 (from celery==5.3.4->-r requirements.txt (line 50))
+2025-10-23T08:55:27.6213881Z #9 6.447   Downloading click_plugins-1.1.1.2-py2.py3-none-any.whl.metadata (6.5 kB)
+2025-10-23T08:55:27.6214794Z #9 6.479 Collecting tzdata>=2022.7 (from celery==5.3.4->-r requirements.txt (line 50))
+2025-10-23T08:55:27.6215582Z #9 6.492   Downloading tzdata-2025.2-py2.py3-none-any.whl.metadata (1.4 kB)
+2025-10-23T08:55:27.6216195Z #9 6.567 Collecting bcrypt>=3.1.0 (from passlib[bcrypt]==1.7.4->-r requirements.txt (line 11))
+2025-10-23T08:55:27.7436215Z #9 6.580   Downloading bcrypt-5.0.0-cp39-abi3-manylinux_2_34_x86_64.whl.metadata (10 kB)
+2025-10-23T08:55:27.7437117Z #9 6.689 Collecting httptools>=0.5.0 (from uvicorn[standard]==0.24.0->-r requirements.txt (line 6))
+2025-10-23T08:55:27.9088994Z #9 6.704   Downloading httptools-0.7.1-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (3.5 kB)
+2025-10-23T08:55:27.9192756Z #9 6.865 Collecting uvloop!=0.15.0,!=0.15.1,>=0.14.0 (from uvicorn[standard]==0.24.0->-r requirements.txt (line 6))
+2025-10-23T08:55:28.0374064Z #9 6.878   Downloading uvloop-0.22.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (4.9 kB)
+2025-10-23T08:55:28.0374616Z #9 6.983 Collecting watchfiles>=0.13 (from uvicorn[standard]==0.24.0->-r requirements.txt (line 6))
+2025-10-23T08:55:28.1598182Z #9 6.997   Downloading watchfiles-1.1.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.9 kB)
+2025-10-23T08:55:28.1598986Z #9 7.106 Collecting websockets>=10.4 (from uvicorn[standard]==0.24.0->-r requirements.txt (line 6))
+2025-10-23T08:55:28.3996375Z #9 7.119   Downloading websockets-15.0.1-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.8 kB)
+2025-10-23T08:55:28.3997750Z #9 7.182 Collecting annotated-types>=0.6.0 (from pydantic>=2.5.0->-r requirements.txt (line 22))
+2025-10-23T08:55:28.3999718Z #9 7.194   Downloading annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+2025-10-23T08:55:29.0963600Z #9 8.039 Collecting pydantic-core==2.41.4 (from pydantic>=2.5.0->-r requirements.txt (line 22))
+2025-10-23T08:55:29.2443407Z #9 8.051   Downloading pydantic_core-2.41.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (7.3 kB)
+2025-10-23T08:55:29.2443957Z #9 8.084 Collecting typing-inspection>=0.4.2 (from pydantic>=2.5.0->-r requirements.txt (line 22))
+2025-10-23T08:55:29.2444448Z #9 8.097   Downloading typing_inspection-0.4.2-py3-none-any.whl.metadata (2.6 kB)
+2025-10-23T08:55:29.2444801Z #9 8.189 Collecting certifi (from httpx>=0.25.2->-r requirements.txt (line 26))
+2025-10-23T08:55:29.3455251Z #9 8.202   Downloading certifi-2025.10.5-py3-none-any.whl.metadata (2.5 kB)
+2025-10-23T08:55:29.3456175Z #9 8.242 Collecting httpcore==1.* (from httpx>=0.25.2->-r requirements.txt (line 26))
+2025-10-23T08:55:29.3457055Z #9 8.255   Downloading httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+2025-10-23T08:55:29.3457736Z #9 8.291 Collecting idna (from httpx>=0.25.2->-r requirements.txt (line 26))
+2025-10-23T08:55:29.4614032Z #9 8.304   Downloading idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+2025-10-23T08:55:29.4614839Z #9 8.366 Collecting aiohappyeyeballs>=2.5.0 (from aiohttp>=3.11.18->-r requirements.txt (line 28))
+2025-10-23T08:55:29.4615198Z #9 8.379   Downloading aiohappyeyeballs-2.6.1-py3-none-any.whl.metadata (5.9 kB)
+2025-10-23T08:55:29.4615538Z #9 8.407 Collecting aiosignal>=1.4.0 (from aiohttp>=3.11.18->-r requirements.txt (line 28))
+2025-10-23T08:55:29.6124433Z #9 8.420   Downloading aiosignal-1.4.0-py3-none-any.whl.metadata (3.7 kB)
+2025-10-23T08:55:29.6125328Z #9 8.455 Collecting attrs>=17.3.0 (from aiohttp>=3.11.18->-r requirements.txt (line 28))
+2025-10-23T08:55:29.6126034Z #9 8.468   Downloading attrs-25.4.0-py3-none-any.whl.metadata (10 kB)
+2025-10-23T08:55:29.6126758Z #9 8.558 Collecting frozenlist>=1.1.1 (from aiohttp>=3.11.18->-r requirements.txt (line 28))
+2025-10-23T08:55:29.7761591Z #9 8.571   Downloading frozenlist-1.8.0-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (20 kB)
+2025-10-23T08:55:29.8869198Z #9 8.832 Collecting multidict<7.0,>=4.5 (from aiohttp>=3.11.18->-r requirements.txt (line 28))
+2025-10-23T08:55:30.0516830Z #9 8.846   Downloading multidict-6.7.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (5.3 kB)
+2025-10-23T08:55:30.1130768Z #9 9.058 Collecting propcache>=0.2.0 (from aiohttp>=3.11.18->-r requirements.txt (line 28))
+2025-10-23T08:55:30.2774895Z #9 9.072   Downloading propcache-0.4.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (13 kB)
+2025-10-23T08:55:30.4183025Z #9 9.364 Collecting yarl<2.0,>=1.17.0 (from aiohttp>=3.11.18->-r requirements.txt (line 28))
+2025-10-23T08:55:30.5388340Z #9 9.377   Downloading yarl-1.22.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (75 kB)
+2025-10-23T08:55:30.5391813Z #9 9.381      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 75.1/75.1 kB 24.6 MB/s eta 0:00:00
+2025-10-23T08:55:30.5392690Z #9 9.431 Collecting markdown-it-py>=2.2.0 (from rich>=13.7.0->-r requirements.txt (line 33))
+2025-10-23T08:55:30.5395166Z #9 9.443   Downloading markdown_it_py-4.0.0-py3-none-any.whl.metadata (7.3 kB)
+2025-10-23T08:55:30.5395543Z #9 9.484 Collecting pygments<3.0.0,>=2.13.0 (from rich>=13.7.0->-r requirements.txt (line 33))
+2025-10-23T08:55:30.6451556Z #9 9.497   Downloading pygments-2.19.2-py3-none-any.whl.metadata (2.5 kB)
+2025-10-23T08:55:30.6453138Z #9 9.578 Collecting msal>=1.30.0 (from azure-identity>=1.21.0->-r requirements.txt (line 41))
+2025-10-23T08:55:30.6453543Z #9 9.591   Downloading msal-1.34.0-py3-none-any.whl.metadata (11 kB)
+2025-10-23T08:55:30.7948825Z #9 9.621 Collecting msal-extensions>=1.2.0 (from azure-identity>=1.21.0->-r requirements.txt (line 41))
+2025-10-23T08:55:30.7952407Z #9 9.634   Downloading msal_extensions-1.3.1-py3-none-any.whl.metadata (7.8 kB)
+2025-10-23T08:55:30.7953227Z #9 9.740 Collecting pytz>2021.1 (from croniter>=1.4.1->-r requirements.txt (line 51))
+2025-10-23T08:55:30.9778672Z #9 9.753   Downloading pytz-2025.2-py2.py3-none-any.whl.metadata (22 kB)
+2025-10-23T08:55:30.9780037Z #9 9.803 Collecting azure-ai-projects>=1.0.0b7 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:30.9780402Z #9 9.816   Downloading azure_ai_projects-1.1.0b4-py3-none-any.whl.metadata (24 kB)
+2025-10-23T08:55:30.9780605Z #9 9.923 Collecting azure-ai-resources>=1.0.0b9 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:31.0776895Z ##[debug]Agent environment resources - Disk: / Available 19316.58 MB out of 73325.30 MB, Memory: Used 993.00 MB out of 7944.00 MB, CPU: Usage 40.44%
+2025-10-23T08:55:31.0853003Z #9 9.937   Downloading azure_ai_resources-1.0.0b9-py3-none-any.whl.metadata (2.7 kB)
+2025-10-23T08:55:31.0853561Z #9 9.969 Collecting azure-mgmt-cognitiveservices>=13.6.0 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:31.0854755Z #9 9.985   Downloading azure_mgmt_cognitiveservices-14.0.0-py3-none-any.whl.metadata (30 kB)
+2025-10-23T08:55:31.0855161Z #9 10.03 Collecting azure-mgmt-resource>=22.0.0 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:31.1960244Z #9 10.04   Downloading azure_mgmt_resource-24.0.0-py3-none-any.whl.metadata (43 kB)
+2025-10-23T08:55:31.1961353Z #9 10.05      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 43.5/43.5 kB 11.6 MB/s eta 0:00:00
+2025-10-23T08:55:31.1962895Z #9 10.08 Collecting azure-mgmt-search>=9.1.0 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:31.1963121Z #9 10.09   Downloading azure_mgmt_search-9.2.0-py3-none-any.whl.metadata (14 kB)
+2025-10-23T08:55:31.1963326Z #9 10.13 Collecting azure-mgmt-storage>=22.1.1 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:31.1963535Z #9 10.14   Downloading azure_mgmt_storage-24.0.0-py3-none-any.whl.metadata (36 kB)
+2025-10-23T08:55:31.4020263Z #9 10.18 Collecting azure-search-documents>=11.5.2 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:31.4020701Z #9 10.20   Downloading azure_search_documents-11.6.0-py3-none-any.whl.metadata (23 kB)
+2025-10-23T08:55:31.4066475Z #9 10.35 Collecting langchain>=0.3.20 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:31.5412996Z #9 10.37   Downloading langchain-1.0.2-py3-none-any.whl.metadata (4.7 kB)
+2025-10-23T08:55:31.5414989Z #9 10.42 Collecting langchain-community>=0.3.19 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:31.5415747Z #9 10.43   Downloading langchain_community-0.4-py3-none-any.whl.metadata (3.0 kB)
+2025-10-23T08:55:31.5416576Z #9 10.49 Collecting langchain-openai>=0.3.8 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:31.7039967Z #9 10.50   Downloading langchain_openai-1.0.1-py3-none-any.whl.metadata (1.8 kB)
+2025-10-23T08:55:31.7237280Z #9 10.67 Collecting langchain-core>=0.1.0 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:31.8332249Z #9 10.68   Downloading langchain_core-1.0.0-py3-none-any.whl.metadata (3.4 kB)
+2025-10-23T08:55:31.8333422Z #9 10.71 Collecting langchain_text_splitters>=0.0.1 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:31.8334232Z #9 10.73   Downloading langchain_text_splitters-1.0.0-py3-none-any.whl.metadata (2.6 kB)
+2025-10-23T08:55:31.8334831Z #9 10.77 Collecting PyPDF2>=3.0.0 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:31.8335243Z #9 10.78   Downloading pypdf2-3.0.1-py3-none-any.whl.metadata (6.8 kB)
+2025-10-23T08:55:31.9704005Z #9 10.92 Collecting pandas>=2.0.0 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:32.0847465Z #9 10.93   Downloading pandas-2.3.3-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (91 kB)
+2025-10-23T08:55:32.0851248Z #9 10.94      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 91.2/91.2 kB 14.9 MB/s eta 0:00:00
+2025-10-23T08:55:32.0851681Z #9 10.98 Collecting openpyxl>=3.1.0 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:32.0852283Z #9 11.00   Downloading openpyxl-3.1.5-py2.py3-none-any.whl.metadata (2.5 kB)
+2025-10-23T08:55:32.0852927Z #9 11.03 Collecting python-docx>=1.1.2 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:32.2501157Z #9 11.05   Downloading python_docx-1.2.0-py3-none-any.whl.metadata (2.0 kB)
+2025-10-23T08:55:32.6212077Z #9 11.57 Collecting regex>=2022.1.18 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:32.8003959Z #9 11.58   Downloading regex-2025.10.23-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (40 kB)
+2025-10-23T08:55:32.8005407Z #9 11.58      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 40.5/40.5 kB 11.9 MB/s eta 0:00:00
+2025-10-23T08:55:32.8007686Z #9 11.62 Collecting tenacity>=8.0.1 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:32.8008036Z #9 11.63   Downloading tenacity-9.1.2-py3-none-any.whl.metadata (1.2 kB)
+2025-10-23T08:55:32.8008526Z #9 11.75 Collecting openai>=1.0.0 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:33.0320960Z #9 11.76   Downloading openai-2.6.0-py3-none-any.whl.metadata (29 kB)
+2025-10-23T08:55:33.0323025Z #9 11.81 Collecting requests (from Office365-REST-Python-Client>=2.5.7->-r requirements.txt (line 56))
+2025-10-23T08:55:33.0324685Z #9 11.83   Downloading requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)
+2025-10-23T08:55:33.0839407Z #9 12.03 Collecting psycopg-binary==3.2.11 (from psycopg[binary]>=3.2.0->-r requirements.txt (line 16))
+2025-10-23T08:55:33.2390314Z #9 12.04   Downloading psycopg_binary-3.2.11-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.9 kB)
+2025-10-23T08:55:33.2392244Z #9 12.12 Collecting sniffio>=1.1 (from anyio<4.0.0,>=3.7.1->fastapi==0.104.1->-r requirements.txt (line 5))
+2025-10-23T08:55:33.2393516Z #9 12.13   Downloading sniffio-1.3.1-py3-none-any.whl.metadata (3.9 kB)
+2025-10-23T08:55:33.2394806Z #9 12.18 Collecting azure-ai-agents>=1.2.0b3 (from azure-ai-projects>=1.0.0b7->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:33.3802015Z #9 12.20   Downloading azure_ai_agents-1.2.0b5-py3-none-any.whl.metadata (74 kB)
+2025-10-23T08:55:33.3803442Z #9 12.20      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 74.7/74.7 kB 26.9 MB/s eta 0:00:00
+2025-10-23T08:55:33.3803900Z #9 12.25 Collecting azure-ai-ml>=1.14.0 (from azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:33.3804634Z #9 12.27   Downloading azure_ai_ml-1.29.0-py3-none-any.whl.metadata (40 kB)
+2025-10-23T08:55:33.3805580Z #9 12.27      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 40.1/40.1 kB 10.5 MB/s eta 0:00:00
+2025-10-23T08:55:33.3806070Z #9 12.33 Collecting mlflow-skinny<3 (from azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:33.5369155Z #9 12.34   Downloading mlflow_skinny-2.22.2-py3-none-any.whl.metadata (31 kB)
+2025-10-23T08:55:33.5372040Z #9 12.37 Collecting opencensus-ext-logging<=0.1.1 (from azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:33.5372789Z #9 12.39   Downloading opencensus_ext_logging-0.1.1-py2.py3-none-any.whl.metadata (2.3 kB)
+2025-10-23T08:55:33.5381718Z #9 12.40 Collecting azure-mgmt-resource>=22.0.0 (from azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:33.5382454Z #9 12.41   Downloading azure_mgmt_resource-22.0.0-py3-none-any.whl.metadata (30 kB)
+2025-10-23T08:55:33.5383500Z #9 12.48 Collecting azure-mgmt-core>=1.6.0 (from azure-mgmt-cognitiveservices>=13.6.0->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:33.7010923Z #9 12.50   Downloading azure_mgmt_core-1.6.0-py3-none-any.whl.metadata (4.6 kB)
+2025-10-23T08:55:33.7012371Z #9 12.54 Collecting msrest>=0.7.1 (from azure-mgmt-resource>=22.0.0->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:33.7013667Z #9 12.56   Downloading msrest-0.7.1-py3-none-any.whl.metadata (21 kB)
+2025-10-23T08:55:33.7015852Z #9 12.65 Collecting pycparser (from cffi>=1.12->cryptography==41.0.7->-r requirements.txt (line 13))
+2025-10-23T08:55:33.8123521Z #9 12.66   Downloading pycparser-2.23-py3-none-any.whl.metadata (993 bytes)
+2025-10-23T08:55:33.8124206Z #9 12.74 Collecting prompt-toolkit>=3.0.36 (from click-repl>=0.2.0->celery==5.3.4->-r requirements.txt (line 50))
+2025-10-23T08:55:33.8125210Z #9 12.76   Downloading prompt_toolkit-3.0.52-py3-none-any.whl.metadata (6.4 kB)
+2025-10-23T08:55:33.9553266Z #9 12.90 Collecting amqp<6.0.0,>=5.1.1 (from kombu<6.0,>=5.3.2->celery==5.3.4->-r requirements.txt (line 50))
+2025-10-23T08:55:34.1190276Z #9 12.91   Downloading amqp-5.3.1-py3-none-any.whl.metadata (8.9 kB)
+2025-10-23T08:55:34.1291948Z #9 13.07 Collecting langgraph<1.1.0,>=1.0.0 (from langchain>=0.3.20->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:34.2912875Z #9 13.09   Downloading langgraph-1.0.1-py3-none-any.whl.metadata (7.4 kB)
+2025-10-23T08:55:34.2915354Z #9 13.15 Collecting langchain-classic<2.0.0,>=1.0.0 (from langchain-community>=0.3.19->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:34.2915793Z #9 13.17   Downloading langchain_classic-1.0.0-py3-none-any.whl.metadata (3.9 kB)
+2025-10-23T08:55:34.2916181Z #9 13.24 Collecting dataclasses-json<0.7.0,>=0.6.7 (from langchain-community>=0.3.19->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:34.4545345Z #9 13.25   Downloading dataclasses_json-0.6.7-py3-none-any.whl.metadata (25 kB)
+2025-10-23T08:55:34.5267236Z #9 13.47 Collecting langsmith<1.0.0,>=0.1.125 (from langchain-community>=0.3.19->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:34.7366098Z #9 13.49   Downloading langsmith-0.4.37-py3-none-any.whl.metadata (14 kB)
+2025-10-23T08:55:34.7368182Z #9 13.52 Collecting httpx-sse<1.0.0,>=0.4.0 (from langchain-community>=0.3.19->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:34.7369731Z #9 13.53   Downloading httpx_sse-0.4.3-py3-none-any.whl.metadata (9.7 kB)
+2025-10-23T08:55:34.9819083Z #9 13.93 Collecting numpy>=1.26.2 (from langchain-community>=0.3.19->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:35.1834675Z #9 13.94   Downloading numpy-2.3.4-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (62 kB)
+2025-10-23T08:55:35.1836160Z #9 13.95      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.1/62.1 kB 12.2 MB/s eta 0:00:00
+2025-10-23T08:55:35.1837079Z #9 14.00 Collecting jsonpatch<2.0.0,>=1.33.0 (from langchain-core>=0.1.0->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:35.1837650Z #9 14.02   Downloading jsonpatch-1.33-py2.py3-none-any.whl.metadata (3.0 kB)
+2025-10-23T08:55:35.1838039Z #9 14.13 Collecting tiktoken<1.0.0,>=0.7.0 (from langchain-openai>=0.3.8->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:35.3390526Z #9 14.14   Downloading tiktoken-0.12.0-cp311-cp311-manylinux_2_28_x86_64.whl.metadata (6.7 kB)
+2025-10-23T08:55:35.3393451Z #9 14.21 Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich>=13.7.0->-r requirements.txt (line 33))
+2025-10-23T08:55:35.3393825Z #9 14.22   Downloading mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+2025-10-23T08:55:35.3394202Z #9 14.28 Collecting PyJWT<3,>=1.0.0 (from PyJWT[crypto]<3,>=1.0.0->msal>=1.30.0->azure-identity>=1.21.0->-r requirements.txt (line 41))
+2025-10-23T08:55:35.4548278Z #9 14.30   Downloading PyJWT-2.10.1-py3-none-any.whl.metadata (4.0 kB)
+2025-10-23T08:55:35.4548927Z #9 14.40 Collecting distro<2,>=1.7.0 (from openai>=1.0.0->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:35.5630363Z #9 14.41   Downloading distro-1.9.0-py3-none-any.whl.metadata (6.8 kB)
+2025-10-23T08:55:35.5631270Z #9 14.51 Collecting jiter<1,>=0.10.0 (from openai>=1.0.0->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:35.6680970Z #9 14.52   Downloading jiter-0.11.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (5.2 kB)
+2025-10-23T08:55:35.6683432Z #9 14.61 Collecting tqdm>4 (from openai>=1.0.0->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:35.8923280Z #9 14.63   Downloading tqdm-4.67.1-py3-none-any.whl.metadata (57 kB)
+2025-10-23T08:55:35.8924584Z #9 14.63      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 57.7/57.7 kB 12.5 MB/s eta 0:00:00
+2025-10-23T08:55:35.8927242Z #9 14.67 Collecting et-xmlfile (from openpyxl>=3.1.0->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:35.8927903Z #9 14.69   Downloading et_xmlfile-2.0.0-py3-none-any.whl.metadata (2.7 kB)
+2025-10-23T08:55:36.2055875Z #9 15.15 Collecting lxml>=3.1.0 (from python-docx>=1.1.2->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:36.3675231Z #9 15.16   Downloading lxml-6.0.2-cp311-cp311-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl.metadata (3.6 kB)
+2025-10-23T08:55:36.3677850Z #9 15.31 Collecting charset_normalizer<4,>=2 (from requests->Office365-REST-Python-Client>=2.5.7->-r requirements.txt (line 56))
+2025-10-23T08:55:36.6068665Z #9 15.33   Downloading charset_normalizer-3.4.4-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (37 kB)
+2025-10-23T08:55:36.6069357Z #9 15.39 Collecting urllib3<3,>=1.21.1 (from requests->Office365-REST-Python-Client>=2.5.7->-r requirements.txt (line 56))
+2025-10-23T08:55:36.6069760Z #9 15.40   Downloading urllib3-2.5.0-py3-none-any.whl.metadata (6.5 kB)
+2025-10-23T08:55:36.7914034Z #9 15.74 Collecting MarkupSafe>=0.9.2 (from Mako->alembic==1.12.1->-r requirements.txt (line 19))
+2025-10-23T08:55:36.9551679Z #9 15.75   Downloading markupsafe-3.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.7 kB)
+2025-10-23T08:55:36.9763667Z #9 15.92 Collecting marshmallow<4.0.0,>=3.5 (from azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:37.1004759Z #9 15.93   Downloading marshmallow-3.26.1-py3-none-any.whl.metadata (7.3 kB)
+2025-10-23T08:55:37.1005376Z #9 15.99 Collecting jsonschema<5.0.0,>=4.0.0 (from azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:37.1005899Z #9 16.00   Downloading jsonschema-4.25.1-py3-none-any.whl.metadata (7.6 kB)
+2025-10-23T08:55:37.1006811Z #9 16.05 Collecting strictyaml<2.0.0 (from azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:37.2049489Z ##[debug]Agent environment resources - Disk: / Available 19308.67 MB out of 73325.30 MB, Memory: Used 1077.00 MB out of 7944.00 MB, CPU: Usage 52.07%
+2025-10-23T08:55:37.2050370Z #9 16.06   Downloading strictyaml-1.7.3-py3-none-any.whl.metadata (11 kB)
+2025-10-23T08:55:37.2052320Z #9 16.09 Collecting colorama<1.0.0 (from azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:37.2052932Z #9 16.10   Downloading colorama-0.4.6-py2.py3-none-any.whl.metadata (17 kB)
+2025-10-23T08:55:37.2053331Z #9 16.15 Collecting azure-storage-file-share (from azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:37.3158503Z #9 16.16   Downloading azure_storage_file_share-12.23.0-py3-none-any.whl.metadata (52 kB)
+2025-10-23T08:55:37.3161394Z #9 16.17      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 52.0/52.0 kB 15.0 MB/s eta 0:00:00
+2025-10-23T08:55:37.3163017Z #9 16.21 Collecting azure-storage-file-datalake>=12.2.0 (from azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:37.3164491Z #9 16.22   Downloading azure_storage_file_datalake-12.22.0-py3-none-any.whl.metadata (16 kB)
+2025-10-23T08:55:37.3165674Z #9 16.26 Collecting pydash<9.0.0,>=6.0.0 (from azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:37.4816302Z #9 16.27   Downloading pydash-8.0.5-py3-none-any.whl.metadata (4.5 kB)
+2025-10-23T08:55:37.4818080Z #9 16.31 Collecting azure-monitor-opentelemetry (from azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:37.4818330Z #9 16.33   Downloading azure_monitor_opentelemetry-1.8.1-py3-none-any.whl.metadata (23 kB)
+2025-10-23T08:55:37.4818561Z #9 16.43 Collecting typing-inspect<1,>=0.4.0 (from dataclasses-json<0.7.0,>=0.6.7->langchain-community>=0.3.19->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:37.5925052Z #9 16.44   Downloading typing_inspect-0.9.0-py3-none-any.whl.metadata (1.5 kB)
+2025-10-23T08:55:37.5926806Z #9 16.54 Collecting jsonpointer>=1.9 (from jsonpatch<2.0.0,>=1.33.0->langchain-core>=0.1.0->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:37.7249700Z #9 16.55   Downloading jsonpointer-3.0.0-py2.py3-none-any.whl.metadata (2.3 kB)
+2025-10-23T08:55:37.7250490Z #9 16.67 Collecting langgraph-checkpoint<4.0.0,>=2.1.0 (from langgraph<1.1.0,>=1.0.0->langchain>=0.3.20->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:37.8375772Z #9 16.68   Downloading langgraph_checkpoint-3.0.0-py3-none-any.whl.metadata (4.2 kB)
+2025-10-23T08:55:37.8377714Z #9 16.72 Collecting langgraph-prebuilt<1.1.0,>=1.0.0 (from langgraph<1.1.0,>=1.0.0->langchain>=0.3.20->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:37.8378148Z #9 16.73   Downloading langgraph_prebuilt-1.0.1-py3-none-any.whl.metadata (5.0 kB)
+2025-10-23T08:55:37.8378551Z #9 16.78 Collecting langgraph-sdk<0.3.0,>=0.2.2 (from langgraph<1.1.0,>=1.0.0->langchain>=0.3.20->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:37.9528541Z #9 16.80   Downloading langgraph_sdk-0.2.9-py3-none-any.whl.metadata (1.5 kB)
+2025-10-23T08:55:37.9529701Z #9 16.90 Collecting xxhash>=3.5.0 (from langgraph<1.1.0,>=1.0.0->langchain>=0.3.20->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:38.1164176Z #9 16.91   Downloading xxhash-3.6.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (13 kB)
+2025-10-23T08:55:38.2742717Z #9 17.22 Collecting orjson>=3.9.14 (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.3.19->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:38.4530162Z #9 17.23   Downloading orjson-3.11.3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (41 kB)
+2025-10-23T08:55:38.4535172Z #9 17.24      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 41.9/41.9 kB 10.9 MB/s eta 0:00:00
+2025-10-23T08:55:38.4535623Z #9 17.29 Collecting requests-toolbelt>=1.0.0 (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.3.19->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:38.4536405Z #9 17.30   Downloading requests_toolbelt-1.0.0-py2.py3-none-any.whl.metadata (14 kB)
+2025-10-23T08:55:38.4536828Z #9 17.40 Collecting zstandard>=0.23.0 (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.3.19->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:38.6092312Z #9 17.41   Downloading zstandard-0.25.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (3.3 kB)
+2025-10-23T08:55:38.6093345Z #9 17.55 Collecting cachetools<6,>=5.0.0 (from mlflow-skinny<3->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:38.7191207Z #9 17.57   Downloading cachetools-5.5.2-py3-none-any.whl.metadata (5.4 kB)
+2025-10-23T08:55:38.7192158Z #9 17.60 Collecting cloudpickle<4 (from mlflow-skinny<3->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:38.7194256Z #9 17.61   Downloading cloudpickle-3.1.1-py3-none-any.whl.metadata (7.1 kB)
+2025-10-23T08:55:38.7196488Z #9 17.66 Collecting databricks-sdk<1,>=0.20.0 (from mlflow-skinny<3->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:38.8808113Z #9 17.68   Downloading databricks_sdk-0.69.0-py3-none-any.whl.metadata (39 kB)
+2025-10-23T08:55:38.8809058Z #9 17.74 Collecting gitpython<4,>=3.1.9 (from mlflow-skinny<3->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:38.8811612Z #9 17.75   Downloading gitpython-3.1.45-py3-none-any.whl.metadata (13 kB)
+2025-10-23T08:55:38.8812190Z #9 17.83 Collecting importlib_metadata!=4.7.0,<9,>=3.7.0 (from mlflow-skinny<3->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:39.0440380Z #9 17.84   Downloading importlib_metadata-8.7.0-py3-none-any.whl.metadata (4.8 kB)
+2025-10-23T08:55:39.1688738Z #9 18.11 Collecting opentelemetry-api<3,>=1.9.0 (from mlflow-skinny<3->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:39.4170841Z #9 18.13   Downloading opentelemetry_api-1.38.0-py3-none-any.whl.metadata (1.5 kB)
+2025-10-23T08:55:39.4171684Z #9 18.17 Collecting opentelemetry-sdk<3,>=1.9.0 (from mlflow-skinny<3->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:39.4174141Z #9 18.19   Downloading opentelemetry_sdk-1.38.0-py3-none-any.whl.metadata (1.5 kB)
+2025-10-23T08:55:39.4174526Z #9 18.20 Collecting packaging (from gunicorn==21.2.0->-r requirements.txt (line 7))
+2025-10-23T08:55:39.4174889Z #9 18.21   Downloading packaging-24.2-py3-none-any.whl.metadata (3.2 kB)
+2025-10-23T08:55:39.4651108Z #9 18.41 Collecting protobuf<7,>=3.12.0 (from mlflow-skinny<3->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:39.6305449Z #9 18.42   Downloading protobuf-6.33.0-cp39-abi3-manylinux2014_x86_64.whl.metadata (593 bytes)
+2025-10-23T08:55:39.6306440Z #9 18.49 Collecting sqlparse<1,>=0.4.0 (from mlflow-skinny<3->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:39.6307549Z #9 18.50   Downloading sqlparse-0.5.3-py3-none-any.whl.metadata (3.9 kB)
+2025-10-23T08:55:39.6309413Z #9 18.58 Collecting requests-oauthlib>=0.5.0 (from msrest>=0.7.1->azure-mgmt-resource>=22.0.0->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:39.7327356Z #9 18.59   Downloading requests_oauthlib-2.0.0-py2.py3-none-any.whl.metadata (11 kB)
+2025-10-23T08:55:39.7328537Z #9 18.68 Collecting opencensus<1.0.0,>=0.8.0 (from opencensus-ext-logging<=0.1.1->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:39.9558126Z #9 18.69   Downloading opencensus-0.11.4-py2.py3-none-any.whl.metadata (12 kB)
+2025-10-23T08:55:39.9558739Z #9 18.74 Collecting wcwidth (from prompt-toolkit>=3.0.36->click-repl>=0.2.0->celery==5.3.4->-r requirements.txt (line 50))
+2025-10-23T08:55:39.9559154Z #9 18.75   Downloading wcwidth-0.2.14-py2.py3-none-any.whl.metadata (15 kB)
+2025-10-23T08:55:40.2294825Z #9 19.17 Collecting google-auth~=2.0 (from databricks-sdk<1,>=0.20.0->mlflow-skinny<3->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:40.3368843Z #9 19.19   Downloading google_auth-2.41.1-py2.py3-none-any.whl.metadata (6.6 kB)
+2025-10-23T08:55:40.3370776Z #9 19.27 Collecting gitdb<5,>=4.0.1 (from gitpython<4,>=3.1.9->mlflow-skinny<3->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:40.3372702Z #9 19.28   Downloading gitdb-4.0.12-py3-none-any.whl.metadata (1.2 kB)
+2025-10-23T08:55:40.5135370Z #9 19.36 Collecting zipp>=3.20 (from importlib_metadata!=4.7.0,<9,>=3.7.0->mlflow-skinny<3->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:40.5136167Z #9 19.37   Downloading zipp-3.23.0-py3-none-any.whl.metadata (3.6 kB)
+2025-10-23T08:55:40.5136756Z #9 19.46 Collecting jsonschema-specifications>=2023.03.6 (from jsonschema<5.0.0,>=4.0.0->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:40.7385783Z #9 19.47   Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl.metadata (2.9 kB)
+2025-10-23T08:55:40.7388723Z #9 19.52 Collecting referencing>=0.28.4 (from jsonschema<5.0.0,>=4.0.0->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:40.7389509Z #9 19.53   Downloading referencing-0.37.0-py3-none-any.whl.metadata (2.8 kB)
+2025-10-23T08:55:40.8799208Z #9 19.83 Collecting rpds-py>=0.7.1 (from jsonschema<5.0.0,>=4.0.0->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:41.0052941Z #9 19.84   Downloading rpds_py-0.28.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.1 kB)
+2025-10-23T08:55:41.0054115Z #9 19.95 Collecting ormsgpack>=1.10.0 (from langgraph-checkpoint<4.0.0,>=2.1.0->langgraph<1.1.0,>=1.0.0->langchain>=0.3.20->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:41.1683287Z #9 19.96   Downloading ormsgpack-1.11.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (1.2 kB)
+2025-10-23T08:55:41.1785519Z #9 20.12 Collecting opencensus-context>=0.1.3 (from opencensus<1.0.0,>=0.8.0->opencensus-ext-logging<=0.1.1->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:41.2850380Z #9 20.14   Downloading opencensus_context-0.1.3-py2.py3-none-any.whl.metadata (3.3 kB)
+2025-10-23T08:55:41.2854218Z #9 20.22 Collecting google-api-core<3.0.0,>=1.0.0 (from opencensus<1.0.0,>=0.8.0->opencensus-ext-logging<=0.1.1->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:41.2854675Z #9 20.23   Downloading google_api_core-2.27.0-py3-none-any.whl.metadata (3.2 kB)
+2025-10-23T08:55:41.3913580Z #9 20.34 Collecting opentelemetry-semantic-conventions==0.59b0 (from opentelemetry-sdk<3,>=1.9.0->mlflow-skinny<3->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:41.5547230Z #9 20.35   Downloading opentelemetry_semantic_conventions-0.59b0-py3-none-any.whl.metadata (2.4 kB)
+2025-10-23T08:55:41.5737156Z #9 20.52 Collecting oauthlib>=3.0.0 (from requests-oauthlib>=0.5.0->msrest>=0.7.1->azure-mgmt-resource>=22.0.0->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:41.7360607Z #9 20.53   Downloading oauthlib-3.3.1-py3-none-any.whl.metadata (7.9 kB)
+2025-10-23T08:55:41.7361184Z #9 20.68 Collecting mypy-extensions>=0.3.0 (from typing-inspect<1,>=0.4.0->dataclasses-json<0.7.0,>=0.6.7->langchain-community>=0.3.19->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:41.8649967Z #9 20.70   Downloading mypy_extensions-1.1.0-py3-none-any.whl.metadata (1.1 kB)
+2025-10-23T08:55:41.8650609Z #9 20.81 Collecting azure-core-tracing-opentelemetry~=1.0.0b11 (from azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:41.9828804Z #9 20.82   Downloading azure_core_tracing_opentelemetry-1.0.0b12-py3-none-any.whl.metadata (11 kB)
+2025-10-23T08:55:41.9832338Z #9 20.86 Collecting azure-monitor-opentelemetry-exporter~=1.0.0b41 (from azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:41.9833154Z #9 20.88   Downloading azure_monitor_opentelemetry_exporter-1.0.0b44-py2.py3-none-any.whl.metadata (33 kB)
+2025-10-23T08:55:41.9833641Z #9 20.93 Collecting opentelemetry-instrumentation-django~=0.57b0 (from azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:42.0999558Z #9 20.94   Downloading opentelemetry_instrumentation_django-0.59b0-py3-none-any.whl.metadata (2.3 kB)
+2025-10-23T08:55:42.1000442Z #9 20.99 Collecting opentelemetry-instrumentation-fastapi~=0.57b0 (from azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:42.1001078Z #9 21.00   Downloading opentelemetry_instrumentation_fastapi-0.59b0-py3-none-any.whl.metadata (2.2 kB)
+2025-10-23T08:55:42.1001706Z #9 21.05 Collecting opentelemetry-instrumentation-flask~=0.57b0 (from azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:42.2191417Z #9 21.06   Downloading opentelemetry_instrumentation_flask-0.59b0-py3-none-any.whl.metadata (2.2 kB)
+2025-10-23T08:55:42.2195465Z #9 21.11 Collecting opentelemetry-instrumentation-psycopg2~=0.57b0 (from azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:42.2197298Z #9 21.12   Downloading opentelemetry_instrumentation_psycopg2-0.59b0-py3-none-any.whl.metadata (2.1 kB)
+2025-10-23T08:55:42.2197767Z #9 21.16 Collecting opentelemetry-instrumentation-requests~=0.57b0 (from azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:42.3338018Z #9 21.18   Downloading opentelemetry_instrumentation_requests-0.59b0-py3-none-any.whl.metadata (2.6 kB)
+2025-10-23T08:55:42.3340057Z #9 21.22 Collecting opentelemetry-instrumentation-urllib~=0.57b0 (from azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:42.3340526Z #9 21.24   Downloading opentelemetry_instrumentation_urllib-0.59b0-py3-none-any.whl.metadata (3.4 kB)
+2025-10-23T08:55:42.3340990Z #9 21.28 Collecting opentelemetry-instrumentation-urllib3~=0.57b0 (from azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:42.5385569Z #9 21.29   Downloading opentelemetry_instrumentation_urllib3-0.59b0-py3-none-any.whl.metadata (4.2 kB)
+2025-10-23T08:55:42.5386312Z #9 21.32 Collecting opentelemetry-resource-detector-azure~=0.1.5 (from azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:42.5387477Z #9 21.34   Downloading opentelemetry_resource_detector_azure-0.1.5-py3-none-any.whl.metadata (5.3 kB)
+2025-10-23T08:55:42.5388088Z #9 21.48 Collecting fixedint==0.1.6 (from azure-monitor-opentelemetry-exporter~=1.0.0b41->azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:42.6628792Z #9 21.50   Downloading fixedint-0.1.6-py3-none-any.whl.metadata (4.8 kB)
+2025-10-23T08:55:42.6629966Z #9 21.61 Collecting psutil<8,>=5.9 (from azure-monitor-opentelemetry-exporter~=1.0.0b41->azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:42.7671312Z #9 21.62   Downloading psutil-7.1.1-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (23 kB)
+2025-10-23T08:55:42.7672213Z #9 21.70 Collecting smmap<6,>=3.0.1 (from gitdb<5,>=4.0.1->gitpython<4,>=3.1.9->mlflow-skinny<3->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:42.7672890Z #9 21.71   Downloading smmap-5.0.2-py3-none-any.whl.metadata (4.3 kB)
+2025-10-23T08:55:42.9599744Z #9 21.79 Collecting googleapis-common-protos<2.0.0,>=1.56.2 (from google-api-core<3.0.0,>=1.0.0->opencensus<1.0.0,>=0.8.0->opencensus-ext-logging<=0.1.1->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:42.9601935Z #9 21.81   Downloading googleapis_common_protos-1.71.0-py3-none-any.whl.metadata (9.4 kB)
+2025-10-23T08:55:42.9602460Z #9 21.91 Collecting proto-plus<2.0.0,>=1.22.3 (from google-api-core<3.0.0,>=1.0.0->opencensus<1.0.0,>=0.8.0->opencensus-ext-logging<=0.1.1->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:43.0899713Z #9 21.92   Downloading proto_plus-1.26.1-py3-none-any.whl.metadata (2.2 kB)
+2025-10-23T08:55:43.0900363Z #9 22.04 Collecting pyasn1-modules>=0.2.1 (from google-auth~=2.0->databricks-sdk<1,>=0.20.0->mlflow-skinny<3->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:43.2531683Z #9 22.05   Downloading pyasn1_modules-0.4.2-py3-none-any.whl.metadata (3.5 kB)
+2025-10-23T08:55:43.2951424Z #9 22.24 Collecting opentelemetry-instrumentation-wsgi==0.59b0 (from opentelemetry-instrumentation-django~=0.57b0->azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:43.4064615Z #9 22.25   Downloading opentelemetry_instrumentation_wsgi-0.59b0-py3-none-any.whl.metadata (2.1 kB)
+2025-10-23T08:55:43.4067583Z #9 22.30 Collecting opentelemetry-instrumentation==0.59b0 (from opentelemetry-instrumentation-django~=0.57b0->azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:43.4068345Z #9 22.31   Downloading opentelemetry_instrumentation-0.59b0-py3-none-any.whl.metadata (7.1 kB)
+2025-10-23T08:55:43.4069324Z #9 22.35 Collecting opentelemetry-util-http==0.59b0 (from opentelemetry-instrumentation-django~=0.57b0->azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:43.4649863Z ##[debug]Agent environment resources - Disk: / Available 19296.90 MB out of 73325.30 MB, Memory: Used 1107.00 MB out of 7944.00 MB, CPU: Usage 40.47%
+2025-10-23T08:55:43.5693704Z #9 22.36   Downloading opentelemetry_util_http-0.59b0-py3-none-any.whl.metadata (2.6 kB)
+2025-10-23T08:55:43.6118966Z #9 22.56 Collecting wrapt<2.0.0,>=1.0.0 (from opentelemetry-instrumentation==0.59b0->opentelemetry-instrumentation-django~=0.57b0->azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:43.7596635Z #9 22.57   Downloading wrapt-1.17.3-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (6.4 kB)
+2025-10-23T08:55:43.7598679Z #9 22.71 Collecting opentelemetry-instrumentation-asgi==0.59b0 (from opentelemetry-instrumentation-fastapi~=0.57b0->azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:43.9730931Z #9 22.72   Downloading opentelemetry_instrumentation_asgi-0.59b0-py3-none-any.whl.metadata (2.0 kB)
+2025-10-23T08:55:43.9733490Z #9 22.79 Collecting asgiref~=3.0 (from opentelemetry-instrumentation-asgi==0.59b0->opentelemetry-instrumentation-fastapi~=0.57b0->azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:43.9734952Z #9 22.80   Downloading asgiref-3.10.0-py3-none-any.whl.metadata (9.3 kB)
+2025-10-23T08:55:43.9735412Z #9 22.92 Collecting opentelemetry-instrumentation-dbapi==0.59b0 (from opentelemetry-instrumentation-psycopg2~=0.57b0->azure-monitor-opentelemetry->azure-ai-ml>=1.14.0->azure-ai-resources>=1.0.0b9->azwrap>=0.1.4->-r requirements.txt (line 54))
+2025-10-23T08:55:44.1362073Z #9 22.93   Downloading opentelemetry_instrumentation_dbapi-0.59b0-py3-none-any.whl.metadata (2.0 kB)
+2025-10-23T08:55:44.7398503Z #9 23.69 Downloading fastapi-0.104.1-py3-none-any.whl (92 kB)
+2025-10-23T08:55:44.8416919Z #9 23.69    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 92.9/92.9 kB 12.6 MB/s eta 0:00:00
+2025-10-23T08:55:44.8417455Z #9 23.71 Downloading uvicorn-0.24.0-py3-none-any.whl (59 kB)
+2025-10-23T08:55:44.8418386Z #9 23.71    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 59.6/59.6 kB 11.0 MB/s eta 0:00:00
+2025-10-23T08:55:44.8418697Z #9 23.73 Downloading gunicorn-21.2.0-py3-none-any.whl (80 kB)
+2025-10-23T08:55:44.8419177Z #9 23.73    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 80.2/80.2 kB 12.0 MB/s eta 0:00:00
+2025-10-23T08:55:44.8419501Z #9 23.75 Downloading python_jose-3.3.0-py2.py3-none-any.whl (33 kB)
+2025-10-23T08:55:44.8419808Z #9 23.76 Downloading passlib-1.7.4-py2.py3-none-any.whl (525 kB)
+2025-10-23T08:55:44.9664782Z #9 23.79    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 525.6/525.6 kB 25.9 MB/s eta 0:00:00
+2025-10-23T08:55:44.9668246Z #9 23.80 Downloading python_multipart-0.0.6-py3-none-any.whl (45 kB)
+2025-10-23T08:55:44.9679675Z #9 23.81    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 45.7/45.7 kB 8.8 MB/s eta 0:00:00
+2025-10-23T08:55:44.9680061Z #9 23.82 Downloading cryptography-41.0.7-cp37-abi3-manylinux_2_28_x86_64.whl (4.4 MB)
+2025-10-23T08:55:44.9680594Z #9 23.87    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.4/4.4 MB 98.9 MB/s eta 0:00:00
+2025-10-23T08:55:44.9682020Z #9 23.88 Downloading SQLAlchemy-2.0.23-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.2 MB)
+2025-10-23T08:55:45.0696676Z #9 23.91    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.2/3.2 MB 116.5 MB/s eta 0:00:00
+2025-10-23T08:55:45.0698445Z #9 23.93 Downloading alembic-1.12.1-py3-none-any.whl (226 kB)
+2025-10-23T08:55:45.0699006Z #9 23.93    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 226.8/226.8 kB 54.7 MB/s eta 0:00:00
+2025-10-23T08:55:45.0699414Z #9 23.95 Downloading prometheus_client-0.19.0-py3-none-any.whl (54 kB)
+2025-10-23T08:55:45.0700174Z #9 23.95    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 54.2/54.2 kB 12.2 MB/s eta 0:00:00
+2025-10-23T08:55:45.0700497Z #9 23.97 Downloading python_dateutil-2.8.2-py2.py3-none-any.whl (247 kB)
+2025-10-23T08:55:45.0701017Z #9 23.97    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 247.7/247.7 kB 45.4 MB/s eta 0:00:00
+2025-10-23T08:55:45.0701350Z #9 23.99 Downloading azure_keyvault_secrets-4.7.0-py3-none-any.whl (348 kB)
+2025-10-23T08:55:45.0701861Z #9 23.99    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 348.6/348.6 kB 64.1 MB/s eta 0:00:00
+2025-10-23T08:55:45.0702158Z #9 24.01 Downloading pytest-7.4.3-py3-none-any.whl (325 kB)
+2025-10-23T08:55:45.1827541Z #9 24.02    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 325.1/325.1 kB 58.0 MB/s eta 0:00:00
+2025-10-23T08:55:45.1830380Z #9 24.03 Downloading pytest_asyncio-0.21.1-py3-none-any.whl (13 kB)
+2025-10-23T08:55:45.1830761Z #9 24.05 Downloading redis-5.0.1-py3-none-any.whl (250 kB)
+2025-10-23T08:55:45.1831591Z #9 24.05    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 250.3/250.3 kB 54.7 MB/s eta 0:00:00
+2025-10-23T08:55:45.1831945Z #9 24.07 Downloading celery-5.3.4-py3-none-any.whl (421 kB)
+2025-10-23T08:55:45.1832458Z #9 24.08    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 421.4/421.4 kB 44.5 MB/s eta 0:00:00
+2025-10-23T08:55:45.1832995Z #9 24.09 Downloading psycopg-3.2.11-py3-none-any.whl (206 kB)
+2025-10-23T08:55:45.1833546Z #9 24.10    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 206.8/206.8 kB 51.5 MB/s eta 0:00:00
+2025-10-23T08:55:45.1833884Z #9 24.11 Downloading psycopg_pool-3.2.6-py3-none-any.whl (38 kB)
+2025-10-23T08:55:45.1834203Z #9 24.13 Downloading pydantic-2.12.3-py3-none-any.whl (462 kB)
+2025-10-23T08:55:45.2930063Z #9 24.14    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 462.4/462.4 kB 57.9 MB/s eta 0:00:00
+2025-10-23T08:55:45.2933250Z #9 24.15 Downloading pydantic_core-2.41.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+2025-10-23T08:55:45.2933859Z #9 24.17    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 126.2 MB/s eta 0:00:00
+2025-10-23T08:55:45.2934077Z #9 24.18 Downloading pydantic_settings-2.11.0-py3-none-any.whl (48 kB)
+2025-10-23T08:55:45.2934351Z #9 24.19    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 48.6/48.6 kB 11.3 MB/s eta 0:00:00
+2025-10-23T08:55:45.2934522Z #9 24.20 Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+2025-10-23T08:55:45.2935141Z #9 24.21    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 73.5/73.5 kB 15.9 MB/s eta 0:00:00
+2025-10-23T08:55:45.2935460Z #9 24.22 Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+2025-10-23T08:55:45.2935934Z #9 24.23    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.8/78.8 kB 15.1 MB/s eta 0:00:00
+2025-10-23T08:55:45.2936118Z #9 24.24 Downloading aiofiles-25.1.0-py3-none-any.whl (14 kB)
+2025-10-23T08:55:45.3933993Z #9 24.25 Downloading aiohttp-3.13.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (1.7 MB)
+2025-10-23T08:55:45.3936483Z #9 24.27    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.7/1.7 MB 119.2 MB/s eta 0:00:00
+2025-10-23T08:55:45.3938447Z #9 24.28 Downloading structlog-25.4.0-py3-none-any.whl (68 kB)
+2025-10-23T08:55:45.3939045Z #9 24.29    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 68.7/68.7 kB 18.9 MB/s eta 0:00:00
+2025-10-23T08:55:45.3939384Z #9 24.30 Downloading rich-14.2.0-py3-none-any.whl (243 kB)
+2025-10-23T08:55:45.3939913Z #9 24.31    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 243.4/243.4 kB 49.6 MB/s eta 0:00:00
+2025-10-23T08:55:45.3940257Z #9 24.32 Downloading python_dotenv-1.1.1-py3-none-any.whl (20 kB)
+2025-10-23T08:55:45.3940597Z #9 24.34 Downloading azure_identity-1.25.1-py3-none-any.whl (191 kB)
+2025-10-23T08:55:45.4998790Z #9 24.35    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 191.3/191.3 kB 38.2 MB/s eta 0:00:00
+2025-10-23T08:55:45.5000832Z #9 24.36 Downloading azure_storage_blob-12.27.0-py3-none-any.whl (428 kB)
+2025-10-23T08:55:45.5001443Z #9 24.37    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 428.9/428.9 kB 80.0 MB/s eta 0:00:00
+2025-10-23T08:55:45.5002060Z #9 24.38 Downloading croniter-6.0.0-py2.py3-none-any.whl (25 kB)
+2025-10-23T08:55:45.5002415Z #9 24.40 Downloading azwrap-0.1.7-py3-none-any.whl (44 kB)
+2025-10-23T08:55:45.5003220Z #9 24.40    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.6/44.6 kB 10.3 MB/s eta 0:00:00
+2025-10-23T08:55:45.5003582Z #9 24.42 Downloading Office365_REST_Python_Client-2.6.2-py3-none-any.whl (1.3 MB)
+2025-10-23T08:55:45.5004133Z #9 24.43    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 119.9 MB/s eta 0:00:00
+2025-10-23T08:55:45.5004456Z #9 24.45 Downloading click-8.3.0-py3-none-any.whl (107 kB)
+2025-10-23T08:55:45.6121213Z #9 24.45    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 107.3/107.3 kB 22.8 MB/s eta 0:00:00
+2025-10-23T08:55:45.6121927Z #9 24.47 Downloading pyyaml-6.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (806 kB)
+2025-10-23T08:55:45.6123083Z #9 24.48    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 806.6/806.6 kB 87.1 MB/s eta 0:00:00
+2025-10-23T08:55:45.6123405Z #9 24.49 Downloading psycopg_binary-3.2.11-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (4.4 MB)
+2025-10-23T08:55:45.6123730Z #9 24.53    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.4/4.4 MB 137.7 MB/s eta 0:00:00
+2025-10-23T08:55:45.6123913Z #9 24.54 Downloading aiohappyeyeballs-2.6.1-py3-none-any.whl (15 kB)
+2025-10-23T08:55:45.6124740Z #9 24.56 Downloading aiosignal-1.4.0-py3-none-any.whl (7.5 kB)
+2025-10-23T08:55:45.7131309Z #9 24.57 Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+2025-10-23T08:55:45.7136290Z #9 24.59 Downloading anyio-3.7.1-py3-none-any.whl (80 kB)
+2025-10-23T08:55:45.7140202Z #9 24.60    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 80.9/80.9 kB 16.3 MB/s eta 0:00:00
+2025-10-23T08:55:45.7141855Z #9 24.61 Downloading attrs-25.4.0-py3-none-any.whl (67 kB)
+2025-10-23T08:55:45.7142436Z #9 24.62    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 67.6/67.6 kB 10.1 MB/s eta 0:00:00
+2025-10-23T08:55:45.7143063Z #9 24.64 Downloading azure_ai_projects-1.1.0b4-py3-none-any.whl (126 kB)
+2025-10-23T08:55:45.7143673Z #9 24.64    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 126.7/126.7 kB 25.2 MB/s eta 0:00:00
+2025-10-23T08:55:45.7144250Z #9 24.66 Downloading azure_ai_resources-1.0.0b9-py3-none-any.whl (2.1 MB)
+2025-10-23T08:55:45.8285536Z #9 24.68    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 109.2 MB/s eta 0:00:00
+2025-10-23T08:55:45.8287117Z #9 24.69 Downloading azure_common-1.1.28-py2.py3-none-any.whl (14 kB)
+2025-10-23T08:55:45.8287655Z #9 24.71 Downloading azure_core-1.36.0-py3-none-any.whl (213 kB)
+2025-10-23T08:55:45.8288840Z #9 24.72    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 213.3/213.3 kB 53.4 MB/s eta 0:00:00
+2025-10-23T08:55:45.8289290Z #9 24.73 Downloading azure_mgmt_cognitiveservices-14.0.0-py3-none-any.whl (271 kB)
+2025-10-23T08:55:45.8290308Z #9 24.74    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 271.6/271.6 kB 63.0 MB/s eta 0:00:00
+2025-10-23T08:55:45.8290760Z #9 24.75 Downloading azure_mgmt_resource-22.0.0-py3-none-any.whl (2.4 MB)
+2025-10-23T08:55:45.9307780Z #9 24.77    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.4/2.4 MB 126.4 MB/s eta 0:00:00
+2025-10-23T08:55:45.9311425Z #9 24.79 Downloading azure_mgmt_search-9.2.0-py3-none-any.whl (124 kB)
+2025-10-23T08:55:45.9312880Z #9 24.79    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 124.1/124.1 kB 28.5 MB/s eta 0:00:00
+2025-10-23T08:55:45.9314861Z #9 24.81 Downloading azure_mgmt_storage-24.0.0-py3-none-any.whl (290 kB)
+2025-10-23T08:55:45.9315453Z #9 24.81    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 290.9/290.9 kB 69.8 MB/s eta 0:00:00
+2025-10-23T08:55:45.9315906Z #9 24.83 Downloading azure_search_documents-11.6.0-py3-none-any.whl (307 kB)
+2025-10-23T08:55:45.9316428Z #9 24.83    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 307.9/307.9 kB 60.6 MB/s eta 0:00:00
+2025-10-23T08:55:45.9316761Z #9 24.85 Downloading bcrypt-5.0.0-cp39-abi3-manylinux_2_34_x86_64.whl (278 kB)
+2025-10-23T08:55:45.9317298Z #9 24.86    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 278.2/278.2 kB 40.8 MB/s eta 0:00:00
+2025-10-23T08:55:45.9317737Z #9 24.87 Downloading billiard-4.2.2-py3-none-any.whl (86 kB)
+2025-10-23T08:55:46.0362984Z #9 24.88    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 86.9/86.9 kB 16.8 MB/s eta 0:00:00
+2025-10-23T08:55:46.0363615Z #9 24.89 Downloading cffi-2.0.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (215 kB)
+2025-10-23T08:55:46.0364220Z #9 24.89    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 215.6/215.6 kB 54.9 MB/s eta 0:00:00
+2025-10-23T08:55:46.0364549Z #9 24.91 Downloading click_didyoumean-0.3.1-py3-none-any.whl (3.6 kB)
+2025-10-23T08:55:46.0364873Z #9 24.92 Downloading click_plugins-1.1.1.2-py2.py3-none-any.whl (11 kB)
+2025-10-23T08:55:46.0365176Z #9 24.94 Downloading click_repl-0.3.0-py3-none-any.whl (10 kB)
+2025-10-23T08:55:46.0365472Z #9 24.96 Downloading ecdsa-0.19.1-py2.py3-none-any.whl (150 kB)
+2025-10-23T08:55:46.0365975Z #9 24.96    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 150.6/150.6 kB 33.3 MB/s eta 0:00:00
+2025-10-23T08:55:46.0366329Z #9 24.97 Downloading frozenlist-1.8.0-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (231 kB)
+2025-10-23T08:55:46.1476191Z #9 24.98    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 231.1/231.1 kB 47.2 MB/s eta 0:00:00
+2025-10-23T08:55:46.1477213Z #9 25.00 Downloading greenlet-3.2.4-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (587 kB)
+2025-10-23T08:55:46.1478221Z #9 25.01    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 587.7/587.7 kB 77.2 MB/s eta 0:00:00
+2025-10-23T08:55:46.1478950Z #9 25.02 Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+2025-10-23T08:55:46.1481220Z #9 25.04 Downloading httptools-0.7.1-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (456 kB)
+2025-10-23T08:55:46.1482090Z #9 25.04    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 456.6/456.6 kB 76.5 MB/s eta 0:00:00
+2025-10-23T08:55:46.1483072Z #9 25.06 Downloading idna-3.11-py3-none-any.whl (71 kB)
+2025-10-23T08:55:46.1483989Z #9 25.06    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 71.0/71.0 kB 13.8 MB/s eta 0:00:00
+2025-10-23T08:55:46.1485839Z #9 25.08 Downloading isodate-0.7.2-py3-none-any.whl (22 kB)
+2025-10-23T08:55:46.1486426Z #9 25.09 Downloading kombu-5.5.4-py3-none-any.whl (210 kB)
+2025-10-23T08:55:46.2488972Z #9 25.10    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 210.0/210.0 kB 46.6 MB/s eta 0:00:00
+2025-10-23T08:55:46.2492272Z #9 25.11 Downloading vine-5.1.0-py3-none-any.whl (9.6 kB)
+2025-10-23T08:55:46.2492891Z #9 25.13 Downloading langchain-1.0.2-py3-none-any.whl (107 kB)
+2025-10-23T08:55:46.2493455Z #9 25.13    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 107.8/107.8 kB 29.8 MB/s eta 0:00:00
+2025-10-23T08:55:46.2493776Z #9 25.15 Downloading langchain_community-0.4-py3-none-any.whl (2.5 MB)
+2025-10-23T08:55:46.2494245Z #9 25.17    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.5/2.5 MB 131.3 MB/s eta 0:00:00
+2025-10-23T08:55:46.2494551Z #9 25.19 Downloading langchain_core-1.0.0-py3-none-any.whl (467 kB)
+2025-10-23T08:55:46.3539524Z #9 25.19    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 467.2/467.2 kB 79.6 MB/s eta 0:00:00
+2025-10-23T08:55:46.3542103Z #9 25.21 Downloading langchain_openai-1.0.1-py3-none-any.whl (81 kB)
+2025-10-23T08:55:46.3544579Z #9 25.21    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 81.9/81.9 kB 21.4 MB/s eta 0:00:00
+2025-10-23T08:55:46.3544981Z #9 25.23 Downloading langchain_text_splitters-1.0.0-py3-none-any.whl (33 kB)
+2025-10-23T08:55:46.3545333Z #9 25.24 Downloading markdown_it_py-4.0.0-py3-none-any.whl (87 kB)
+2025-10-23T08:55:46.3545859Z #9 25.25    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 87.3/87.3 kB 24.6 MB/s eta 0:00:00
+2025-10-23T08:55:46.3546192Z #9 25.26 Downloading msal-1.34.0-py3-none-any.whl (116 kB)
+2025-10-23T08:55:46.3546704Z #9 25.27    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 117.0/117.0 kB 21.6 MB/s eta 0:00:00
+2025-10-23T08:55:46.3547045Z #9 25.28 Downloading msal_extensions-1.3.1-py3-none-any.whl (20 kB)
+2025-10-23T08:55:46.3547451Z #9 25.30 Downloading multidict-6.7.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (246 kB)
+2025-10-23T08:55:46.5085005Z #9 25.31    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 246.7/246.7 kB 44.9 MB/s eta 0:00:00
+2025-10-23T08:55:46.5086047Z #9 25.32 Downloading openai-2.6.0-py3-none-any.whl (1.0 MB)
+2025-10-23T08:55:46.5086612Z #9 25.33    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.0/1.0 MB 97.7 MB/s eta 0:00:00
+2025-10-23T08:55:46.5089246Z #9 25.35 Downloading openpyxl-3.1.5-py2.py3-none-any.whl (250 kB)
+2025-10-23T08:55:46.5090248Z #9 25.35    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 250.9/250.9 kB 55.7 MB/s eta 0:00:00
+2025-10-23T08:55:46.5090981Z #9 25.37 Downloading pandas-2.3.3-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (12.8 MB)
+2025-10-23T08:55:46.6099435Z #9 25.45    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.8/12.8 MB 142.3 MB/s eta 0:00:00
+2025-10-23T08:55:46.6101129Z #9 25.47 Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+2025-10-23T08:55:46.6101551Z #9 25.48 Downloading propcache-0.4.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (210 kB)
+2025-10-23T08:55:46.6102200Z #9 25.49    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 210.0/210.0 kB 56.1 MB/s eta 0:00:00
+2025-10-23T08:55:46.6103204Z #9 25.50 Downloading pygments-2.19.2-py3-none-any.whl (1.2 MB)
+2025-10-23T08:55:46.6103780Z #9 25.52    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 109.1 MB/s eta 0:00:00
+2025-10-23T08:55:46.6104100Z #9 25.53 Downloading pypdf2-3.0.1-py3-none-any.whl (232 kB)
+2025-10-23T08:55:46.6104629Z #9 25.54    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 232.6/232.6 kB 34.4 MB/s eta 0:00:00
+2025-10-23T08:55:46.6104961Z #9 25.56 Downloading python_docx-1.2.0-py3-none-any.whl (252 kB)
+2025-10-23T08:55:46.7208078Z #9 25.56    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 253.0/253.0 kB 33.5 MB/s eta 0:00:00
+2025-10-23T08:55:46.7211031Z #9 25.58 Downloading pytz-2025.2-py2.py3-none-any.whl (509 kB)
+2025-10-23T08:55:46.7211625Z #9 25.59    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 509.2/509.2 kB 61.6 MB/s eta 0:00:00
+2025-10-23T08:55:46.7212004Z #9 25.60 Downloading regex-2025.10.23-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (800 kB)
+2025-10-23T08:55:46.7212794Z #9 25.61    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 800.3/800.3 kB 88.4 MB/s eta 0:00:00
+2025-10-23T08:55:46.7213122Z #9 25.63 Downloading requests-2.32.5-py3-none-any.whl (64 kB)
+2025-10-23T08:55:46.7213645Z #9 25.63    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.7/64.7 kB 16.2 MB/s eta 0:00:00
+2025-10-23T08:55:46.7213959Z #9 25.65 Downloading certifi-2025.10.5-py3-none-any.whl (163 kB)
+2025-10-23T08:55:46.7214267Z #9 25.65    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 163.3/163.3 kB 37.3 MB/s eta 0:00:00
+2025-10-23T08:55:46.7214445Z #9 25.67 Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+2025-10-23T08:55:46.8316222Z #9 25.68 Downloading starlette-0.27.0-py3-none-any.whl (66 kB)
+2025-10-23T08:55:46.8320353Z #9 25.69    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 67.0/67.0 kB 13.8 MB/s eta 0:00:00
+2025-10-23T08:55:46.8320743Z #9 25.70 Downloading tenacity-9.1.2-py3-none-any.whl (28 kB)
+2025-10-23T08:55:46.8321080Z #9 25.72 Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+2025-10-23T08:55:46.8321878Z #9 25.72    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.6/44.6 kB 11.4 MB/s eta 0:00:00
+2025-10-23T08:55:46.8325241Z #9 25.74 Downloading typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+2025-10-23T08:55:46.8325643Z #9 25.75 Downloading tzdata-2025.2-py2.py3-none-any.whl (347 kB)
+2025-10-23T08:55:46.8326232Z #9 25.76    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 347.8/347.8 kB 60.1 MB/s eta 0:00:00
+2025-10-23T08:55:46.8326651Z #9 25.78 Downloading uvloop-0.22.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (3.8 MB)
+2025-10-23T08:55:46.9424140Z #9 25.81    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.8/3.8 MB 130.4 MB/s eta 0:00:00
+2025-10-23T08:55:46.9424510Z #9 25.82 Downloading watchfiles-1.1.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (456 kB)
+2025-10-23T08:55:46.9425262Z #9 25.83    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 456.1/456.1 kB 70.6 MB/s eta 0:00:00
+2025-10-23T08:55:46.9425679Z #9 25.85 Downloading websockets-15.0.1-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (182 kB)
+2025-10-23T08:55:46.9434437Z #9 25.85    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 182.3/182.3 kB 30.6 MB/s eta 0:00:00
+2025-10-23T08:55:46.9434848Z #9 25.87 Downloading yarl-1.22.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (365 kB)
+2025-10-23T08:55:46.9435445Z #9 25.87    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 365.8/365.8 kB 67.0 MB/s eta 0:00:00
+2025-10-23T08:55:46.9435808Z #9 25.89 Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+2025-10-23T08:55:47.0443091Z #9 25.90 Downloading mako-1.3.10-py3-none-any.whl (78 kB)
+2025-10-23T08:55:47.0444101Z #9 25.91    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.5/78.5 kB 19.1 MB/s eta 0:00:00
+2025-10-23T08:55:47.0444916Z #9 25.92 Downloading pyasn1-0.6.1-py3-none-any.whl (83 kB)
+2025-10-23T08:55:47.0446205Z #9 25.93    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 83.1/83.1 kB 12.1 MB/s eta 0:00:00
+2025-10-23T08:55:47.0447056Z #9 25.94 Downloading rsa-4.9.1-py3-none-any.whl (34 kB)
+2025-10-23T08:55:47.0447623Z #9 25.96 Downloading amqp-5.3.1-py3-none-any.whl (50 kB)
+2025-10-23T08:55:47.0448164Z #9 25.97    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 50.9/50.9 kB 10.5 MB/s eta 0:00:00
+2025-10-23T08:55:47.0448472Z #9 25.98 Downloading azure_ai_agents-1.2.0b5-py3-none-any.whl (217 kB)
+2025-10-23T08:55:47.1500504Z #9 25.99    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 217.9/217.9 kB 50.5 MB/s eta 0:00:00
+2025-10-23T08:55:47.1500972Z #9 26.00 Downloading azure_ai_ml-1.29.0-py3-none-any.whl (13.2 MB)
+2025-10-23T08:55:47.2503767Z #9 26.09    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.2/13.2 MB 143.2 MB/s eta 0:00:00
+2025-10-23T08:55:47.2504336Z #9 26.11 Downloading azure_mgmt_core-1.6.0-py3-none-any.whl (29 kB)
+2025-10-23T08:55:47.2504753Z #9 26.12 Downloading charset_normalizer-3.4.4-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (151 kB)
+2025-10-23T08:55:47.2505420Z #9 26.13    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 151.6/151.6 kB 38.2 MB/s eta 0:00:00
+2025-10-23T08:55:47.2506042Z #9 26.14 Downloading dataclasses_json-0.6.7-py3-none-any.whl (28 kB)
+2025-10-23T08:55:47.2506357Z #9 26.16 Downloading distro-1.9.0-py3-none-any.whl (20 kB)
+2025-10-23T08:55:47.2506725Z #9 26.17 Downloading httpx_sse-0.4.3-py3-none-any.whl (9.0 kB)
+2025-10-23T08:55:47.2507083Z #9 26.19 Downloading jiter-0.11.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (359 kB)
+2025-10-23T08:55:47.3883394Z #9 26.20    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 359.2/359.2 kB 80.5 MB/s eta 0:00:00
+2025-10-23T08:55:47.3884416Z #9 26.21 Downloading jsonpatch-1.33-py2.py3-none-any.whl (12 kB)
+2025-10-23T08:55:47.3885132Z #9 26.23 Downloading langchain_classic-1.0.0-py3-none-any.whl (1.0 MB)
+2025-10-23T08:55:47.3886610Z #9 26.24    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.0/1.0 MB 106.5 MB/s eta 0:00:00
+2025-10-23T08:55:47.3887223Z #9 26.25 Downloading langgraph-1.0.1-py3-none-any.whl (155 kB)
+2025-10-23T08:55:47.3888211Z #9 26.26    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 155.4/155.4 kB 44.3 MB/s eta 0:00:00
+2025-10-23T08:55:47.3888722Z #9 26.27 Downloading langsmith-0.4.37-py3-none-any.whl (396 kB)
+2025-10-23T08:55:47.3890962Z #9 26.28    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 396.1/396.1 kB 77.4 MB/s eta 0:00:00
+2025-10-23T08:55:47.3891328Z #9 26.29 Downloading lxml-6.0.2-cp311-cp311-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl (5.2 MB)
+2025-10-23T08:55:47.4938254Z #9 26.33    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.2/5.2 MB 139.2 MB/s eta 0:00:00
+2025-10-23T08:55:47.4939298Z #9 26.35 Downloading markupsafe-3.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+2025-10-23T08:55:47.4940133Z #9 26.36 Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+2025-10-23T08:55:47.4940753Z #9 26.38 Downloading mlflow_skinny-2.22.2-py3-none-any.whl (6.3 MB)
+2025-10-23T08:55:47.4942374Z #9 26.43    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.3/6.3 MB 147.4 MB/s eta 0:00:00
+2025-10-23T08:55:47.4945839Z #9 26.44 Downloading packaging-24.2-py3-none-any.whl (65 kB)
+2025-10-23T08:55:47.6568112Z #9 26.44    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 65.5/65.5 kB 16.3 MB/s eta 0:00:00
+2025-10-23T08:55:47.6568515Z #9 26.46 Downloading msrest-0.7.1-py3-none-any.whl (85 kB)
+2025-10-23T08:55:47.6569067Z #9 26.46    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 85.4/85.4 kB 20.9 MB/s eta 0:00:00
+2025-10-23T08:55:47.6569429Z #9 26.48 Downloading numpy-2.3.4-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (16.9 MB)
+2025-10-23T08:55:47.7647888Z #9 26.60    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.9/16.9 MB 127.3 MB/s eta 0:00:00
+2025-10-23T08:55:47.7648994Z #9 26.62 Downloading opencensus_ext_logging-0.1.1-py2.py3-none-any.whl (4.0 kB)
+2025-10-23T08:55:47.7649853Z #9 26.63 Downloading prompt_toolkit-3.0.52-py3-none-any.whl (391 kB)
+2025-10-23T08:55:47.7651245Z #9 26.64    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 391.4/391.4 kB 73.5 MB/s eta 0:00:00
+2025-10-23T08:55:47.7651941Z #9 26.65 Downloading PyJWT-2.10.1-py3-none-any.whl (22 kB)
+2025-10-23T08:55:47.7653079Z #9 26.67 Downloading sniffio-1.3.1-py3-none-any.whl (10 kB)
+2025-10-23T08:55:47.7655090Z #9 26.68 Downloading tiktoken-0.12.0-cp311-cp311-manylinux_2_28_x86_64.whl (1.2 MB)
+2025-10-23T08:55:47.7655690Z #9 26.70    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 112.0 MB/s eta 0:00:00
+2025-10-23T08:55:47.7656033Z #9 26.71 Downloading tqdm-4.67.1-py3-none-any.whl (78 kB)
+2025-10-23T08:55:47.8758539Z #9 26.72    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.5/78.5 kB 13.7 MB/s eta 0:00:00
+2025-10-23T08:55:47.8761341Z #9 26.73 Downloading urllib3-2.5.0-py3-none-any.whl (129 kB)
+2025-10-23T08:55:47.8762210Z #9 26.74    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 129.8/129.8 kB 25.6 MB/s eta 0:00:00
+2025-10-23T08:55:47.8762737Z #9 26.75 Downloading et_xmlfile-2.0.0-py3-none-any.whl (18 kB)
+2025-10-23T08:55:47.8763048Z #9 26.77 Downloading pycparser-2.23-py3-none-any.whl (118 kB)
+2025-10-23T08:55:47.8763541Z #9 26.77    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 118.1/118.1 kB 32.6 MB/s eta 0:00:00
+2025-10-23T08:55:47.8764129Z #9 26.78 Downloading azure_storage_file_datalake-12.22.0-py3-none-any.whl (264 kB)
+2025-10-23T08:55:47.8764626Z #9 26.79    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 264.8/264.8 kB 51.8 MB/s eta 0:00:00
+2025-10-23T08:55:47.8765107Z #9 26.81 Downloading cachetools-5.5.2-py3-none-any.whl (10 kB)
+2025-10-23T08:55:47.8765463Z #9 26.82 Downloading cloudpickle-3.1.1-py3-none-any.whl (20 kB)
+2025-10-23T08:55:47.9854121Z #9 26.84 Downloading colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+2025-10-23T08:55:47.9856061Z #9 26.86 Downloading databricks_sdk-0.69.0-py3-none-any.whl (749 kB)
+2025-10-23T08:55:47.9856850Z #9 26.87    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 749.8/749.8 kB 110.9 MB/s eta 0:00:00
+2025-10-23T08:55:47.9857204Z #9 26.88 Downloading gitpython-3.1.45-py3-none-any.whl (208 kB)
+2025-10-23T08:55:47.9857746Z #9 26.89    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 208.2/208.2 kB 51.3 MB/s eta 0:00:00
+2025-10-23T08:55:47.9858087Z #9 26.90 Downloading importlib_metadata-8.7.0-py3-none-any.whl (27 kB)
+2025-10-23T08:55:47.9858479Z #9 26.91 Downloading jsonpointer-3.0.0-py2.py3-none-any.whl (7.6 kB)
+2025-10-23T08:55:47.9858805Z #9 26.93 Downloading jsonschema-4.25.1-py3-none-any.whl (90 kB)
+2025-10-23T08:55:48.0943644Z #9 26.94    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 90.0/90.0 kB 24.4 MB/s eta 0:00:00
+2025-10-23T08:55:48.0944184Z #9 26.95 Downloading langgraph_checkpoint-3.0.0-py3-none-any.whl (46 kB)
+2025-10-23T08:55:48.0944710Z #9 26.95    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 46.1/46.1 kB 10.9 MB/s eta 0:00:00
+2025-10-23T08:55:48.0945046Z #9 26.97 Downloading langgraph_prebuilt-1.0.1-py3-none-any.whl (28 kB)
+2025-10-23T08:55:48.0945365Z #9 26.98 Downloading langgraph_sdk-0.2.9-py3-none-any.whl (56 kB)
+2025-10-23T08:55:48.0945830Z #9 26.99    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 56.8/56.8 kB 11.6 MB/s eta 0:00:00
+2025-10-23T08:55:48.0946148Z #9 27.00 Downloading marshmallow-3.26.1-py3-none-any.whl (50 kB)
+2025-10-23T08:55:48.0946682Z #9 27.01    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 50.9/50.9 kB 11.6 MB/s eta 0:00:00
+2025-10-23T08:55:48.0949618Z #9 27.02 Downloading opencensus-0.11.4-py2.py3-none-any.whl (128 kB)
+2025-10-23T08:55:48.0951165Z #9 27.03    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 128.2/128.2 kB 40.5 MB/s eta 0:00:00
+2025-10-23T08:55:48.0952296Z #9 27.04 Downloading opentelemetry_api-1.38.0-py3-none-any.whl (65 kB)
+2025-10-23T08:55:48.1962256Z #9 27.05    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 65.9/65.9 kB 14.0 MB/s eta 0:00:00
+2025-10-23T08:55:48.1966543Z #9 27.06 Downloading opentelemetry_sdk-1.38.0-py3-none-any.whl (132 kB)
+2025-10-23T08:55:48.1967536Z #9 27.06    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 132.3/132.3 kB 31.4 MB/s eta 0:00:00
+2025-10-23T08:55:48.1968042Z #9 27.08 Downloading opentelemetry_semantic_conventions-0.59b0-py3-none-any.whl (207 kB)
+2025-10-23T08:55:48.1968973Z #9 27.08    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 208.0/208.0 kB 50.0 MB/s eta 0:00:00
+2025-10-23T08:55:48.1969463Z #9 27.10 Downloading orjson-3.11.3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (132 kB)
+2025-10-23T08:55:48.1970581Z #9 27.10    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 132.7/132.7 kB 39.0 MB/s eta 0:00:00
+2025-10-23T08:55:48.1971031Z #9 27.12 Downloading protobuf-6.33.0-cp39-abi3-manylinux2014_x86_64.whl (323 kB)
+2025-10-23T08:55:48.1972341Z #9 27.12    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 323.2/323.2 kB 67.2 MB/s eta 0:00:00
+2025-10-23T08:55:48.1973040Z #9 27.14 Downloading pydash-8.0.5-py3-none-any.whl (102 kB)
+2025-10-23T08:55:48.3015833Z #9 27.14    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 102.1/102.1 kB 23.0 MB/s eta 0:00:00
+2025-10-23T08:55:48.3017491Z #9 27.15 Downloading requests_oauthlib-2.0.0-py2.py3-none-any.whl (24 kB)
+2025-10-23T08:55:48.3018138Z #9 27.17 Downloading requests_toolbelt-1.0.0-py2.py3-none-any.whl (54 kB)
+2025-10-23T08:55:48.3018655Z #9 27.18    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 54.5/54.5 kB 15.3 MB/s eta 0:00:00
+2025-10-23T08:55:48.3019517Z #9 27.19 Downloading sqlparse-0.5.3-py3-none-any.whl (44 kB)
+2025-10-23T08:55:48.3020542Z #9 27.19    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.4/44.4 kB 10.3 MB/s eta 0:00:00
+2025-10-23T08:55:48.3021004Z #9 27.21 Downloading strictyaml-1.7.3-py3-none-any.whl (123 kB)
+2025-10-23T08:55:48.3021973Z #9 27.21    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 123.9/123.9 kB 37.2 MB/s eta 0:00:00
+2025-10-23T08:55:48.3022400Z #9 27.23 Downloading typing_inspect-0.9.0-py3-none-any.whl (8.8 kB)
+2025-10-23T08:55:48.3023458Z #9 27.24 Downloading xxhash-3.6.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (193 kB)
+2025-10-23T08:55:48.4062251Z #9 27.25    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 193.9/193.9 kB 54.3 MB/s eta 0:00:00
+2025-10-23T08:55:48.4063640Z #9 27.26 Downloading zstandard-0.25.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (5.6 MB)
+2025-10-23T08:55:48.4064294Z #9 27.30    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.6/5.6 MB 138.1 MB/s eta 0:00:00
+2025-10-23T08:55:48.4064834Z #9 27.32 Downloading azure_monitor_opentelemetry-1.8.1-py3-none-any.whl (27 kB)
+2025-10-23T08:55:48.4065225Z #9 27.33 Downloading azure_storage_file_share-12.23.0-py3-none-any.whl (307 kB)
+2025-10-23T08:55:48.4065769Z #9 27.34    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 307.4/307.4 kB 64.5 MB/s eta 0:00:00
+2025-10-23T08:55:48.4066075Z #9 27.35 Downloading wcwidth-0.2.14-py2.py3-none-any.whl (37 kB)
+2025-10-23T08:55:48.5132409Z #9 27.37 Downloading azure_core_tracing_opentelemetry-1.0.0b12-py3-none-any.whl (11 kB)
+2025-10-23T08:55:48.5134191Z #9 27.38 Downloading azure_monitor_opentelemetry_exporter-1.0.0b44-py2.py3-none-any.whl (198 kB)
+2025-10-23T08:55:48.5135333Z #9 27.39    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 198.5/198.5 kB 35.0 MB/s eta 0:00:00
+2025-10-23T08:55:48.5137382Z #9 27.40 Downloading fixedint-0.1.6-py3-none-any.whl (12 kB)
+2025-10-23T08:55:48.5138846Z #9 27.42 Downloading gitdb-4.0.12-py3-none-any.whl (62 kB)
+2025-10-23T08:55:48.5139657Z #9 27.43    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.8/62.8 kB 12.3 MB/s eta 0:00:00
+2025-10-23T08:55:48.5141581Z #9 27.44 Downloading google_api_core-2.27.0-py3-none-any.whl (167 kB)
+2025-10-23T08:55:48.5142419Z #9 27.45    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 167.1/167.1 kB 42.1 MB/s eta 0:00:00
+2025-10-23T08:55:48.5143173Z #9 27.46 Downloading google_auth-2.41.1-py2.py3-none-any.whl (221 kB)
+2025-10-23T08:55:48.6206585Z #9 27.47    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 221.3/221.3 kB 30.5 MB/s eta 0:00:00
+2025-10-23T08:55:48.6206960Z #9 27.48 Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl (18 kB)
+2025-10-23T08:55:48.6207150Z #9 27.50 Downloading mypy_extensions-1.1.0-py3-none-any.whl (5.0 kB)
+2025-10-23T08:55:48.6207345Z #9 27.51 Downloading oauthlib-3.3.1-py3-none-any.whl (160 kB)
+2025-10-23T08:55:48.6207681Z #9 27.52    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 160.1/160.1 kB 28.3 MB/s eta 0:00:00
+2025-10-23T08:55:48.6207992Z #9 27.54 Downloading opencensus_context-0.1.3-py2.py3-none-any.whl (5.1 kB)
+2025-10-23T08:55:48.6208563Z #9 27.55 Downloading opentelemetry_instrumentation_django-0.59b0-py3-none-any.whl (19 kB)
+2025-10-23T08:55:48.6209002Z #9 27.57 Downloading opentelemetry_instrumentation-0.59b0-py3-none-any.whl (33 kB)
+2025-10-23T08:55:48.7316007Z #9 27.58 Downloading opentelemetry_instrumentation_wsgi-0.59b0-py3-none-any.whl (14 kB)
+2025-10-23T08:55:48.7316990Z #9 27.60 Downloading opentelemetry_util_http-0.59b0-py3-none-any.whl (7.6 kB)
+2025-10-23T08:55:48.7317872Z #9 27.61 Downloading opentelemetry_instrumentation_fastapi-0.59b0-py3-none-any.whl (13 kB)
+2025-10-23T08:55:48.7318238Z #9 27.63 Downloading opentelemetry_instrumentation_asgi-0.59b0-py3-none-any.whl (16 kB)
+2025-10-23T08:55:48.7318588Z #9 27.65 Downloading opentelemetry_instrumentation_flask-0.59b0-py3-none-any.whl (14 kB)
+2025-10-23T08:55:48.7318970Z #9 27.66 Downloading opentelemetry_instrumentation_psycopg2-0.59b0-py3-none-any.whl (10 kB)
+2025-10-23T08:55:48.8332375Z #9 27.68 Downloading opentelemetry_instrumentation_dbapi-0.59b0-py3-none-any.whl (13 kB)
+2025-10-23T08:55:48.8333090Z #9 27.69 Downloading opentelemetry_instrumentation_requests-0.59b0-py3-none-any.whl (12 kB)
+2025-10-23T08:55:48.8335297Z #9 27.71 Downloading opentelemetry_instrumentation_urllib-0.59b0-py3-none-any.whl (12 kB)
+2025-10-23T08:55:48.8335874Z #9 27.73 Downloading opentelemetry_instrumentation_urllib3-0.59b0-py3-none-any.whl (13 kB)
+2025-10-23T08:55:48.8336241Z #9 27.74 Downloading opentelemetry_resource_detector_azure-0.1.5-py3-none-any.whl (14 kB)
+2025-10-23T08:55:48.8336620Z #9 27.76 Downloading ormsgpack-1.11.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (207 kB)
+2025-10-23T08:55:48.8337267Z #9 27.77    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 207.4/207.4 kB 55.9 MB/s eta 0:00:00
+2025-10-23T08:55:48.8337462Z #9 27.78 Downloading referencing-0.37.0-py3-none-any.whl (26 kB)
+2025-10-23T08:55:48.9452051Z #9 27.80 Downloading rpds_py-0.28.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (382 kB)
+2025-10-23T08:55:48.9453224Z #9 27.80    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 382.9/382.9 kB 65.2 MB/s eta 0:00:00
+2025-10-23T08:55:48.9453915Z #9 27.82 Downloading zipp-3.23.0-py3-none-any.whl (10 kB)
+2025-10-23T08:55:48.9454394Z #9 27.83 Downloading googleapis_common_protos-1.71.0-py3-none-any.whl (294 kB)
+2025-10-23T08:55:48.9455060Z #9 27.84    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 294.6/294.6 kB 61.1 MB/s eta 0:00:00
+2025-10-23T08:55:48.9455517Z #9 27.85 Downloading proto_plus-1.26.1-py3-none-any.whl (50 kB)
+2025-10-23T08:55:48.9456141Z #9 27.86    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 50.2/50.2 kB 11.1 MB/s eta 0:00:00
+2025-10-23T08:55:48.9456567Z #9 27.87 Downloading psutil-7.1.1-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (290 kB)
+2025-10-23T08:55:48.9457216Z #9 27.88    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 290.1/290.1 kB 66.7 MB/s eta 0:00:00
+2025-10-23T08:55:48.9460940Z #9 27.89 Downloading pyasn1_modules-0.4.2-py3-none-any.whl (181 kB)
+2025-10-23T08:55:49.1466619Z #9 27.90    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 181.3/181.3 kB 40.1 MB/s eta 0:00:00
+2025-10-23T08:55:49.1468867Z #9 27.91 Downloading smmap-5.0.2-py3-none-any.whl (24 kB)
+2025-10-23T08:55:49.1469542Z #9 27.93 Downloading wrapt-1.17.3-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (82 kB)
+2025-10-23T08:55:49.1470409Z #9 27.93    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 82.4/82.4 kB 29.5 MB/s eta 0:00:00
+2025-10-23T08:55:49.1470932Z #9 27.94 Downloading asgiref-3.10.0-py3-none-any.whl (24 kB)
+2025-10-23T08:55:49.5710919Z ##[debug]Agent environment resources - Disk: / Available 19182.32 MB out of 73325.30 MB, Memory: Used 1163.00 MB out of 7944.00 MB, CPU: Usage 36.76%
+2025-10-23T08:55:50.1656526Z #9 29.11 Installing collected packages: pytz, passlib, opencensus-context, fixedint, azure-common, zstandard, zipp, xxhash, wrapt, websockets, wcwidth, vine, uvloop, urllib3, tzdata, typing-extensions, tqdm, tenacity, structlog, sqlparse, sniffio, smmap, six, rpds-py, regex, redis, pyyaml, python-multipart, python-dotenv, PyPDF2, PyJWT, pygments, pycparser, pyasn1, psycopg-binary, psutil, protobuf, propcache, prometheus-client, pluggy, packaging, ormsgpack, orjson, opentelemetry-util-http, oauthlib, numpy, mypy-extensions, multidict, mdurl, MarkupSafe, lxml, jsonpointer, jiter, isodate, iniconfig, idna, httpx-sse, httptools, h11, greenlet, frozenlist, et-xmlfile, distro, colorama, cloudpickle, click, charset_normalizer, certifi, cachetools, billiard, bcrypt, attrs, asgiref, annotated-types, aiohappyeyeballs, aiofiles, yarl, uvicorn, typing-inspection, typing-inspect, sqlalchemy, rsa, requests, referencing, python-docx, python-dateutil, pytest, pydash, pydantic-core, pyasn1-modules, psycopg-pool, psycopg, proto-plus, prompt-toolkit, openpyxl, marshmallow, markdown-it-py, Mako, jsonpatch, importlib_metadata, httpcore, gunicorn, googleapis-common-protos, gitdb, ecdsa, click-plugins, click-didyoumean, cffi, anyio, amqp, aiosignal, watchfiles, tiktoken, strictyaml, starlette, rich, requests-toolbelt, requests-oauthlib, python-jose, pytest-asyncio, pydantic, pandas, opentelemetry-api, kombu, jsonschema-specifications, httpx, google-auth, gitpython, dataclasses-json, cryptography, croniter, click-repl, azure-core, alembic, aiohttp, pydantic-settings, opentelemetry-semantic-conventions, openai, msrest, langsmith, langgraph-sdk, jsonschema, google-api-core, fastapi, databricks-sdk, celery, azure-storage-file-share, azure-storage-blob, azure-search-documents, azure-mgmt-core, azure-keyvault-secrets, azure-core-tracing-opentelemetry, azure-ai-agents, opentelemetry-sdk, opentelemetry-instrumentation, opencensus, msal, langchain-core, azure-storage-file-datalake, azure-mgmt-storage, azure-mgmt-search, azure-mgmt-resource, azure-mgmt-cognitiveservices, azure-ai-projects, opentelemetry-resource-detector-azure, opentelemetry-instrumentation-wsgi, opentelemetry-instrumentation-urllib3, opentelemetry-instrumentation-urllib, opentelemetry-instrumentation-requests, opentelemetry-instrumentation-dbapi, opentelemetry-instrumentation-asgi, opencensus-ext-logging, Office365-REST-Python-Client, msal-extensions, mlflow-skinny, langgraph-checkpoint, langchain_text_splitters, langchain-openai, opentelemetry-instrumentation-psycopg2, opentelemetry-instrumentation-flask, opentelemetry-instrumentation-fastapi, opentelemetry-instrumentation-django, langgraph-prebuilt, langchain-classic, azure-identity, langgraph, langchain-community, azure-monitor-opentelemetry-exporter, langchain, azure-monitor-opentelemetry, azure-ai-ml, azure-ai-resources, azwrap
+2025-10-23T08:55:55.6751802Z ##[debug]Agent environment resources - Disk: / Available 18968.64 MB out of 73325.30 MB, Memory: Used 1197.00 MB out of 7944.00 MB, CPU: Usage 52.29%
+2025-10-23T08:56:01.7783740Z ##[debug]Agent environment resources - Disk: / Available 18817.68 MB out of 73325.30 MB, Memory: Used 1211.00 MB out of 7944.00 MB, CPU: Usage 51.50%
+2025-10-23T08:56:07.8844497Z ##[debug]Agent environment resources - Disk: / Available 18668.71 MB out of 73325.30 MB, Memory: Used 1208.00 MB out of 7944.00 MB, CPU: Usage 52.67%
+2025-10-23T08:56:13.9875118Z ##[debug]Agent environment resources - Disk: / Available 18558.31 MB out of 73325.30 MB, Memory: Used 1188.00 MB out of 7944.00 MB, CPU: Usage 50.74%
+2025-10-23T08:56:18.9874100Z ##[debug]Agent environment resources - Disk: / Available 18463.74 MB out of 73325.30 MB, Memory: Used 1208.00 MB out of 7944.00 MB, CPU: Usage 50.74%
+2025-10-23T08:56:23.9882854Z ##[debug]Agent environment resources - Disk: / Available 18308.38 MB out of 73325.30 MB, Memory: Used 1207.00 MB out of 7944.00 MB, CPU: Usage 52.24%
+2025-10-23T08:56:28.9893516Z ##[debug]Agent environment resources - Disk: / Available 18238.66 MB out of 73325.30 MB, Memory: Used 1236.00 MB out of 7944.00 MB, CPU: Usage 50.71%
+2025-10-23T08:56:30.7926541Z #9 69.74 Successfully installed Mako-1.3.10 MarkupSafe-3.0.3 Office365-REST-Python-Client-2.6.2 PyJWT-2.10.1 PyPDF2-3.0.1 aiofiles-25.1.0 aiohappyeyeballs-2.6.1 aiohttp-3.13.1 aiosignal-1.4.0 alembic-1.12.1 amqp-5.3.1 annotated-types-0.7.0 anyio-3.7.1 asgiref-3.10.0 attrs-25.4.0 azure-ai-agents-1.2.0b5 azure-ai-ml-1.29.0 azure-ai-projects-1.1.0b4 azure-ai-resources-1.0.0b9 azure-common-1.1.28 azure-core-1.36.0 azure-core-tracing-opentelemetry-1.0.0b12 azure-identity-1.25.1 azure-keyvault-secrets-4.7.0 azure-mgmt-cognitiveservices-14.0.0 azure-mgmt-core-1.6.0 azure-mgmt-resource-22.0.0 azure-mgmt-search-9.2.0 azure-mgmt-storage-24.0.0 azure-monitor-opentelemetry-1.8.1 azure-monitor-opentelemetry-exporter-1.0.0b44 azure-search-documents-11.6.0 azure-storage-blob-12.27.0 azure-storage-file-datalake-12.22.0 azure-storage-file-share-12.23.0 azwrap-0.1.7 bcrypt-5.0.0 billiard-4.2.2 cachetools-5.5.2 celery-5.3.4 certifi-2025.10.5 cffi-2.0.0 charset_normalizer-3.4.4 click-8.3.0 click-didyoumean-0.3.1 click-plugins-1.1.1.2 click-repl-0.3.0 cloudpickle-3.1.1 colorama-0.4.6 croniter-6.0.0 cryptography-41.0.7 databricks-sdk-0.69.0 dataclasses-json-0.6.7 distro-1.9.0 ecdsa-0.19.1 et-xmlfile-2.0.0 fastapi-0.104.1 fixedint-0.1.6 frozenlist-1.8.0 gitdb-4.0.12 gitpython-3.1.45 google-api-core-2.27.0 google-auth-2.41.1 googleapis-common-protos-1.71.0 greenlet-3.2.4 gunicorn-21.2.0 h11-0.16.0 httpcore-1.0.9 httptools-0.7.1 httpx-0.28.1 httpx-sse-0.4.3 idna-3.11 importlib_metadata-8.7.0 iniconfig-2.3.0 isodate-0.7.2 jiter-0.11.1 jsonpatch-1.33 jsonpointer-3.0.0 jsonschema-4.25.1 jsonschema-specifications-2025.9.1 kombu-5.5.4 langchain-1.0.2 langchain-classic-1.0.0 langchain-community-0.4 langchain-core-1.0.0 langchain-openai-1.0.1 langchain_text_splitters-1.0.0 langgraph-1.0.1 langgraph-checkpoint-3.0.0 langgraph-prebuilt-1.0.1 langgraph-sdk-0.2.9 langsmith-0.4.37 lxml-6.0.2 markdown-it-py-4.0.0 marshmallow-3.26.1 mdurl-0.1.2 mlflow-skinny-2.22.2 msal-1.34.0 msal-extensions-1.3.1 msrest-0.7.1 multidict-6.7.0 mypy-extensions-1.1.0 numpy-2.3.4 oauthlib-3.3.1 openai-2.6.0 opencensus-0.11.4 opencensus-context-0.1.3 opencensus-ext-logging-0.1.1 openpyxl-3.1.5 opentelemetry-api-1.38.0 opentelemetry-instrumentation-0.59b0 opentelemetry-instrumentation-asgi-0.59b0 opentelemetry-instrumentation-dbapi-0.59b0 opentelemetry-instrumentation-django-0.59b0 opentelemetry-instrumentation-fastapi-0.59b0 opentelemetry-instrumentation-flask-0.59b0 opentelemetry-instrumentation-psycopg2-0.59b0 opentelemetry-instrumentation-requests-0.59b0 opentelemetry-instrumentation-urllib-0.59b0 opentelemetry-instrumentation-urllib3-0.59b0 opentelemetry-instrumentation-wsgi-0.59b0 opentelemetry-resource-detector-azure-0.1.5 opentelemetry-sdk-1.38.0 opentelemetry-semantic-conventions-0.59b0 opentelemetry-util-http-0.59b0 orjson-3.11.3 ormsgpack-1.11.0 packaging-24.2 pandas-2.3.3 passlib-1.7.4 pluggy-1.6.0 prometheus-client-0.19.0 prompt-toolkit-3.0.52 propcache-0.4.1 proto-plus-1.26.1 protobuf-6.33.0 psutil-7.1.1 psycopg-3.2.11 psycopg-binary-3.2.11 psycopg-pool-3.2.6 pyasn1-0.6.1 pyasn1-modules-0.4.2 pycparser-2.23 pydantic-2.12.3 pydantic-core-2.41.4 pydantic-settings-2.11.0 pydash-8.0.5 pygments-2.19.2 pytest-7.4.3 pytest-asyncio-0.21.1 python-dateutil-2.8.2 python-docx-1.2.0 python-dotenv-1.1.1 python-jose-3.3.0 python-multipart-0.0.6 pytz-2025.2 pyyaml-6.0.3 redis-5.0.1 referencing-0.37.0 regex-2025.10.23 requests-2.32.5 requests-oauthlib-2.0.0 requests-toolbelt-1.0.0 rich-14.2.0 rpds-py-0.28.0 rsa-4.9.1 six-1.17.0 smmap-5.0.2 sniffio-1.3.1 sqlalchemy-2.0.23 sqlparse-0.5.3 starlette-0.27.0 strictyaml-1.7.3 structlog-25.4.0 tenacity-9.1.2 tiktoken-0.12.0 tqdm-4.67.1 typing-extensions-4.15.0 typing-inspect-0.9.0 typing-inspection-0.4.2 tzdata-2025.2 urllib3-2.5.0 uvicorn-0.24.0 uvloop-0.22.1 vine-5.1.0 watchfiles-1.1.1 wcwidth-0.2.14 websockets-15.0.1 wrapt-1.17.3 xxhash-3.6.0 yarl-1.22.0 zipp-3.23.0 zstandard-0.25.0
+2025-10-23T08:56:30.9005424Z #9 69.74 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+2025-10-23T08:56:30.9009137Z #9 69.85 
+2025-10-23T08:56:30.9009404Z #9 69.85 [notice] A new release of pip is available: 24.0 -> 25.2
+2025-10-23T08:56:30.9009676Z #9 69.85 [notice] To update, run: pip install --upgrade pip
+2025-10-23T08:56:33.9911230Z ##[debug]Agent environment resources - Disk: / Available 18227.57 MB out of 73325.30 MB, Memory: Used 1233.00 MB out of 7944.00 MB, CPU: Usage 51.00%
+2025-10-23T08:56:34.7378766Z #9 DONE 73.7s
+2025-10-23T08:56:34.9468643Z 
+2025-10-23T08:56:34.9469504Z #10 [6/9] COPY src/ ./src/
+2025-10-23T08:56:34.9469729Z #10 DONE 0.0s
+2025-10-23T08:56:34.9469811Z 
+2025-10-23T08:56:34.9470028Z #11 [7/9] COPY web_service/ ./web_service/
+2025-10-23T08:56:34.9470267Z #11 DONE 0.0s
+2025-10-23T08:56:34.9470370Z 
+2025-10-23T08:56:34.9470664Z #12 [8/9] RUN mkdir -p /app/logs /app/data &&     chown -R appuser:appuser /app
+2025-10-23T08:56:35.0411153Z #12 DONE 0.2s
+2025-10-23T08:56:35.2321597Z 
+2025-10-23T08:56:35.2333338Z #13 [9/9] WORKDIR /app/web_service
+2025-10-23T08:56:35.2333798Z #13 DONE 0.0s
+2025-10-23T08:56:35.2333905Z 
+2025-10-23T08:56:35.2334132Z #14 exporting to image
+2025-10-23T08:56:35.2334470Z #14 exporting layers
+2025-10-23T08:56:38.9906363Z ##[debug]Agent environment resources - Disk: / Available 18345.21 MB out of 73325.30 MB, Memory: Used 894.00 MB out of 7944.00 MB, CPU: Usage 51.00%
+2025-10-23T08:56:43.9913120Z ##[debug]Agent environment resources - Disk: / Available 18342.35 MB out of 73325.30 MB, Memory: Used 1338.00 MB out of 7944.00 MB, CPU: Usage 99.00%
+2025-10-23T08:56:48.0885642Z #14 exporting layers 13.0s done
+2025-10-23T08:56:48.1146080Z #14 writing image sha256:8841076bd2a9b3f3c03f05a3ac12db96107acc2705e6072b5d4e289efb99b2f3 done
+2025-10-23T08:56:48.1148057Z #14 naming to docker.io/ai/knowledge-base-sectest:latest done
+2025-10-23T08:56:48.1150671Z #14 DONE 13.0s
+2025-10-23T08:56:48.1209866Z 
+2025-10-23T08:56:48.1213461Z ##[debug]Exit code 0 received from tool '/usr/bin/docker'
+2025-10-23T08:56:48.1219488Z ##[debug]STDIO streams have closed for tool '/usr/bin/docker'
+2025-10-23T08:56:48.1227002Z ##[debug]agent.tempDirectory=/home/vsts/work/_temp
+2025-10-23T08:56:48.1253034Z ##[debug]Synced the file content to the disk. The content is .
+2025-10-23T08:56:48.1257638Z ##[warning]No data was written into the file /home/vsts/work/_temp/task_outputs/build_1761209808122.txt
+2025-10-23T08:56:48.1259313Z ##[debug]Processed: ##vso[task.issue type=warning;source=TaskInternal;correlationId=0f29af08-8a07-470f-89b9-0af6ae6a26e3;]No data was written into the file /home/vsts/work/_temp/task_outputs/build_1761209808122.txt
+2025-10-23T08:56:48.1266328Z ##[debug]set DockerOutput=/home/vsts/work/_temp/task_outputs/build_1761209808122.txt
+2025-10-23T08:56:48.1274958Z ##[debug]Processed: ##vso[task.setvariable variable=DockerOutput;isOutput=false;issecret=false;]/home/vsts/work/_temp/task_outputs/build_1761209808122.txt
+2025-10-23T08:56:48.1275638Z ##[debug]task result: Succeeded
+2025-10-23T08:56:48.1276862Z ##[debug]Processed: ##vso[task.complete result=Succeeded;]
+2025-10-23T08:56:48.1324958Z ##[section]Finishing: BUILD DOCKER IMAGE WITH TAGS

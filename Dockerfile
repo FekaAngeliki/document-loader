@@ -16,6 +16,7 @@ COPY requirements.txt ./requirements.txt
 ENV PYTHONHTTPSVERIFY=0
 ENV CURL_CA_BUNDLE=""
 ENV REQUESTS_CA_BUNDLE=""
+
 RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 # Copy application code

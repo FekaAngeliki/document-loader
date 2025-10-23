@@ -51,7 +51,7 @@ croniter>=1.4.1
 
 # Document loader core dependencies
 azwrap>=0.1.4
-# pydapper>=0.12.0  # Currently unused - uncomment if needed later
+pydapper>=0.12.0  # Currently unused - uncomment if needed later
 Office365-REST-Python-Client>=2.5.7
 click>=8.2.0
 pyyaml>=6.0.2
