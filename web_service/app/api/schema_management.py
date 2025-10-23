@@ -19,6 +19,132 @@ import psycopg
 
 router = APIRouter()
 
+# Helper function to get detailed table schema information
+async def get_table_schema_details(db: Database, schema_name: str, table_name: str):
+    """Get detailed schema information for a specific table."""
+    try:
+        # Get column information
+        columns_info = await db.fetch("""
+            SELECT 
+                column_name,
+                data_type,
+                character_maximum_length,
+                numeric_precision,
+                numeric_scale,
+                is_nullable,
+                column_default,
+                ordinal_position,
+                udt_name
+            FROM information_schema.columns 
+            WHERE table_schema = %s AND table_name = %s
+            ORDER BY ordinal_position
+        """, schema_name, table_name)
+        
+        # Get constraints information
+        constraints_info = await db.fetch("""
+            SELECT 
+                tc.constraint_name,
+                tc.constraint_type,
+                kcu.column_name,
+                ccu.table_name AS foreign_table_name,
+                ccu.column_name AS foreign_column_name
+            FROM information_schema.table_constraints tc
+            LEFT JOIN information_schema.key_column_usage kcu 
+                ON tc.constraint_name = kcu.constraint_name
+                AND tc.table_schema = kcu.table_schema
+            LEFT JOIN information_schema.constraint_column_usage ccu
+                ON tc.constraint_name = ccu.constraint_name
+                AND tc.table_schema = ccu.table_schema
+            WHERE tc.table_schema = %s AND tc.table_name = %s
+        """, schema_name, table_name)
+        
+        # Get indexes information
+        indexes_info = await db.fetch("""
+            SELECT 
+                i.relname as index_name,
+                a.attname as column_name,
+                ix.indisunique as is_unique,
+                ix.indisprimary as is_primary
+            FROM pg_class t
+            JOIN pg_index ix ON t.oid = ix.indrelid
+            JOIN pg_class i ON i.oid = ix.indexrelid
+            JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
+            JOIN pg_namespace n ON n.oid = t.relnamespace
+            WHERE n.nspname = %s AND t.relname = %s
+            ORDER BY i.relname, a.attnum
+        """, schema_name, table_name)
+        
+        # Format columns
+        columns = []
+        for col in columns_info:
+            column_def = {
+                "name": col["column_name"],
+                "data_type": col["data_type"],
+                "udt_name": col["udt_name"],
+                "is_nullable": col["is_nullable"] == "YES",
+                "default": col["column_default"],
+                "position": col["ordinal_position"]
+            }
+            
+            # Add length/precision info
+            if col["character_maximum_length"]:
+                column_def["max_length"] = col["character_maximum_length"]
+            if col["numeric_precision"]:
+                column_def["precision"] = col["numeric_precision"]
+            if col["numeric_scale"]:
+                column_def["scale"] = col["numeric_scale"]
+                
+            columns.append(column_def)
+        
+        # Format constraints
+        constraints = []
+        constraint_map = {}
+        for constraint in constraints_info:
+            key = constraint["constraint_name"]
+            if key not in constraint_map:
+                constraint_map[key] = {
+                    "name": constraint["constraint_name"],
+                    "type": constraint["constraint_type"],
+                    "columns": [],
+                    "foreign_table": constraint["foreign_table_name"],
+                    "foreign_column": constraint["foreign_column_name"]
+                }
+            if constraint["column_name"]:
+                constraint_map[key]["columns"].append(constraint["column_name"])
+        
+        constraints = list(constraint_map.values())
+        
+        # Format indexes
+        indexes = []
+        index_map = {}
+        for idx in indexes_info:
+            key = idx["index_name"]
+            if key not in index_map:
+                index_map[key] = {
+                    "name": idx["index_name"],
+                    "columns": [],
+                    "is_unique": idx["is_unique"],
+                    "is_primary": idx["is_primary"]
+                }
+            index_map[key]["columns"].append(idx["column_name"])
+        
+        indexes = list(index_map.values())
+        
+        return {
+            "columns": columns,
+            "constraints": constraints,
+            "indexes": indexes
+        }
+        
+    except Exception as e:
+        # Return empty structure if table schema cannot be read
+        return {
+            "columns": [],
+            "constraints": [],
+            "indexes": [],
+            "error": str(e)
+        }
+
 # Pydantic models for API requests/responses
 class SchemaCreateRequest(BaseModel):
     name: str
@@ -301,7 +427,7 @@ async def get_schema_info(
             
             # Get comprehensive schema information
             
-            # 1. Basic table information
+            # 1. Enhanced table information with detailed schema
             tables_info = await db.fetch("""
                 SELECT 
                     table_name,
@@ -326,11 +452,17 @@ async def get_schema_info(
                 except:
                     record_count = 0
                 
+                # Get detailed schema information for each table
+                schema_details = await get_table_schema_details(
+                    db, request.schema_name, table_info["table_name"]
+                )
+                
                 tables.append({
                     "name": table_info["table_name"],
                     "columns": table_info["column_count"],
                     "records": record_count,
-                    "size": table_info["table_size"]
+                    "size": table_info["table_size"],
+                    "schema": schema_details
                 })
             
             # 2. Knowledge base details

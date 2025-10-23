@@ -162,6 +162,54 @@
             background: #dc2626;
         }
         
+        .btn-small {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
+        
+        /* Badge styles for table schema display */
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-align: center;
+            white-space: nowrap;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        
+        .badge-primary {
+            background-color: var(--nbg-primary);
+            color: white;
+        }
+        
+        .badge-secondary {
+            background-color: var(--nbg-secondary);
+            color: white;
+        }
+        
+        .badge-accent {
+            background-color: var(--nbg-accent);
+            color: white;
+        }
+        
+        .badge-success {
+            background-color: var(--nbg-accent);
+            color: white;
+        }
+        
+        .badge-warning {
+            background-color: var(--nbg-warning);
+            color: white;
+        }
+        
+        .badge-gray {
+            background-color: var(--nbg-gray);
+            color: white;
+        }
+        
         .search-box {
             padding: 0.75rem;
             border: 2px solid #e2e8f0;
@@ -1177,6 +1225,7 @@
                                                 <th>Columns</th>
                                                 <th>Records</th>
                                                 <th>Size</th>
+                                                <th>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -1186,6 +1235,12 @@
                                                     <td>${table.columns}</td>
                                                     <td>${table.records.toLocaleString()}</td>
                                                     <td>${table.size}</td>
+                                                    <td>
+                                                        <button class="btn-small btn-secondary" 
+                                                                onclick="viewTableSchema('${schema.schema_name}', '${table.name}', ${JSON.stringify(table.schema).replace(/"/g, '&quot;')})">
+                                                            📋 View Schema
+                                                        </button>
+                                                    </td>
                                                 </tr>
                                             `).join('')}
                                         </tbody>
@@ -1303,6 +1358,152 @@
                 console.error('Error loading schema details:', error);
                 showAlert(`Failed to load schema details: ${error.message}`, 'error');
             }
+        }
+
+        // Table Schema Viewer
+        function viewTableSchema(schemaName, tableName, tableSchema) {
+            const modalHtml = `
+                <div class="modal-overlay" id="table-schema-modal">
+                    <div class="modal" style="max-width: 900px; max-height: 80vh; overflow-y: auto;">
+                        <div class="modal-header">
+                            <h3>📋 Table Schema: ${schemaName}.${tableName}</h3>
+                            <button class="modal-close" onclick="closeModal('table-schema-modal')">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            ${tableSchema.error ? `
+                                <div class="alert alert-danger">
+                                    <strong>Error:</strong> ${tableSchema.error}
+                                </div>
+                            ` : `
+                                <!-- Columns Section -->
+                                <div style="margin-bottom: 2rem;">
+                                    <h4 style="color: var(--nbg-primary); margin-bottom: 1rem;">📊 Columns (${tableSchema.columns?.length || 0})</h4>
+                                    ${tableSchema.columns && tableSchema.columns.length > 0 ? `
+                                        <div style="overflow-x: auto;">
+                                            <table class="data-table" style="font-size: 0.85rem;">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Position</th>
+                                                        <th>Column Name</th>
+                                                        <th>Data Type</th>
+                                                        <th>Nullable</th>
+                                                        <th>Default</th>
+                                                        <th>Details</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${tableSchema.columns.map(col => `
+                                                        <tr>
+                                                            <td>${col.position}</td>
+                                                            <td><strong>${col.name}</strong></td>
+                                                            <td><code>${col.data_type}${col.udt_name !== col.data_type ? ' (' + col.udt_name + ')' : ''}</code></td>
+                                                            <td>
+                                                                <span class="badge ${col.is_nullable ? 'badge-warning' : 'badge-success'}">
+                                                                    ${col.is_nullable ? 'NULL' : 'NOT NULL'}
+                                                                </span>
+                                                            </td>
+                                                            <td><code>${col.default || '-'}</code></td>
+                                                            <td>
+                                                                ${col.max_length ? `Length: ${col.max_length}<br>` : ''}
+                                                                ${col.precision ? `Precision: ${col.precision}` : ''}
+                                                                ${col.scale ? `, Scale: ${col.scale}` : ''}
+                                                            </td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ` : '<p style="color: var(--nbg-gray);">No columns found</p>'}
+                                </div>
+
+                                <!-- Constraints Section -->
+                                <div style="margin-bottom: 2rem;">
+                                    <h4 style="color: var(--nbg-primary); margin-bottom: 1rem;">🔐 Constraints (${tableSchema.constraints?.length || 0})</h4>
+                                    ${tableSchema.constraints && tableSchema.constraints.length > 0 ? `
+                                        <div style="overflow-x: auto;">
+                                            <table class="data-table" style="font-size: 0.85rem;">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Constraint Name</th>
+                                                        <th>Type</th>
+                                                        <th>Columns</th>
+                                                        <th>References</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${tableSchema.constraints.map(constraint => `
+                                                        <tr>
+                                                            <td><code>${constraint.name}</code></td>
+                                                            <td>
+                                                                <span class="badge ${
+                                                                    constraint.type === 'PRIMARY KEY' ? 'badge-primary' :
+                                                                    constraint.type === 'FOREIGN KEY' ? 'badge-secondary' :
+                                                                    constraint.type === 'UNIQUE' ? 'badge-accent' : 'badge-gray'
+                                                                }">
+                                                                    ${constraint.type}
+                                                                </span>
+                                                            </td>
+                                                            <td><code>${constraint.columns?.join(', ') || '-'}</code></td>
+                                                            <td>
+                                                                ${constraint.foreign_table ? 
+                                                                    `<code>${constraint.foreign_table}.${constraint.foreign_column}</code>` : 
+                                                                    '-'
+                                                                }
+                                                            </td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ` : '<p style="color: var(--nbg-gray);">No constraints found</p>'}
+                                </div>
+
+                                <!-- Indexes Section -->
+                                <div>
+                                    <h4 style="color: var(--nbg-primary); margin-bottom: 1rem;">📑 Indexes (${tableSchema.indexes?.length || 0})</h4>
+                                    ${tableSchema.indexes && tableSchema.indexes.length > 0 ? `
+                                        <div style="overflow-x: auto;">
+                                            <table class="data-table" style="font-size: 0.85rem;">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Index Name</th>
+                                                        <th>Columns</th>
+                                                        <th>Unique</th>
+                                                        <th>Primary</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${tableSchema.indexes.map(index => `
+                                                        <tr>
+                                                            <td><code>${index.name}</code></td>
+                                                            <td><code>${index.columns?.join(', ') || '-'}</code></td>
+                                                            <td>
+                                                                <span class="badge ${index.is_unique ? 'badge-success' : 'badge-gray'}">
+                                                                    ${index.is_unique ? 'UNIQUE' : 'NORMAL'}
+                                                                </span>
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge ${index.is_primary ? 'badge-primary' : 'badge-gray'}">
+                                                                    ${index.is_primary ? 'PRIMARY' : 'NORMAL'}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ` : '<p style="color: var(--nbg-gray);">No indexes found</p>'}
+                                </div>
+                            `}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeModal('table-schema-modal')">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
         }
 
         // Utility Functions
