@@ -1327,21 +1327,32 @@
 
         function updateConnectionStatus(result, databaseName) {
             const isCustom = databaseName && databaseName !== '';
-            const statusElement = document.getElementById(isCustom ? 'custom-connection-status' : 'default-connection-status');
-            const detailsElement = document.getElementById('custom-connection-details');
-            
-            statusElement.innerHTML = `
-                <span class="status-indicator ${result.success ? 'status-online' : 'status-offline'}">
-                    <span class="status-dot"></span>
-                    ${result.success ? 'Connected' : 'Failed'}
-                </span>
-                <div style="margin-top: 0.5rem; font-size: 0.9rem;">
-                    ${result.message}
-                </div>
-            `;
             
             if (isCustom) {
-                document.getElementById('custom-connection-results').style.display = 'block';
+                // For individual database tests, always show in custom results area
+                const customResultsDiv = document.getElementById('custom-connection-results');
+                const statusElement = document.getElementById('custom-connection-status');
+                const detailsElement = document.getElementById('custom-connection-details');
+                
+                // Make sure the custom results area is visible
+                customResultsDiv.style.display = 'block';
+                
+                // Update the header to show which database was tested
+                const headerElement = customResultsDiv.querySelector('h4');
+                if (headerElement) {
+                    headerElement.textContent = `Database: ${databaseName}`;
+                }
+                
+                statusElement.innerHTML = `
+                    <span class="status-indicator ${result.success ? 'status-online' : 'status-offline'}">
+                        <span class="status-dot"></span>
+                        ${result.success ? 'Connected' : 'Failed'}
+                    </span>
+                    <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                        ${result.message}
+                    </div>
+                `;
+                
                 if (detailsElement) {
                     detailsElement.innerHTML = `
                         Host: ${result.host}<br>
@@ -1350,11 +1361,51 @@
                         User: ${result.user}
                     `;
                 }
+            } else {
+                // For default connection test, update default status
+                const statusElement = document.getElementById('default-connection-status');
+                statusElement.innerHTML = `
+                    <span class="status-indicator ${result.success ? 'status-online' : 'status-offline'}">
+                        <span class="status-dot"></span>
+                        ${result.success ? 'Connected' : 'Failed'}
+                    </span>
+                    <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                        ${result.message}
+                    </div>
+                `;
             }
         }
 
         async function testConnectionToDatabase(databaseName) {
-            await testConnection(databaseName);
+            try {
+                console.log(`Testing connection to database: ${databaseName}`);
+                
+                const response = await fetch(`${API_BASE}/connection/check`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ database_name: databaseName })
+                });
+                
+                const result = await response.json();
+                console.log('Connection test result:', result);
+                
+                if (response.ok) {
+                    const statusText = result.success ? 'successful' : 'failed';
+                    const alertType = result.success ? 'success' : 'warning';
+                    showDbAlert(`Connection to "${databaseName}": ${statusText} - ${result.message}`, alertType);
+                    
+                    // Also show in the custom connection results area
+                    updateConnectionStatus(result, databaseName);
+                } else {
+                    throw new Error(result.detail || `HTTP ${response.status}`);
+                }
+                
+            } catch (error) {
+                console.error('Error testing database connection:', error);
+                showDbAlert(`Connection test to "${databaseName}" failed: ${error.message}`, 'error');
+            }
         }
 
         // Database CRUD Operations
