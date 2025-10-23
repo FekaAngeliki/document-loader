@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Loader - Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        
+        /* NBG Corporate Colors */
+        :root {
+            --nbg-primary: #1e3a8a;
+            --nbg-secondary: #3b82f6;
+            --nbg-accent: #10b981;
+            --nbg-warning: #f59e0b;
+            --nbg-danger: #ef4444;
+            --nbg-light: #f8fafc;
+            --nbg-dark: #1e293b;
+            --nbg-gray: #64748b;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--nbg-primary) 0%, var(--nbg-secondary) 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 300;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            margin-top: 0.5rem;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 1rem 2rem;
+            background: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab:hover {
+            background: var(--nbg-light);
+        }
+        
+        .tab.active {
+            background: var(--nbg-light);
+            border-bottom-color: var(--nbg-secondary);
+            color: var(--nbg-primary);
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Schema Management Styles */
+        .schema-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .schema-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: var(--nbg-primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--nbg-secondary);
+        }
+        
+        .btn-secondary {
+            background: var(--nbg-gray);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: var(--nbg-dark);
+        }
+        
+        .btn-success {
+            background: var(--nbg-accent);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        .btn-danger {
+            background: var(--nbg-danger);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .search-box {
+            padding: 0.75rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 1rem;
+            min-width: 300px;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: var(--nbg-secondary);
+        }
+        
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 2rem;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .data-table th {
+            background: var(--nbg-light);
+            font-weight: 600;
+            color: var(--nbg-primary);
+            position: sticky;
+            top: 0;
+        }
+        
+        .data-table tr:hover {
+            background: #f8fafc;
+        }
+        
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .status-online {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-offline {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-header h3 {
+            color: var(--nbg-primary);
+            font-size: 1.5rem;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--nbg-gray);
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--nbg-dark);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--nbg-secondary);
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .bulk-actions {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: var(--nbg-light);
+            border-radius: 6px;
+            display: none;
+        }
+        
+        .bulk-actions.active {
+            display: block;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid var(--nbg-secondary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            border-left: 4px solid;
+        }
+        
+        .alert-success {
+            background: #ecfdf5;
+            border-color: var(--nbg-accent);
+            color: #065f46;
+        }
+        
+        .alert-error {
+            background: #fef2f2;
+            border-color: var(--nbg-danger);
+            color: #991b1b;
+        }
+        
+        .alert-warning {
+            background: #fffbeb;
+            border-color: var(--nbg-warning);
+            color: #92400e;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .schema-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .schema-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            
+            .search-box {
+                min-width: auto;
+                width: 100%;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Document Loader - Admin Dashboard</h1>
+        <p>Schema Management, System Monitoring & Configuration</p>
+    </div>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('schema-management')">Schema Management</button>
+            <button class="tab" onclick="switchTab('system-health')">System Health</button>
+            <button class="tab" onclick="switchTab('knowledge-bases')">Knowledge Bases</button>
+            <button class="tab" onclick="switchTab('configuration')">Configuration</button>
+            <button class="tab" onclick="switchTab('api-testing')">API Testing</button>
+        </div>
+
+        <!-- Schema Management Tab -->
+        <div id="schema-management" class="tab-content active">
+            <div class="schema-header">
+                <div>
+                    <h2>Schema Management</h2>
+                    <p>Manage isolated schemas for different RAG use cases</p>
+                </div>
+                <div class="schema-actions">
+                    <input type="text" class="search-box" placeholder="Search schemas..." id="schema-search">
+                    <button class="btn btn-secondary" onclick="refreshSchemas()">
+                        🔄 Refresh
+                    </button>
+                    <button class="btn btn-primary" onclick="openCreateSchemaModal()">
+                        ➕ Create Schema
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bulk Actions -->
+            <div id="bulk-actions" class="bulk-actions">
+                <span id="selected-count">0 schemas selected</span>
+                <div style="margin-top: 0.5rem;">
+                    <button class="btn btn-danger" onclick="bulkDeleteSchemas()">🗑️ Delete Selected</button>
+                    <button class="btn btn-secondary" onclick="clearSelection()">Clear Selection</button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Loading schemas...</p>
+            </div>
+
+            <!-- Alerts -->
+            <div id="alerts"></div>
+
+            <!-- Schema Table -->
+            <div class="table-container">
+                <table class="data-table" id="schema-table">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" class="checkbox" id="select-all" onchange="toggleSelectAll()">
+                            </th>
+                            <th>Schema Name</th>
+                            <th>Description</th>
+                            <th>Tables</th>
+                            <th>Knowledge Bases</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schema-table-body">
+                        <!-- Schema data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Other tabs will be added later -->
+        <div id="system-health" class="tab-content">
+            <h2>System Health</h2>
+            <p>Coming soon...</p>
+        </div>
+
+        <div id="knowledge-bases" class="tab-content">
+            <h2>Knowledge Base Administration</h2>
+            <p>Coming soon...</p>
+        </div>
+
+        <div id="configuration" class="tab-content">
+            <h2>Configuration Management</h2>
+            <p>Coming soon...</p>
+        </div>
+
+        <div id="api-testing" class="tab-content">
+            <h2>API Testing</h2>
+            <p>Coming soon...</p>
+        </div>
+    </div>
+
+    <!-- Create Schema Modal -->
+    <div id="create-schema-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Schema</h3>
+                <button class="close-btn" onclick="closeModal('create-schema-modal')">&times;</button>
+            </div>
+            <form id="create-schema-form">
+                <div class="form-group">
+                    <label class="form-label">Schema Name *</label>
+                    <input type="text" class="form-input" id="schema-name" required>
+                    <small>Use lowercase letters, numbers, and underscores only</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-input form-textarea" id="schema-description" 
+                              placeholder="Optional description for this schema"></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('create-schema-modal')">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Create Schema
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-confirmation-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Schema Deletion</h3>
+                <button class="close-btn" onclick="closeModal('delete-confirmation-modal')">&times;</button>
+            </div>
+            <div class="alert alert-warning">
+                <strong>Warning:</strong> This action cannot be undone. All data in this schema will be permanently deleted.
+            </div>
+            <form id="delete-confirmation-form">
+                <div class="form-group">
+                    <label class="form-label">Type the schema name to confirm deletion:</label>
+                    <input type="text" class="form-input" id="delete-confirmation-input" required>
+                    <small id="schema-to-delete"></small>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('delete-confirmation-modal')">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-danger" id="confirm-delete-btn" disabled>
+                        Delete Schema
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Schema Details Modal -->
+    <div id="schema-details-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 id="schema-details-title">Schema Details</h3>
+                <button class="close-btn" onclick="closeModal('schema-details-modal')">&times;</button>
+            </div>
+            <div id="schema-details-content">
+                <!-- Schema details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = '/api/v1';
+        let schemas = [];
+        let selectedSchemas = new Set();
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSchemas();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Search functionality
+            document.getElementById('schema-search').addEventListener('input', filterSchemas);
+            
+            // Create schema form
+            document.getElementById('create-schema-form').addEventListener('submit', createSchema);
+            
+            // Delete confirmation form
+            document.getElementById('delete-confirmation-form').addEventListener('submit', confirmDelete);
+            document.getElementById('delete-confirmation-input').addEventListener('input', validateDeleteInput);
+        }
+
+        // Tab switching
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabId).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        // Schema Management Functions
+        async function loadSchemas() {
+            showLoading(true);
+            clearAlerts();
+            
+            try {
+                const response = await fetch(`${API_BASE}/schemas/list`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                schemas = data.schemas || [];
+                renderSchemas();
+                showAlert('Schemas loaded successfully', 'success');
+                
+            } catch (error) {
+                console.error('Error loading schemas:', error);
+                showAlert(`Failed to load schemas: ${error.message}`, 'error');
+                schemas = [];
+                renderSchemas();
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function renderSchemas() {
+            const tbody = document.getElementById('schema-table-body');
+            tbody.innerHTML = '';
+            
+            if (schemas.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: #64748b;">
+                            No schemas found. Create your first schema to get started.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            schemas.forEach(schema => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <input type="checkbox" class="checkbox schema-checkbox" 
+                               value="${schema.schema_name}" onchange="toggleSchemaSelection('${schema.schema_name}')">
+                    </td>
+                    <td><strong>${schema.schema_name}</strong></td>
+                    <td>${schema.description || '<em>No description</em>'}</td>
+                    <td>${schema.table_count}</td>
+                    <td>${schema.knowledge_bases_count}</td>
+                    <td>
+                        <span class="status-indicator ${schema.is_isolated ? 'status-online' : 'status-offline'}">
+                            <span class="status-dot"></span>
+                            ${schema.is_isolated ? 'Isolated' : 'Shared'}
+                        </span>
+                    </td>
+                    <td>-</td>
+                    <td>
+                        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
+                                onclick="viewSchemaDetails('${schema.schema_name}')">
+                            👁️ View
+                        </button>
+                        <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
+                                onclick="deleteSchema('${schema.schema_name}')">
+                            🗑️ Delete
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function filterSchemas() {
+            const searchTerm = document.getElementById('schema-search').value.toLowerCase();
+            const rows = document.querySelectorAll('#schema-table-body tr');
+            
+            rows.forEach(row => {
+                const schemaName = row.cells[1]?.textContent.toLowerCase() || '';
+                const description = row.cells[2]?.textContent.toLowerCase() || '';
+                
+                if (schemaName.includes(searchTerm) || description.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function refreshSchemas() {
+            loadSchemas();
+        }
+
+        // Selection Management
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('select-all');
+            const checkboxes = document.querySelectorAll('.schema-checkbox');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+                if (selectAll.checked) {
+                    selectedSchemas.add(checkbox.value);
+                } else {
+                    selectedSchemas.delete(checkbox.value);
+                }
+            });
+            
+            updateBulkActions();
+        }
+
+        function toggleSchemaSelection(schemaName) {
+            if (selectedSchemas.has(schemaName)) {
+                selectedSchemas.delete(schemaName);
+            } else {
+                selectedSchemas.add(schemaName);
+            }
+            
+            updateBulkActions();
+            updateSelectAllState();
+        }
+
+        function updateSelectAllState() {
+            const selectAll = document.getElementById('select-all');
+            const checkboxes = document.querySelectorAll('.schema-checkbox');
+            const checkedBoxes = document.querySelectorAll('.schema-checkbox:checked');
+            
+            selectAll.indeterminate = checkedBoxes.length > 0 && checkedBoxes.length < checkboxes.length;
+            selectAll.checked = checkboxes.length > 0 && checkedBoxes.length === checkboxes.length;
+        }
+
+        function updateBulkActions() {
+            const bulkActions = document.getElementById('bulk-actions');
+            const selectedCount = document.getElementById('selected-count');
+            
+            selectedCount.textContent = `${selectedSchemas.size} schema${selectedSchemas.size !== 1 ? 's' : ''} selected`;
+            
+            if (selectedSchemas.size > 0) {
+                bulkActions.classList.add('active');
+            } else {
+                bulkActions.classList.remove('active');
+            }
+        }
+
+        function clearSelection() {
+            selectedSchemas.clear();
+            document.querySelectorAll('.schema-checkbox').forEach(cb => cb.checked = false);
+            document.getElementById('select-all').checked = false;
+            updateBulkActions();
+        }
+
+        // Modal Functions
+        function openCreateSchemaModal() {
+            document.getElementById('create-schema-modal').classList.add('active');
+            document.getElementById('schema-name').focus();
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            
+            // Reset forms
+            if (modalId === 'create-schema-modal') {
+                document.getElementById('create-schema-form').reset();
+            } else if (modalId === 'delete-confirmation-modal') {
+                document.getElementById('delete-confirmation-form').reset();
+                document.getElementById('confirm-delete-btn').disabled = true;
+            }
+        }
+
+        // Schema Operations
+        async function createSchema(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('schema-name').value.trim();
+            const description = document.getElementById('schema-description').value.trim();
+            
+            try {
+                const response = await fetch(`${API_BASE}/schemas/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        description: description || null
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.detail || `HTTP ${response.status}`);
+                }
+                
+                showAlert(`Schema "${name}" created successfully`, 'success');
+                closeModal('create-schema-modal');
+                loadSchemas();
+                
+            } catch (error) {
+                console.error('Error creating schema:', error);
+                showAlert(`Failed to create schema: ${error.message}`, 'error');
+            }
+        }
+
+        function deleteSchema(schemaName) {
+            document.getElementById('schema-to-delete').textContent = `Schema to delete: ${schemaName}`;
+            document.getElementById('delete-confirmation-modal').classList.add('active');
+            document.getElementById('delete-confirmation-input').dataset.schemaName = schemaName;
+            document.getElementById('delete-confirmation-input').focus();
+        }
+
+        function validateDeleteInput() {
+            const input = document.getElementById('delete-confirmation-input');
+            const confirmBtn = document.getElementById('confirm-delete-btn');
+            const schemaName = input.dataset.schemaName;
+            
+            confirmBtn.disabled = input.value !== schemaName;
+        }
+
+        async function confirmDelete(event) {
+            event.preventDefault();
+            
+            const input = document.getElementById('delete-confirmation-input');
+            const schemaName = input.dataset.schemaName;
+            
+            try {
+                const response = await fetch(`${API_BASE}/schemas/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        schema_name: schemaName,
+                        force: true
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.detail || `HTTP ${response.status}`);
+                }
+                
+                showAlert(`Schema "${schemaName}" deleted successfully`, 'success');
+                closeModal('delete-confirmation-modal');
+                loadSchemas();
+                
+            } catch (error) {
+                console.error('Error deleting schema:', error);
+                showAlert(`Failed to delete schema: ${error.message}`, 'error');
+            }
+        }
+
+        async function bulkDeleteSchemas() {
+            if (selectedSchemas.size === 0) return;
+            
+            const confirmed = confirm(`Are you sure you want to delete ${selectedSchemas.size} schema(s)? This action cannot be undone.`);
+            if (!confirmed) return;
+            
+            showLoading(true);
+            let successCount = 0;
+            let errorCount = 0;
+            
+            for (const schemaName of selectedSchemas) {
+                try {
+                    const response = await fetch(`${API_BASE}/schemas/delete`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            schema_name: schemaName,
+                            force: true
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        successCount++;
+                    } else {
+                        errorCount++;
+                    }
+                } catch (error) {
+                    errorCount++;
+                }
+            }
+            
+            showLoading(false);
+            clearSelection();
+            
+            if (successCount > 0) {
+                showAlert(`Successfully deleted ${successCount} schema(s)`, 'success');
+            }
+            if (errorCount > 0) {
+                showAlert(`Failed to delete ${errorCount} schema(s)`, 'error');
+            }
+            
+            loadSchemas();
+        }
+
+        async function viewSchemaDetails(schemaName) {
+            try {
+                const response = await fetch(`${API_BASE}/schemas/info`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        schema_name: schemaName
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const schema = await response.json();
+                
+                document.getElementById('schema-details-title').textContent = `Schema: ${schema.schema_name}`;
+                document.getElementById('schema-details-content').innerHTML = `
+                    <div style="display: grid; gap: 1rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <strong>Schema Name:</strong><br>
+                                ${schema.schema_name}
+                            </div>
+                            <div>
+                                <strong>Type:</strong><br>
+                                ${schema.is_isolated ? 'Isolated' : 'Shared'}
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <strong>Tables:</strong><br>
+                                ${schema.table_count}
+                            </div>
+                            <div>
+                                <strong>Knowledge Bases:</strong><br>
+                                ${schema.knowledge_bases_count}
+                            </div>
+                        </div>
+                        ${schema.description ? `
+                            <div>
+                                <strong>Description:</strong><br>
+                                ${schema.description}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                document.getElementById('schema-details-modal').classList.add('active');
+                
+            } catch (error) {
+                console.error('Error loading schema details:', error);
+                showAlert(`Failed to load schema details: ${error.message}`, 'error');
+            }
+        }
+
+        // Utility Functions
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            if (show) {
+                loading.classList.add('active');
+            } else {
+                loading.classList.remove('active');
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertsContainer = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            alertsContainer.appendChild(alert);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        function clearAlerts() {
+            document.getElementById('alerts').innerHTML = '';
+        }
+
+        // Close modals when clicking outside
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
