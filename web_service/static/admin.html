@@ -1237,7 +1237,10 @@
                                                     <td>${table.size}</td>
                                                     <td>
                                                         <button class="btn-small btn-secondary" 
-                                                                onclick="viewTableSchema('${schema.schema_name}', '${table.name}', ${JSON.stringify(table.schema).replace(/"/g, '&quot;')})">
+                                                                data-schema-name="${schema.schema_name}" 
+                                                                data-table-name="${table.name}"
+                                                                data-table-schema='${JSON.stringify(table.schema)}'
+                                                                onclick="viewTableSchemaFromButton(this)">
                                                             📋 View Schema
                                                         </button>
                                                     </td>
@@ -1357,6 +1360,21 @@
             } catch (error) {
                 console.error('Error loading schema details:', error);
                 showAlert(`Failed to load schema details: ${error.message}`, 'error');
+            }
+        }
+
+        // Table Schema Viewer Helper
+        function viewTableSchemaFromButton(button) {
+            const schemaName = button.getAttribute('data-schema-name');
+            const tableName = button.getAttribute('data-table-name');
+            const tableSchemaJson = button.getAttribute('data-table-schema');
+            
+            try {
+                const tableSchema = JSON.parse(tableSchemaJson);
+                viewTableSchema(schemaName, tableName, tableSchema);
+            } catch (error) {
+                console.error('Failed to parse table schema:', error);
+                showAlert('Failed to load table schema: Invalid data format', 'error');
             }
         }
 
