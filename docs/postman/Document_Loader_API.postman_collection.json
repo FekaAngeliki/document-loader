@@ -47,9 +47,9 @@
               "raw": "{}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/schemas/connection/check",
+              "raw": "{{baseUrl}}/api/v1/connection/check",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "schemas", "connection", "check"]
+              "path": ["api", "v1", "connection", "check"]
             },
             "description": "Test database connectivity to default database.\nUses secure request body instead of URL parameters.\nEquivalent to CLI: document-loader check-connection"
           }
@@ -69,9 +69,9 @@
               "raw": "{\n  \"database_name\": \"rag_kb_manage_dum\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/schemas/connection/check",
+              "raw": "{{baseUrl}}/api/v1/connection/check",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "schemas", "connection", "check"]
+              "path": ["api", "v1", "connection", "check"]
             },
             "description": "Test database connectivity with custom database name.\nUses secure request body instead of URL parameters.\nEquivalent to CLI: document-loader check-connection --database-name custom_db"
           }
@@ -91,9 +91,9 @@
               "raw": "{\n  \"database_name\": null,\n  \"create_schema\": true,\n  \"force\": false\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/schemas/database/create",
+              "raw": "{{baseUrl}}/api/v1/database/create",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "schemas", "database", "create"]
+              "path": ["api", "v1", "database", "create"]
             },
             "description": "Create the database and optionally the schema if they don't exist.\nEquivalent to CLI: document-loader create-db"
           }
@@ -104,9 +104,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/schemas/database/list",
+              "raw": "{{baseUrl}}/api/v1/database/list",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "schemas", "database", "list"]
+              "path": ["api", "v1", "database", "list"]
             },
             "description": "List all PostgreSQL databases accessible by the current user.\nShows database name, owner, size, encoding, and other metadata.\nEquivalent to CLI: document-loader db list-postgres-databases"
           }
@@ -126,9 +126,9 @@
               "raw": "{\n    \"database_name\": \"test_database\",\n    \"force\": false\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/schemas/database/delete",
+              "raw": "{{baseUrl}}/api/v1/database/delete",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "schemas", "database", "delete"]
+              "path": ["api", "v1", "database", "delete"]
             },
             "description": "Delete a PostgreSQL database using secure request body.\nWARNING: This operation is irreversible and will destroy all data.\nEquivalent to CLI: document-loader db delete-postgres-database test_database --force"
           }
@@ -148,9 +148,9 @@
               "raw": "{\n  \"name\": \"hr_schema\",\n  \"description\": \"HR department schema for employee documents\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/schemas/schemas",
+              "raw": "{{baseUrl}}/api/v1/schemas/create",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "schemas", "schemas"]
+              "path": ["api", "v1", "schemas", "create"]
             },
             "description": "Create a new isolated schema for RAG use case.\nEquivalent to CLI: document-loader create-schema --name hr_schema"
           }
@@ -161,9 +161,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/schemas/schemas",
+              "raw": "{{baseUrl}}/api/v1/schemas/list",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "schemas", "schemas"]
+              "path": ["api", "v1", "schemas", "list"]
             },
             "description": "List all RAG schemas with metadata.\nEquivalent to CLI: document-loader list-schemas"
           }

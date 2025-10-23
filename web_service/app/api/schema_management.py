@@ -84,7 +84,7 @@ class DatabaseListResponse(BaseModel):
 class ConnectionCheckRequest(BaseModel):
     database_name: Optional[str] = None
 
-@router.post("/schemas", response_model=OperationResponse)
+@router.post("/schemas/create", response_model=OperationResponse)
 async def create_schema(
     request: SchemaCreateRequest,
     current_user: User = Depends(require_roles([UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SCHEMA_MANAGER]))
@@ -177,7 +177,7 @@ async def create_schema(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create schema: {str(e)}")
 
-@router.get("/schemas", response_model=SchemaListResponse)
+@router.get("/schemas/list", response_model=SchemaListResponse)
 async def list_schemas(
     current_user: User = Depends(get_current_user)
 ):
