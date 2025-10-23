@@ -48,6 +48,7 @@ class ConnectionStatus(BaseModel):
     database: str
     user: str
     postgres_reachable: bool
+    target_database_exists: bool = False
 
 class SchemaInfoRequest(BaseModel):
     schema_name: str
@@ -454,10 +455,10 @@ async def check_connection(
         return ConnectionStatus(
             success=postgres_reachable and target_database_exists,
             message=message,
-            host=config.host,
-            port=config.port,
-            database=config.database,
-            user=config.user,
+            host=config.host or "unknown",
+            port=config.port or 5432,
+            database=config.database or "unknown",
+            user=config.user or "unknown",
             postgres_reachable=postgres_reachable,
             target_database_exists=target_database_exists
         )
