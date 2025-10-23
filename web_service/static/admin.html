@@ -696,16 +696,39 @@
             const searchTerm = document.getElementById('schema-search').value.toLowerCase();
             const rows = document.querySelectorAll('#schema-table-body tr');
             
-            rows.forEach(row => {
+            console.log('Filtering schemas with term:', searchTerm);
+            console.log('Found rows:', rows.length);
+            
+            let visibleCount = 0;
+            
+            rows.forEach((row, index) => {
+                // Skip rows that don't have the expected structure (like "no schemas" message)
+                if (row.cells.length < 8) {
+                    row.style.display = searchTerm === '' ? '' : 'none';
+                    if (searchTerm === '') visibleCount++;
+                    return;
+                }
+                
                 const schemaName = row.cells[1]?.textContent.toLowerCase() || '';
                 const description = row.cells[2]?.textContent.toLowerCase() || '';
                 
-                if (schemaName.includes(searchTerm) || description.includes(searchTerm)) {
+                console.log(`Row ${index}: "${schemaName}" - "${description}"`);
+                
+                // Show row if search term is empty or found in schema name or description
+                const shouldShow = searchTerm === '' || schemaName.includes(searchTerm) || description.includes(searchTerm);
+                
+                if (shouldShow) {
                     row.style.display = '';
+                    visibleCount++;
                 } else {
                     row.style.display = 'none';
                 }
             });
+            
+            console.log('Visible rows after filter:', visibleCount);
+            
+            // Update selection state after filtering
+            updateSelectAllState();
         }
 
         function refreshSchemas() {
