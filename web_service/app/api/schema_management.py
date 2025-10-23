@@ -30,6 +30,28 @@ class SchemaInfo(BaseModel):
     table_count: int
     knowledge_bases_count: int
     description: Optional[str] = None
+    
+    # Enhanced schema details
+    created_at: Optional[str] = None
+    owner: Optional[str] = None
+    size_mb: Optional[float] = None
+    total_records: int = 0
+    
+    # Table details
+    tables: List[dict] = []
+    
+    # Knowledge base details
+    knowledge_bases: List[dict] = []
+    
+    # Recent activity
+    last_sync_run: Optional[dict] = None
+    recent_sync_runs: List[dict] = []
+    
+    # File statistics
+    file_stats: dict = {}
+    
+    # Schema permissions
+    privileges: List[str] = []
 
 class SchemaListResponse(BaseModel):
     schemas: List[SchemaInfo]
@@ -277,28 +299,176 @@ async def get_schema_info(
                 request.schema_name
             )
             
-            # Count tables
-            table_count = await db.fetchval("""
-                SELECT COUNT(*) 
-                FROM information_schema.tables 
-                WHERE table_schema = %s 
-                AND table_name IN ('knowledge_base', 'sync_run', 'file_record', 'source_type', 'rag_type')
+            # Get comprehensive schema information
+            
+            # 1. Basic table information
+            tables_info = await db.fetch("""
+                SELECT 
+                    table_name,
+                    (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = t.table_schema AND table_name = t.table_name) as column_count,
+                    (SELECT pg_size_pretty(pg_total_relation_size(quote_ident(t.table_schema)||'.'||quote_ident(t.table_name)))) as table_size
+                FROM information_schema.tables t
+                WHERE t.table_schema = %s 
+                AND t.table_type = 'BASE TABLE'
+                ORDER BY t.table_name
             """, request.schema_name)
             
-            # Count knowledge bases
+            tables = []
+            total_records = 0
+            
+            for table_info in tables_info:
+                try:
+                    # Get record count for each table
+                    record_count = await db.fetchval(
+                        f'SELECT COUNT(*) FROM "{request.schema_name}".{table_info["table_name"]}'
+                    )
+                    total_records += record_count or 0
+                except:
+                    record_count = 0
+                
+                tables.append({
+                    "name": table_info["table_name"],
+                    "columns": table_info["column_count"],
+                    "records": record_count,
+                    "size": table_info["table_size"]
+                })
+            
+            # 2. Knowledge base details
+            knowledge_bases = []
+            kb_count = 0
             try:
-                kb_count = await db.fetchval(
-                    f"SELECT COUNT(*) FROM {config.qualify_table('knowledge_base')}"
-                )
+                kb_data = await db.fetch(f"""
+                    SELECT id, name, source_type, rag_type, created_at, updated_at
+                    FROM {config.qualify_table('knowledge_base')}
+                    ORDER BY name
+                """)
+                
+                for kb in kb_data:
+                    knowledge_bases.append({
+                        "id": kb["id"],
+                        "name": kb["name"],
+                        "source_type": kb["source_type"],
+                        "rag_type": kb["rag_type"],
+                        "created_at": kb["created_at"].isoformat() if kb["created_at"] else None,
+                        "updated_at": kb["updated_at"].isoformat() if kb["updated_at"] else None
+                    })
+                
+                kb_count = len(knowledge_bases)
             except:
                 kb_count = 0
+            
+            # 3. Recent sync runs
+            recent_sync_runs = []
+            last_sync_run = None
+            try:
+                sync_runs = await db.fetch(f"""
+                    SELECT sr.id, sr.knowledge_base_id, kb.name as kb_name, sr.started_at, sr.completed_at, 
+                           sr.status, sr.files_processed, sr.files_added, sr.files_updated, sr.files_deleted, sr.error_message
+                    FROM {config.qualify_table('sync_run')} sr
+                    JOIN {config.qualify_table('knowledge_base')} kb ON sr.knowledge_base_id = kb.id
+                    ORDER BY sr.started_at DESC
+                    LIMIT 10
+                """)
+                
+                for run in sync_runs:
+                    run_info = {
+                        "id": run["id"],
+                        "knowledge_base": run["kb_name"],
+                        "started_at": run["started_at"].isoformat() if run["started_at"] else None,
+                        "completed_at": run["completed_at"].isoformat() if run["completed_at"] else None,
+                        "status": run["status"],
+                        "files_processed": run["files_processed"],
+                        "files_added": run["files_added"],
+                        "files_updated": run["files_updated"],
+                        "files_deleted": run["files_deleted"],
+                        "error_message": run["error_message"]
+                    }
+                    recent_sync_runs.append(run_info)
+                
+                if recent_sync_runs:
+                    last_sync_run = recent_sync_runs[0]
+            except:
+                pass
+            
+            # 4. File statistics
+            file_stats = {}
+            try:
+                stats = await db.fetchrow(f"""
+                    SELECT 
+                        COUNT(*) as total_files,
+                        COUNT(CASE WHEN status = 'processed' THEN 1 END) as processed_files,
+                        COUNT(CASE WHEN status = 'error' THEN 1 END) as error_files,
+                        AVG(CASE WHEN file_size_bytes IS NOT NULL THEN file_size_bytes END) as avg_file_size,
+                        SUM(CASE WHEN file_size_bytes IS NOT NULL THEN file_size_bytes END) as total_size_bytes
+                    FROM {config.qualify_table('file_record')}
+                """)
+                
+                file_stats = {
+                    "total_files": stats["total_files"] or 0,
+                    "processed_files": stats["processed_files"] or 0,
+                    "error_files": stats["error_files"] or 0,
+                    "avg_file_size_mb": round((stats["avg_file_size"] or 0) / 1024 / 1024, 2),
+                    "total_size_mb": round((stats["total_size_bytes"] or 0) / 1024 / 1024, 2)
+                }
+            except:
+                file_stats = {"total_files": 0, "processed_files": 0, "error_files": 0}
+            
+            # 5. Schema size and owner information
+            schema_size_mb = 0.0
+            schema_owner = None
+            try:
+                # Get schema size
+                size_query = await db.fetchval(f"""
+                    SELECT pg_size_pretty(SUM(pg_total_relation_size(quote_ident(schemaname)||'.'||quote_ident(tablename))::bigint))
+                    FROM pg_tables 
+                    WHERE schemaname = %s
+                """, request.schema_name)
+                
+                # Parse size string to MB
+                if size_query:
+                    size_str = size_query.replace(' ', '').lower()
+                    if 'mb' in size_str:
+                        schema_size_mb = float(size_str.replace('mb', ''))
+                    elif 'kb' in size_str:
+                        schema_size_mb = float(size_str.replace('kb', '')) / 1024
+                    elif 'gb' in size_str:
+                        schema_size_mb = float(size_str.replace('gb', '')) * 1024
+                
+                # Get schema owner
+                schema_owner = await db.fetchval(
+                    "SELECT nspowner::regrole FROM pg_namespace WHERE nspname = %s",
+                    request.schema_name
+                )
+            except:
+                pass
+            
+            # 6. Schema privileges
+            privileges = []
+            try:
+                priv_data = await db.fetch("""
+                    SELECT privilege_type 
+                    FROM information_schema.schema_privileges 
+                    WHERE schema_name = %s
+                """, request.schema_name)
+                privileges = [p["privilege_type"] for p in priv_data]
+            except:
+                pass
             
             return SchemaInfo(
                 schema_name=request.schema_name,
                 is_isolated=request.schema_name != 'public',
-                table_count=table_count or 0,
-                knowledge_bases_count=kb_count or 0,
-                description=description
+                table_count=len(tables),
+                knowledge_bases_count=kb_count,
+                description=description,
+                owner=str(schema_owner) if schema_owner else None,
+                size_mb=schema_size_mb,
+                total_records=total_records,
+                tables=tables,
+                knowledge_bases=knowledge_bases,
+                last_sync_run=last_sync_run,
+                recent_sync_runs=recent_sync_runs,
+                file_stats=file_stats,
+                privileges=privileges
             )
             
         finally:

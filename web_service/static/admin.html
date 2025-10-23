@@ -1145,31 +1145,153 @@
                 
                 document.getElementById('schema-details-title').textContent = `Schema: ${schema.schema_name}`;
                 document.getElementById('schema-details-content').innerHTML = `
-                    <div style="display: grid; gap: 1rem;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                            <div>
-                                <strong>Schema Name:</strong><br>
-                                ${schema.schema_name}
+                    <div style="display: grid; gap: 1.5rem;">
+                        <!-- Basic Information -->
+                        <div style="background: var(--nbg-light); padding: 1rem; border-radius: 6px;">
+                            <h4 style="margin-bottom: 1rem; color: var(--nbg-primary);">📋 Basic Information</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                                <div><strong>Schema Name:</strong><br>${schema.schema_name}</div>
+                                <div><strong>Type:</strong><br>${schema.is_isolated ? 'Isolated' : 'Shared'}</div>
+                                <div><strong>Owner:</strong><br>${schema.owner || 'N/A'}</div>
+                                <div><strong>Size:</strong><br>${schema.size_mb ? schema.size_mb.toFixed(2) + ' MB' : 'N/A'}</div>
+                                <div><strong>Total Records:</strong><br>${schema.total_records.toLocaleString()}</div>
+                                <div><strong>Knowledge Bases:</strong><br>${schema.knowledge_bases_count}</div>
                             </div>
-                            <div>
-                                <strong>Type:</strong><br>
-                                ${schema.is_isolated ? 'Isolated' : 'Shared'}
-                            </div>
+                            ${schema.description ? `
+                                <div style="margin-top: 1rem;">
+                                    <strong>Description:</strong><br>
+                                    ${schema.description}
+                                </div>
+                            ` : ''}
                         </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                            <div>
-                                <strong>Tables:</strong><br>
-                                ${schema.table_count}
-                            </div>
-                            <div>
-                                <strong>Knowledge Bases:</strong><br>
-                                ${schema.knowledge_bases_count}
-                            </div>
+
+                        <!-- Tables Information -->
+                        <div>
+                            <h4 style="margin-bottom: 1rem; color: var(--nbg-primary);">🗂️ Tables (${schema.table_count})</h4>
+                            ${schema.tables && schema.tables.length > 0 ? `
+                                <div style="overflow-x: auto;">
+                                    <table class="data-table" style="font-size: 0.9rem;">
+                                        <thead>
+                                            <tr>
+                                                <th>Table Name</th>
+                                                <th>Columns</th>
+                                                <th>Records</th>
+                                                <th>Size</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${schema.tables.map(table => `
+                                                <tr>
+                                                    <td><strong>${table.name}</strong></td>
+                                                    <td>${table.columns}</td>
+                                                    <td>${table.records.toLocaleString()}</td>
+                                                    <td>${table.size}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ` : '<p style="color: var(--nbg-gray);">No tables found</p>'}
                         </div>
-                        ${schema.description ? `
+
+                        <!-- Knowledge Bases -->
+                        <div>
+                            <h4 style="margin-bottom: 1rem; color: var(--nbg-primary);">🧠 Knowledge Bases (${schema.knowledge_bases_count})</h4>
+                            ${schema.knowledge_bases && schema.knowledge_bases.length > 0 ? `
+                                <div style="overflow-x: auto;">
+                                    <table class="data-table" style="font-size: 0.9rem;">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Source Type</th>
+                                                <th>RAG Type</th>
+                                                <th>Created</th>
+                                                <th>Updated</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${schema.knowledge_bases.map(kb => `
+                                                <tr>
+                                                    <td><strong>${kb.name}</strong></td>
+                                                    <td>${kb.source_type}</td>
+                                                    <td>${kb.rag_type}</td>
+                                                    <td>${kb.created_at ? new Date(kb.created_at).toLocaleDateString() : 'N/A'}</td>
+                                                    <td>${kb.updated_at ? new Date(kb.updated_at).toLocaleDateString() : 'N/A'}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ` : '<p style="color: var(--nbg-gray);">No knowledge bases found</p>'}
+                        </div>
+
+                        <!-- File Statistics -->
+                        ${schema.file_stats && Object.keys(schema.file_stats).length > 0 ? `
+                            <div style="background: var(--nbg-light); padding: 1rem; border-radius: 6px;">
+                                <h4 style="margin-bottom: 1rem; color: var(--nbg-primary);">📊 File Statistics</h4>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                                    <div><strong>Total Files:</strong><br>${schema.file_stats.total_files?.toLocaleString() || 0}</div>
+                                    <div><strong>Processed:</strong><br>${schema.file_stats.processed_files?.toLocaleString() || 0}</div>
+                                    <div><strong>Errors:</strong><br>${schema.file_stats.error_files?.toLocaleString() || 0}</div>
+                                    <div><strong>Avg File Size:</strong><br>${schema.file_stats.avg_file_size_mb || 0} MB</div>
+                                    <div><strong>Total Size:</strong><br>${schema.file_stats.total_size_mb || 0} MB</div>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <!-- Recent Activity -->
+                        ${schema.recent_sync_runs && schema.recent_sync_runs.length > 0 ? `
                             <div>
-                                <strong>Description:</strong><br>
-                                ${schema.description}
+                                <h4 style="margin-bottom: 1rem; color: var(--nbg-primary);">⚡ Recent Sync Runs</h4>
+                                <div style="overflow-x: auto;">
+                                    <table class="data-table" style="font-size: 0.9rem;">
+                                        <thead>
+                                            <tr>
+                                                <th>Knowledge Base</th>
+                                                <th>Status</th>
+                                                <th>Started</th>
+                                                <th>Duration</th>
+                                                <th>Files Processed</th>
+                                                <th>Changes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${schema.recent_sync_runs.slice(0, 5).map(run => {
+                                                const duration = run.started_at && run.completed_at ? 
+                                                    Math.round((new Date(run.completed_at) - new Date(run.started_at)) / 1000) + 's' : 'N/A';
+                                                const changes = `+${run.files_added || 0} ~${run.files_updated || 0} -${run.files_deleted || 0}`;
+                                                return `
+                                                <tr>
+                                                    <td><strong>${run.knowledge_base}</strong></td>
+                                                    <td>
+                                                        <span class="status-indicator ${run.status === 'completed' ? 'status-online' : 'status-offline'}">
+                                                            <span class="status-dot"></span>
+                                                            ${run.status}
+                                                        </span>
+                                                    </td>
+                                                    <td>${run.started_at ? new Date(run.started_at).toLocaleString() : 'N/A'}</td>
+                                                    <td>${duration}</td>
+                                                    <td>${run.files_processed || 0}</td>
+                                                    <td style="font-family: monospace; font-size: 0.8rem;">${changes}</td>
+                                                </tr>
+                                            `}).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <!-- Schema Privileges -->
+                        ${schema.privileges && schema.privileges.length > 0 ? `
+                            <div style="background: var(--nbg-light); padding: 1rem; border-radius: 6px;">
+                                <h4 style="margin-bottom: 1rem; color: var(--nbg-primary);">🔐 Schema Privileges</h4>
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                    ${schema.privileges.map(priv => `
+                                        <span style="background: var(--nbg-secondary); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">
+                                            ${priv}
+                                        </span>
+                                    `).join('')}
+                                </div>
                             </div>
                         ` : ''}
                     </div>
