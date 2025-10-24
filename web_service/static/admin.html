@@ -1392,11 +1392,11 @@
         // Table Schema Viewer
         function viewTableSchema(schemaName, tableName, tableSchema) {
             const modalHtml = `
-                <div class="modal-overlay" id="table-schema-modal">
-                    <div class="modal" style="max-width: 900px; max-height: 80vh; overflow-y: auto;">
+                <div class="modal active" id="table-schema-modal">
+                    <div class="modal-content" style="max-width: 900px; max-height: 80vh; overflow-y: auto;">
                         <div class="modal-header">
                             <h3>📋 Table Schema: ${schemaName}.${tableName}</h3>
-                            <button class="modal-close" onclick="closeModal('table-schema-modal')">&times;</button>
+                            <button class="close-btn" onclick="closeTableSchemaModal()">&times;</button>
                         </div>
                         <div class="modal-body">
                             ${tableSchema.error ? `
@@ -1526,13 +1526,21 @@
                             `}
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="closeModal('table-schema-modal')">Close</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeTableSchemaModal()">Close</button>
                         </div>
                     </div>
                 </div>
             `;
             
             document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        // Function to close the table schema modal
+        function closeTableSchemaModal() {
+            const modal = document.getElementById('table-schema-modal');
+            if (modal) {
+                modal.remove();
+            }
         }
 
         // Utility Functions
@@ -1917,7 +1925,11 @@
         // Close modals when clicking outside
         document.addEventListener('click', function(event) {
             if (event.target.classList.contains('modal')) {
-                event.target.classList.remove('active');
+                if (event.target.id === 'table-schema-modal') {
+                    closeTableSchemaModal();
+                } else {
+                    event.target.classList.remove('active');
+                }
             }
         });
     </script>
